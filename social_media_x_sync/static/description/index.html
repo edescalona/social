@@ -1,0 +1,656 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils: https://docutils.sourceforge.io/" />
+<title>Social Media X Sync</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 9511 2024-01-13 09:50:07Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+Despite the name, some widely supported CSS2 features are used.
+
+See https://docutils.sourceforge.io/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+.subscript {
+  vertical-align: sub;
+  font-size: smaller }
+
+.superscript {
+  vertical-align: super;
+  font-size: smaller }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left, table.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right, table.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+table.align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+.align-top    {
+  vertical-align: top }
+
+.align-middle {
+  vertical-align: middle }
+
+.align-bottom {
+  vertical-align: bottom }
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: gray; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic, pre.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="social-media-x-sync">
+<h1 class="title">Social Media X Sync</h1>
+
+<!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! This file is generated by oca-gen-addon-readme !!
+!! changes will be overwritten.                   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! source digest: sha256:15307101901f58dc713d1be0acf5508d65ee914b4aa43bc3b98119ef50240696
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+<p><a class="reference external image-reference" href="https://odoo-community.org/page/development-status"><img alt="Beta" src="https://img.shields.io/badge/maturity-Beta-yellow.png" /></a> <a class="reference external image-reference" href="http://www.gnu.org/licenses/agpl-3.0-standalone.html"><img alt="License: AGPL-3" src="https://img.shields.io/badge/licence-AGPL--3-blue.png" /></a> <a class="reference external image-reference" href="https://github.com/OCA/social/tree/17.0/social_media_x_sync"><img alt="OCA/social" src="https://img.shields.io/badge/github-OCA%2Fsocial-lightgray.png?logo=github" /></a> <a class="reference external image-reference" href="https://translation.odoo-community.org/projects/social-17-0/social-17-0-social_media_x_sync"><img alt="Translate me on Weblate" src="https://img.shields.io/badge/weblate-Translate%20me-F47D42.png" /></a> <a class="reference external image-reference" href="https://runboat.odoo-community.org/builds?repo=OCA/social&amp;target_branch=17.0"><img alt="Try me on Runboat" src="https://img.shields.io/badge/runboat-Try%20me-875A7B.png" /></a></p>
+<p>This module brings back into Odoo what an X account already published:
+the posts of its timeline, the figures each of them collected, and their
+comments.</p>
+<p>It is the X half of <em>Social Media Sync</em>, split from <em>Social Media X</em>
+along the same line: what a call costs. The connector asks X for a fixed
+number of things per account — link it, refresh its card, publish,
+delete — and that number does not change whether the account published
+once or ten thousand times. Everything whose cost grows with the history
+of the account lives here: the timeline that answers up to a hundred
+publications and one download per media not stored yet, one call per
+publication whose comments are read, and one call per publication that
+is verified.</p>
+<p>An Odoo that only publishes on X installs <em>Social Media X</em> alone and
+pays for none of it.</p>
+<p>Main features:</p>
+<ul class="simple">
+<li>Import of the publications of the timeline and of the figures each of
+them collected, on demand and through the scheduled actions of <em>Social
+Media Sync</em>.</li>
+<li>Comments of a publication, read from the dashboard: X answers the
+whole conversation at once, so the replies of a comment are nested
+from what was already read instead of being asked for apart. A comment
+answers the publication, and answering a comment answers that comment,
+which on X is a post like any other.</li>
+<li>Verification that a publication still exists on X before the dashboard
+acts on it.</li>
+<li>Reading only what was published after a chosen publication, with
+<em>Enable since</em>, for an account that does not need its whole history
+read again.</li>
+</ul>
+<p><em>Recommend</em> is not offered on X, neither on a publication nor on a
+comment. X does serve the endpoints — <tt class="docutils literal">POST <span class="pre">/2/users/:id/likes</span></tt> and
+<tt class="docutils literal">DELETE <span class="pre">/2/users/:id/likes/:tweet_id</span></tt>, and a comment is a post like
+any other, so both would be the same call — but it <a class="reference external" href="https://devcommunity.x.com/t/update-to-x-api-free-tier-removal-of-like-and-follow-endpoints/247646">withdrew their
+access from the Free
+tier</a>.
+This module does not implement them, and until it does the button is not
+rendered for the X publications. The roadmap says the rest.</p>
+<div class="section" id="statistics-account">
+<h1>Statistics account</h1>
+<p>In the case of X statistics, only current posts are taken into account;
+if some are deleted, the metrics also decrease, that is, it is not a
+history of the account’s posts.</p>
+<p>The metrics are computed on the <strong>100 most recent publications</strong> X
+answers in a single request, and only on original publications:
+retweets, replies and quotes are discarded both when importing and when
+computing. The publications older than those 100 are not counted,
+because the timeline (<tt class="docutils literal">GET <span class="pre">/2/users/:id/tweets</span></tt>) is read once and not
+paginated, in order to spare the requests of the plan.</p>
+<ol class="arabic">
+<li><p class="first">The eye icon: Total number of views, which may include multiple views
+by the same user.</p>
+</li>
+<li><p class="first">The hand icon: means the interactions (likes, comments, retweets and
+quotes) of current posts. They are the
+<a class="reference external" href="https://docs.x.com/x-api/fundamentals/metrics">metrics</a> X returns
+for a post.</p>
+</li>
+<li><p class="first">The star icon: the engagement of the account, the interactions of its
+publications over their impressions. X reports no rate of its own, so
+it is derived from those counters, and it counts the retweets and the
+quotes as interactions like any other.</p>
+<p><img alt="STATISTICS_ACCOUNT" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x_sync/static/img/readme/STATISTICS_ACCOUNT.png" /></p>
+</li>
+</ol>
+<p>If the X API <a class="reference external" href="https://docs.x.com/x-api/fundamentals/rate-limits">rate
+limit</a> is reached
+while refreshing the statistics, the last metrics stored on the account
+are kept instead of failing.</p>
+<p><strong>Table of contents</strong></p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#installation" id="toc-entry-1">Installation</a></li>
+<li><a class="reference internal" href="#configuration" id="toc-entry-2">Configuration</a></li>
+</ul>
+</div>
+<div class="section" id="installation">
+<h2><a class="toc-backref" href="#toc-entry-1">Installation</a></h2>
+<p>This module is installed on its own as soon as <em>Social Media Sync</em> and
+<em>Social Media X</em> are both present, which is what a bridge module is for:
+the choice to synchronize was already made by whoever installed <em>Social
+Media Sync</em>, and this only keeps an X account from being left without
+the half that belongs to it.</p>
+<p>Installing <em>Social Media X</em> alone is a valid installation: the account
+is linked, publishes and deletes.</p>
+<p>It adds no Python dependency of its own: it asks the connector for the
+tweepy client and never builds one.</p>
+</div>
+<div class="section" id="configuration">
+<h2><a class="toc-backref" href="#toc-entry-2">Configuration</a></h2>
+<p>Nothing has to be configured for this module: it reads X with the
+credentials the account already holds, which are configured in <em>Social
+Media X</em>.</p>
+<p>What those credentials need is a <strong>paid plan</strong>, the same one the
+connector requires: the timeline of the user and the recent search this
+module spends are X API v2 endpoints, so a developer App outside a
+Project answers <tt class="docutils literal">403</tt> to them as it does to the rest. See the
+configuration of <em>Social Media X</em> and <a class="reference external" href="https://docs.x.com/x-api/getting-started/pricing">the pricing of the X
+API</a>.</p>
+</div>
+</div>
+<div class="section" id="enable-since">
+<h1>Enable since</h1>
+<ul>
+<li><p class="first">Go to <em>Social Media</em> &gt; Configuration &gt; Accounts</p>
+</li>
+<li><p class="first">Select the account</p>
+</li>
+<li><p class="first">Select <em>Enable since</em></p>
+</li>
+<li><p class="first">The <em>Post since</em> field is then enabled, allowing you to select the
+post to start the search for in the next post retrieval. Note that
+metrics for older posts will not be updated if this option is
+selected.</p>
+<p><img alt="ENABLE_SINCE" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x_sync/static/img/readme/ENABLE_SINCE.png" /></p>
+</li>
+</ul>
+</div>
+<div class="section" id="scheduled-actions">
+<h1>Scheduled actions</h1>
+<p>The passes over an X account are the ones <em>Social Media Sync</em> declares,
+plus the check for updates of <em>Social Media Base</em>:</p>
+<ul class="simple">
+<li><em>Check media updates</em>, every 2 hours, reads the timeline of every X
+account. X has no cheap answer to whether anything moved — the only
+endpoint that knows is the timeline, and reading it is already the
+import — so this pass imports instead of flagging the account.</li>
+<li><em>Initial sync of the new accounts</em>, monthly, imports the timeline of
+an account that was just linked. Linking one triggers this action
+immediately as well, so its card is filled from the first moment.</li>
+<li><em>Full resync</em>, weekly, is the only pass that notices a publication
+deleted on X.</li>
+</ul>
+<p>An account whose first import has not run yet is left out of the
+bihourly check, because that check and the initial import write the same
+row from two threads.</p>
+<div class="section" id="usage">
+<h2>Usage</h2>
+</div>
+</div>
+<div class="section" id="importing-the-publications">
+<h1>Importing the publications</h1>
+<ul class="simple">
+<li>The timeline of the account is read with <a class="reference external" href="https://docs.x.com/x-api/posts/user-posts-timeline">the posts of a
+user</a>, which
+answers up to <strong>100 publications in a single request</strong> and is not
+paginated: what is older than those hundred is not imported, in order
+to spare the requests of the plan. Retweets and replies are excluded,
+so only the original publications of the account are stored.</li>
+<li>Each media of an imported publication is downloaded once and stored as
+an attachment. A media already stored is not asked for again.</li>
+<li>The <em>Update</em> button of the dashboard card runs the same import on
+demand.</li>
+<li>With <em>Enable since</em> the import only asks for what was published after
+the stored publication, so the figures of the older publications are
+no longer updated. The card of the account is unaffected either way:
+the import writes the figures of each tweet on its publication, and
+the card adds up every publication stored.</li>
+</ul>
+</div>
+<div class="section" id="comments">
+<h1>Comments</h1>
+<ul class="simple">
+<li>The comments of a publication are read with the <a class="reference external" href="https://docs.x.com/x-api/posts/recent-search">recent
+search</a> endpoint of
+X, which only covers the <strong>last 7 days</strong>: the replies to older
+publications are not shown on the dashboard even though the post has
+them. Retweets and quotes are excluded as well, only the replies are
+listed.</li>
+<li>The whole conversation arrives in that single answer, so how many
+replies each comment has is counted in Odoo and never asked to X
+again.</li>
+<li>Answering a publication and answering one of its comments are the same
+call to X: on X a comment is a post like any other, and what changes
+is the post being replied to.</li>
+</ul>
+</div>
+<div class="section" id="verification-of-a-publication">
+<h1>Verification of a publication</h1>
+<ul class="simple">
+<li>Before acting on a publication from the dashboard, Odoo checks on X
+that the post still exists. If it was deleted directly on X, the
+action stops, the publication is marked as <em>Deleted</em> in Odoo and the
+notice <em>The post does not exist or has been deleted.</em> is shown.</li>
+<li>Only the <em>Not Found</em> answer of X marks the publication as deleted. A
+throttled application, or any other failure, means the post could not
+be read and the publication is left untouched.</li>
+</ul>
+</div>
+<div class="section" id="rate-limits">
+<h1>Rate limits</h1>
+<p>The endpoints this module spends from the plan of the account are the
+timeline of the user, the recent search of the comments, the publication
+of a reply and the read of a single post. Each of them has its own
+window on the account, the same record where <em>Social Media X</em> stores the
+ones it spends, and when X answers that one is exhausted Odoo stops
+calling that endpoint until the window expires.</p>
+<p>While the window of the comments lasts, opening the conversation of a
+publication shows the notice <em>The comments could not be read from X. The
+account may have reached the limit of requests of its plan.</em> instead of
+an empty thread, and a refresh in that state leaves the comments already
+on screen untouched.</p>
+<p>While the window of the replies lasts, publishing a comment answers <em>The
+comment could not be published on X. The account may have reached the
+limit of requests of its plan.</em> and the text stays in the composer,
+instead of reporting a reply X never received.</p>
+</div>
+<div class="section" id="uninstalling">
+<h1>Uninstalling</h1>
+<p>Uninstalling this module leaves the account linked and able to publish.
+What goes with it is the checkpoint of the import: <em>Enable since</em>, <em>Post
+since</em> and the reference of the last publication read.</p>
+<div class="section" id="known-issues-roadmap">
+<h2>Known issues / Roadmap</h2>
+<ul class="simple">
+<li>Migrating a database where <em>Social Media X</em> held both halves needs a
+manual step. The stored fields <tt class="docutils literal">social.account.last_post_ref</tt>,
+<tt class="docutils literal">social.account.enable_since</tt> and <tt class="docutils literal">social.account.post_since_id</tt>
+move from <em>Social Media X</em> to this module, and no migration script
+ships with it. Recreate the database, or update <tt class="docutils literal">ir_model_fields</tt> so
+the three of them belong to this module before uninstalling the
+connector: Odoo drops the columns of the module that declares them, so
+an uninstall of <em>Social Media X</em> against the old ownership takes the
+checkpoint of the import with it.</li>
+<li>Recommending a publication or a comment is not implemented. X does
+offer the endpoints, <tt class="docutils literal">POST <span class="pre">/2/users/:id/likes</span></tt> and
+<tt class="docutils literal">DELETE <span class="pre">/2/users/:id/likes/:tweet_id</span></tt>, and a comment on X is a post
+like any other, so both would be the same call; what X withdrew is
+their access from the <strong>Free tier</strong>, and these modules require a paid
+plan anyway. Until they are implemented the button is not shown for
+the X publications, neither on the publication nor on its comments.<ul>
+<li>Likes endpoints: <a class="reference external" href="https://docs.x.com/x-api/posts/likes/introduction">https://docs.x.com/x-api/posts/likes/introduction</a></li>
+</ul>
+</li>
+<li>The timeline is read once and <tt class="docutils literal">next_token</tt> is never followed, so an
+account with more than 100 publications is only imported up to that
+page. Paginating it costs one request per page against the plan of the
+account.</li>
+</ul>
+</div>
+<div class="section" id="bug-tracker">
+<h2>Bug Tracker</h2>
+<p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
+In case of trouble, please check there if your issue has already been reported.
+If you spotted it first, help us to smash it by providing a detailed and welcomed
+<a class="reference external" href="https://github.com/OCA/social/issues/new?body=module:%20social_media_x_sync%0Aversion:%2017.0%0A%0A**Steps%20to%20reproduce**%0A-%20...%0A%0A**Current%20behavior**%0A%0A**Expected%20behavior**">feedback</a>.</p>
+<p>Do not contact contributors directly about support or help with technical issues.</p>
+</div>
+<div class="section" id="credits">
+<h2>Credits</h2>
+</div>
+</div>
+<div class="section" id="authors">
+<h1>Authors</h1>
+<ul class="simple">
+<li>Binhex</li>
+</ul>
+</div>
+<div class="section" id="contributors">
+<h1>Contributors</h1>
+<ul class="simple">
+<li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
+<li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="maintainers">
+<h1>Maintainers</h1>
+<p>This module is maintained by the OCA.</p>
+<a class="reference external image-reference" href="https://odoo-community.org">
+<img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />
+</a>
+<p>OCA, or the Odoo Community Association, is a nonprofit organization whose
+mission is to support the collaborative development of Odoo features and
+promote its widespread use.</p>
+<p>Current <a class="reference external" href="https://odoo-community.org/page/maintainer-role">maintainer</a>:</p>
+<p><a class="reference external image-reference" href="https://github.com/edescalona"><img alt="edescalona" src="https://github.com/edescalona.png?size=40px" /></a></p>
+<p>This module is part of the <a class="reference external" href="https://github.com/OCA/social/tree/17.0/social_media_x_sync">OCA/social</a> project on GitHub.</p>
+<p>You are welcome to contribute. To learn how please visit <a class="reference external" href="https://odoo-community.org/page/Contribute">https://odoo-community.org/page/Contribute</a>.</p>
+</div>
+</div>
+</body>
+</html>

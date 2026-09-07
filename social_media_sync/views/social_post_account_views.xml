@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Binhex <https://www.binhex.cloud>
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+
+    <!-- The figures a social media reports are counted by the import of this
+         module, so they are drawn where the user reads a publication only
+         once this module is installed: without it the cells would be there
+         showing a zero nobody can turn into a number. -->
+
+    <!-- The counters the footer of the card draws, and the reaction of the
+         account on its own publication that its *Recommend* entry toggles:
+         both travel with the records the dashboard loads. -->
+    <record id="social_post_account_view_kanban_inherit" model="ir.ui.view">
+        <field
+            name="name"
+        >social.post.account.view.kanban.inherit.social.media.sync</field>
+        <field name="model">social.post.account</field>
+        <field
+            name="inherit_id"
+            ref="social_media_base.social_post_account_view_kanban"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='account_remote_ref']" position="after">
+                <field name="like_count" />
+                <field name="comment_count" />
+                <field name="liked_by_account" />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- A publication is searched by what the social media reported on it
+         only where those figures are imported. -->
+    <record id="social_post_account_view_search_inherit" model="ir.ui.view">
+        <field
+            name="name"
+        >social.post.account.view.search.inherit.social.media.sync</field>
+        <field name="model">social.post.account</field>
+        <field
+            name="inherit_id"
+            ref="social_media_base.social_post_account_view_search"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='scheduled']" position="after">
+                <separator />
+                <filter
+                    string="With Likes"
+                    name="with_likes"
+                    domain="[('like_count', '&gt;', 0)]"
+                />
+                <filter
+                    string="With Comments"
+                    name="with_comments"
+                    domain="[('comment_count', '&gt;', 0)]"
+                />
+                <filter
+                    string="With Shares"
+                    name="with_shares"
+                    domain="[('share_count', '&gt;', 0)]"
+                />
+                <filter
+                    string="With Clicks"
+                    name="with_clicks"
+                    domain="[('click_count', '&gt;', 0)]"
+                />
+                <filter
+                    string="With Impressions"
+                    name="with_impressions"
+                    domain="[('impression_count', '&gt;', 0)]"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="social_post_account_view_tree_inherit" model="ir.ui.view">
+        <field
+            name="name"
+        >social.post.account.view.tree.inherit.social.media.sync</field>
+        <field name="model">social.post.account</field>
+        <field
+            name="inherit_id"
+            ref="social_media_base.social_post_account_view_tree"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='link_click_count']" position="after">
+                <field name="click_count" string="Social Media Clicks" />
+                <field name="like_count" string="Likes" />
+                <field name="comment_count" string="Comments" />
+                <field name="interactions_count" string="Interactions" />
+                <field name="engagement" string="Engagement" />
+                <field name="share_count" string="Shares" optional="hide" />
+                <field name="impression_count" string="Impressions" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="social_post_account_view_form_inherit" model="ir.ui.view">
+        <field
+            name="name"
+        >social.post.account.view.form.inherit.social.media.sync</field>
+        <field name="model">social.post.account</field>
+        <field
+            name="inherit_id"
+            ref="social_media_base.social_post_account_view_form"
+        />
+        <field name="arch" type="xml">
+            <xpath
+                expr="//group[@name='statistics_left']/field[@name='link_click_count']"
+                position="before"
+            >
+                <field name="impression_count" />
+            </xpath>
+            <xpath
+                expr="//group[@name='statistics_left']/field[@name='link_click_count']"
+                position="after"
+            >
+                <field name="click_count" string="Social Media Clicks" />
+                <field name="share_count" />
+            </xpath>
+            <xpath expr="//group[@name='statistics_right']" position="inside">
+                <field name="like_count" />
+                <field name="comment_count" />
+                <field name="interactions_count" />
+                <field name="engagement" />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="social_post_account_view_form_statistics_inherit" model="ir.ui.view">
+        <field
+            name="name"
+        >social.post.account.view.form.statistics.inherit.social.media.sync</field>
+        <field name="model">social.post.account</field>
+        <field
+            name="inherit_id"
+            ref="social_media_base.social_post_account_view_form_statistics"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='link_click_count']" position="before">
+                <div class="col-4 py-3" name="impression_count">
+                    <!-- Declared as a float while the same figure is an
+                         integer on the account, so the decimals are dropped
+                         here instead of showing 537.00. -->
+                    <field
+                        name="impression_count"
+                        widget="statinfo"
+                        string="Impressions"
+                        digits="[16,0]"
+                    />
+                </div>
+            </xpath>
+            <xpath expr="//div[@name='link_click_count']" position="after">
+                <div class="col-4 py-3" name="click_count">
+                    <field
+                        name="click_count"
+                        widget="statinfo"
+                        string="Social Media Clicks"
+                    />
+                </div>
+                <div class="col-4 py-3" name="share_count">
+                    <field name="share_count" widget="statinfo" string="Shares" />
+                </div>
+                <div class="col-4 py-3" name="like_count">
+                    <field name="like_count" widget="statinfo" string="Likes" />
+                </div>
+                <div class="col-4 py-3" name="comment_count">
+                    <field name="comment_count" widget="statinfo" string="Comments" />
+                </div>
+                <div class="col-4 py-3" name="interactions_count">
+                    <field
+                        name="interactions_count"
+                        widget="statinfo"
+                        string="Interactions"
+                    />
+                </div>
+                <div class="col-4 py-3" name="engagement">
+                    <field name="engagement" widget="statinfo" string="Engagement" />
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
