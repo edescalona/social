@@ -99,23 +99,23 @@ class TestSocialSyncScopesLinkedin(TestSocialSyncCommonLinkedin):
         self.assertIn(account.user_id.partner_id, message.partner_ids)
         self.assertTrue(account.linkedin_sync_scopes_notified)
 
-    def test_check_updates_leaves_need_update_alone(self):
+    def test_check_updates_leaves_posts_need_import_alone(self):
         """The warning must not take the account out of the check for good.
 
-        ``need_update`` means "there are publications to import" here, and
-        the check skips every account carrying it. Only the import clears it,
-        and the import is the very thing that cannot run.
+        The check skips every account carrying ``posts_need_import``. Only
+        the import clears it, and the import is the very thing that cannot
+        run without the scopes.
         """
         account = self.SocialAccountLinkedin
         self._isolate_linkedin_account()
         self._mark_the_page_as_imported()
         account.sudo().linkedin_granted_scopes = GRANTED_LINKEDIN
-        account.need_update = False
+        account.posts_need_import = False
         with self._patch_recent_statistics(), patch(
             PATCH_ACCOUNT_LINKEDIN.format("_get_posts"), autospec=True
         ):
             self.SocialAccount._run_check_media_updates()
-        self.assertFalse(account.need_update)
+        self.assertFalse(account.posts_need_import)
 
     def test_check_updates_warns_once(self):
         """A second pass on the same broken account writes nothing more."""

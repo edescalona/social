@@ -11,7 +11,6 @@ from odoo import _, fields
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
-from odoo.addons.social_media_base.tests.test_social_common import PATCH_ACCOUNT
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _UPDATE_CHECK_DAYS_LINKEDIN,
     epoch_milliseconds,
@@ -21,6 +20,9 @@ from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     RECENT_STATISTICS_LINKEDIN,
     _linkedin_buckets,
     _linkedin_day,
+)
+from odoo.addons.social_media_sync.tests.test_social_sync_common import (
+    PATCH_SYNC_ACCOUNT,
 )
 
 from .test_sync_linkedin_common import (
@@ -140,7 +142,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
                 RECENT_STATISTICS_LINKEDIN
             ),
         )
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
         mock_get_posts.assert_not_called()
 
     def test_run_check_media_updates_reads_a_mark_written_before_the_move(self):
@@ -179,7 +181,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             msg="The stored value did not read as a baseline: the check "
             "reseeded instead of comparing.",
         )
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
         self.assertEqual(
             self.SocialAccountLinkedin.linkedin_statistics_checkpoint,
             stored,
@@ -202,7 +204,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
                 RECENT_STATISTICS_LINKEDIN
             ),
         )
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
         mock_get_posts.assert_not_called()
 
     def test_run_check_media_updates_when_the_page_moved(self):
@@ -215,7 +217,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             PATCH_ACCOUNT_LINKEDIN.format("_get_posts"), autospec=True
         ) as mock_get_posts:
             self.assertTrue(self.SocialAccount._run_check_media_updates())
-        self.assertTrue(self.SocialAccountLinkedin.need_update)
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
         mock_get_posts.assert_not_called()
         self.assertEqual(
             self.SocialAccountLinkedin.linkedin_statistics_checkpoint,
@@ -231,7 +233,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         moved = {**RECENT_STATISTICS_LINKEDIN, _linkedin_day(2): (5, 0, 0, 0, 30)}
         with self._patch_recent_statistics(moved):
             self.SocialAccount._run_check_media_updates()
-        self.assertTrue(self.SocialAccountLinkedin.need_update)
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_notices_a_new_day_with_activity(self):
         """A day LinkedIn had nothing for before, now carrying activity."""
@@ -240,7 +242,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         moved = {**RECENT_STATISTICS_LINKEDIN, _linkedin_day(0): (0, 1, 0, 0, 0)}
         with self._patch_recent_statistics(moved):
             self.SocialAccount._run_check_media_updates()
-        self.assertTrue(self.SocialAccountLinkedin.need_update)
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_ignores_an_empty_new_day(self):
         """The day in progress starts as a bucket of zeros, not as news."""
@@ -253,7 +255,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             return_value=[{"id": self.SocialPostAccountLinkedin.remote_ref}],
         ):
             self.assertFalse(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_ignores_a_day_that_aged_out(self):
         """The window slides, so its oldest day leaving is not activity."""
@@ -270,7 +272,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             return_value=[{"id": self.SocialPostAccountLinkedin.remote_ref}],
         ):
             self.assertFalse(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_without_posts(self):
         self._isolate_linkedin_account()
@@ -282,7 +284,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         ) as mock_get_posts:
             self.assertFalse(self.SocialAccount._run_check_media_updates())
         self.assertTrue(mock_get_posts.called)
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_with_a_known_post(self):
         """Same figures and nothing new published: nothing to announce."""
@@ -294,7 +296,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             return_value=[{"id": self.SocialPostAccountLinkedin.remote_ref}],
         ):
             self.assertFalse(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_sees_an_archived_publication(self):
         """Archiving a post does not make its publication new again."""
@@ -313,7 +315,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             ],
         ):
             self.assertFalse(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_with_unknown_post(self):
         """A publication posted outside Odoo moves no figure of its own."""
@@ -325,13 +327,13 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             return_value=[{"id": "urn:li:share:not-imported-yet"}],
         ):
             self.SocialAccount._run_check_media_updates()
-        self.assertTrue(self.SocialAccountLinkedin.need_update)
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
 
     def test_run_check_media_updates_skips_a_flagged_account(self):
         """An account already announcing updates is not checked again."""
         self._isolate_linkedin_account()
         self._mark_the_page_as_imported()
-        self.SocialAccountLinkedin.need_update = True
+        self.SocialAccountLinkedin.posts_need_import = True
         with self._patch_recent_statistics() as mock_reader, patch(
             PATCH_SYNC_ACCOUNT_LINKEDIN.format("_check_linkedin_updates"), autospec=True
         ) as mock_check, patch(
@@ -374,8 +376,8 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         moved = {**RECENT_STATISTICS_LINKEDIN, _linkedin_day(1): (0, 2, 0, 0, 0)}
         with self._patch_recent_statistics(moved):
             self.SocialAccount._run_check_media_updates()
-        self.assertTrue(self.SocialAccountLinkedin.need_update)
-        self.assertTrue(other_account.need_update)
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
+        self.assertTrue(other_account.posts_need_import)
 
     @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
     def test_run_check_media_updates_isolates_each_account(self):
@@ -398,8 +400,8 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
 
         with self._patch_recent_statistics(side_effect=recent_statistics):
             self.assertTrue(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(failing.need_update)
-        self.assertTrue(working.need_update)
+        self.assertFalse(failing.posts_need_import)
+        self.assertTrue(working.posts_need_import)
 
     @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
     def test_run_check_media_updates_reraises_a_concurrency_error(self):
@@ -488,7 +490,7 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         self.assertEqual(mock_reader.call_count, 1)
         mock_get_posts.assert_not_called()
         self.assertFalse(
-            self.SocialAccountLinkedin.need_update,
+            self.SocialAccountLinkedin.posts_need_import,
             msg="A reading that failed says nothing about the page.",
         )
 
@@ -512,16 +514,79 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             return_value=[{"id": self.SocialPostAccountLinkedin.remote_ref}],
         ):
             self.assertFalse(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
 
     def test_flag_linkedin_update_is_idempotent(self):
         """The bus message is not pushed again for what is already announced."""
-        self.SocialAccountLinkedin.need_update = True
+        self.SocialAccountLinkedin.posts_need_import = True
         with patch(
-            PATCH_ACCOUNT.format("_need_update"), autospec=True
-        ) as mock_need_update:
+            PATCH_SYNC_ACCOUNT.format("_notify_posts_need_import"), autospec=True
+        ) as mock_notify:
             self.SocialAccountLinkedin._flag_linkedin_update()
-        mock_need_update.assert_not_called()
+        mock_notify.assert_not_called()
+
+    def test_flag_linkedin_update_leaves_the_credentials_alone(self):
+        """The two states are separate: this one says nothing about the token.
+
+        An account whose credentials work is exactly the one that has
+        publications to bring in, so announcing an import must not ask the
+        user for a new authorization.
+        """
+        self.SocialAccountLinkedin.posts_need_import = False
+        self.SocialAccountLinkedin.need_update = False
+        self.SocialAccountLinkedin._flag_linkedin_update()
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
+        self.assertFalse(self.SocialAccountLinkedin.need_update)
+
+    def test_flag_credentials_expired_leaves_the_import_alone(self):
+        """And the other way round: expired credentials import nothing."""
+        self.SocialAccountLinkedin.posts_need_import = False
+        self.SocialAccountLinkedin._flag_credentials_expired("LinkedIn said no")
+        self.assertTrue(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
+
+    def test_a_new_authorization_leaves_the_import_alone(self):
+        """Authorizing again resolves the credentials and nothing else."""
+        self.SocialAccountLinkedin.write(
+            {"need_update": True, "posts_need_import": True}
+        )
+        self.SocialAccountLinkedin._clear_credentials_flag()
+        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertTrue(self.SocialAccountLinkedin.posts_need_import)
+
+    def test_an_import_leaves_the_credentials_alone(self):
+        """And the import resolves the publications and nothing else."""
+        self.SocialAccountLinkedin.write(
+            {"need_update": True, "posts_need_import": True}
+        )
+        self.SocialAccountLinkedin._clear_posts_need_import()
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
+        self.assertTrue(self.SocialAccountLinkedin.need_update)
+
+    def test_run_check_media_updates_skips_expired_credentials(self):
+        """A call made with a token known to be dead is a call thrown away.
+
+        It could only end in a ``SocialCredentialsError``, and what the
+        account is waiting for is a new authorization and not an import. The
+        check used to skip it by accident, because both states shared a field.
+        """
+        self._isolate_linkedin_account()
+        self._mark_the_page_as_imported()
+        self.SocialAccountLinkedin.need_update = True
+        moved = {**RECENT_STATISTICS_LINKEDIN, _linkedin_day(1): (0, 2, 0, 0, 0)}
+        with self._patch_recent_statistics(moved), patch(
+            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_check_linkedin_updates"), autospec=True
+        ) as mock_check, patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_posts"), autospec=True
+        ) as mock_get_posts:
+            self.assertFalse(self.SocialAccount._run_check_media_updates())
+        mock_check.assert_not_called()
+        mock_get_posts.assert_not_called()
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)
+
+    def test_detects_pending_posts(self):
+        """LinkedIn says the page moved without the publications being read."""
+        self.assertTrue(self.SocialAccountLinkedin._detects_pending_posts())
 
     @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
     def test_run_check_media_updates_exception(self):
@@ -533,4 +598,4 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
             side_effect=Exception("Error Check Media Updates"),
         ):
             self.assertFalse(self.SocialAccount._run_check_media_updates())
-        self.assertFalse(self.SocialAccountLinkedin.need_update)
+        self.assertFalse(self.SocialAccountLinkedin.posts_need_import)

@@ -371,7 +371,7 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
         account.write(
             {
                 "linkedin_statistics_checkpoint": "stale",
-                "need_update": True,
+                "posts_need_import": True,
             }
         )
         ugc_posts = [
@@ -400,7 +400,7 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             account.linkedin_statistics_checkpoint,
             account._linkedin_statistics_checkpoint(RECENT_STATISTICS_LINKEDIN),
         )
-        self.assertFalse(account.need_update)
+        self.assertFalse(account.posts_need_import)
 
     def test_full_resync_cleans_stale_urns(self):
         """A publication gone from a feed read whole is marked as deleted."""

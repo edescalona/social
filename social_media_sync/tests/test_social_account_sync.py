@@ -392,3 +392,223 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
             "A user may be responsible for several accounts, so the message "
             "has to name the one that was updated",
         )
+
+    def test_flag_posts_need_import_announces_it_once(self):
+        """The notice goes up, and a second pass does not push it again.
+
+        The check runs every two hours over an account only the import can
+        clear, so announcing it again would push the same message at the user
+        for something the dashboard is already drawing.
+        """
+        Bus = self.env["bus.bus"]
+        with patch.object(type(Bus), "_sendone", autospec=True) as patch_sendone:
+            self.social_account_id._flag_posts_need_import()
+            self.social_account_id._flag_posts_need_import()
+        self.assertTrue(self.social_account_id.posts_need_import)
+        patch_sendone.assert_called_once()
+        self.assertEqual(patch_sendone.call_args[0][2], "social_posts_need_import")
+        self.assertTrue(patch_sendone.call_args[0][3]["need_update"])
+
+    def test_clear_posts_need_import_takes_the_notice_down(self):
+        """The import that brings the publications in is what resolves it."""
+        self.social_account_id.posts_need_import = True
+        Bus = self.env["bus.bus"]
+        with patch.object(type(Bus), "_sendone", autospec=True) as patch_sendone:
+            self.social_account_id._clear_posts_need_import()
+        self.assertFalse(self.social_account_id.posts_need_import)
+        self.assertEqual(patch_sendone.call_args[0][2], "social_posts_need_import")
+        self.assertFalse(patch_sendone.call_args[0][3]["need_update"])
+
+    def test_clear_posts_need_import_says_nothing_when_it_was_down(self):
+        """An account announcing nothing has no notice to take down."""
+        self.social_account_id.posts_need_import = False
+        Bus = self.env["bus.bus"]
+        with patch.object(type(Bus), "_sendone", autospec=True) as patch_sendone:
+            self.social_account_id._clear_posts_need_import()
+        patch_sendone.assert_not_called()
+
+    def test_notify_posts_need_import_names_the_accounts(self):
+        """The dashboard has to say which account to import."""
+        Bus = self.env["bus.bus"]
+        with patch.object(type(Bus), "_sendone", autospec=True) as patch_sendone:
+            self.social_account_id._notify_posts_need_import()
+        self.assertEqual(
+            patch_sendone.call_args[0][3]["accounts"],
+            [
+                {
+                    "id": self.social_account_id.id,
+                    "name": self.social_account_id.name,
+                    "media": self.social_account_id.media_id.name,
+                }
+            ],
+        )
+
+    def test_notify_posts_need_import_tells_each_user_of_his_own(self):
+        """Each responsible hears about his accounts and about no others."""
+        other_user = self.env["res.users"].create(
+            {"name": "Other responsible", "login": "other-responsible"}
+        )
+        other_account = self.SocialAccount.create(
+            {
+                "name": "Other account",
+                "media_id": self.social_media_id.id,
+                "user_id": other_user.id,
+            }
+        )
+        Bus = self.env["bus.bus"]
+        with patch.object(type(Bus), "_sendone", autospec=True) as patch_sendone:
+            (self.social_account_id | other_account)._notify_posts_need_import()
+        self.assertEqual(patch_sendone.call_count, 2)
+        named = {
+            call[0][1]: [account["id"] for account in call[0][3]["accounts"]]
+            for call in patch_sendone.call_args_list
+        }
+        self.assertEqual(
+            named[self.social_account_id.user_id.partner_id],
+            [self.social_account_id.id],
+        )
+        self.assertEqual(named[other_user.partner_id], [other_account.id])
+
+    def test_update_posts_statistics_clears_posts_need_import(self):
+        """The import the notice asked for is what takes it down."""
+        self.social_account_id.posts_need_import = True
+        with patch.object(
+            type(self.social_account_id),
+            "_update_posts_statistics",
+            autospec=True,
+            side_effect=self._report_imported,
+        ):
+            self.social_account_id.update_posts_statistics()
+        self.assertFalse(self.social_account_id.posts_need_import)
+
+    def test_update_posts_statistics_keeps_the_notice_of_a_skipped_import(self):
+        """An import the quota stopped brought nothing in to announce."""
+        self.social_account_id.posts_need_import = True
+        with patch.object(
+            type(self.social_account_id),
+            "_update_posts_statistics",
+            autospec=True,
+            return_value=[],
+        ):
+            self.social_account_id.update_posts_statistics()
+        self.assertTrue(self.social_account_id.posts_need_import)
+
+    def test_detects_pending_posts_is_off_by_default(self):
+        """A social media that cannot tell says so, and is imported anyway."""
+        self.assertFalse(self.social_account_id._detects_pending_posts())
+
+    def test_accounts_to_import_keeps_a_media_that_cannot_detect(self):
+        """Its only source is the timeline, and reading it is the import.
+
+        Without this rule the filter would leave those accounts out for good:
+        they can never carry a flag their connector cannot raise.
+        """
+        self.social_account_id.write(
+            {"posts_need_import": False, "pending_initial_sync": False}
+        )
+        self.assertEqual(
+            self.social_account_id._accounts_to_import(), self.social_account_id
+        )
+
+    def test_accounts_to_import_narrows_a_media_that_can_detect(self):
+        """A connector that knows what moved spends nothing on what did not."""
+        quiet = self.SocialAccount.create(
+            {"name": "Quiet account", "media_id": self.social_media_id.id}
+        )
+        self.social_account_id.posts_need_import = True
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ):
+            self.assertEqual(
+                (self.social_account_id | quiet)._accounts_to_import(),
+                self.social_account_id,
+            )
+
+    def test_accounts_to_import_keeps_a_pending_initial_sync(self):
+        """The button is what unblocks a first import that failed.
+
+        A freshly associated account has been through no check, so nothing
+        could have flagged it.
+        """
+        self.social_account_id.write(
+            {"posts_need_import": False, "pending_initial_sync": True}
+        )
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ):
+            self.assertEqual(
+                self.social_account_id._accounts_to_import(), self.social_account_id
+            )
+
+    def test_update_posts_statistics_narrows_what_it_reads(self):
+        """Asked for every account, only the ones behind cost a call."""
+        quiet = self.SocialAccount.create(
+            {"name": "Quiet account", "media_id": self.social_media_id.id}
+        )
+        self.social_account_id.posts_need_import = True
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ), patch.object(
+            type(self.SocialAccount),
+            "_update_posts_statistics",
+            autospec=True,
+            side_effect=self._report_imported,
+        ) as mock_update:
+            self.SocialAccount.update_posts_statistics()
+        self.assertEqual(mock_update.call_args[0][0], self.social_account_id)
+        self.assertNotIn(quiet, mock_update.call_args[0][0])
+
+    def test_update_posts_statistics_reads_the_account_it_was_given(self):
+        """*Update* on one card imports it, flagged or not.
+
+        The user already said which account he wants; the narrowing is only
+        there to save the calls nobody asked for.
+        """
+        self.social_account_id.write(
+            {"posts_need_import": False, "pending_initial_sync": False}
+        )
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ), patch.object(
+            type(self.SocialAccount),
+            "_update_posts_statistics",
+            autospec=True,
+            side_effect=self._report_imported,
+        ) as mock_update:
+            self.social_account_id.update_posts_statistics()
+        self.assertEqual(mock_update.call_args[0][0], self.social_account_id)
+
+    def test_update_posts_statistics_hands_no_account_when_none_moved(self):
+        """An empty recordset is every account to the connectors.
+
+        So a narrowing that keeps nothing has to stop instead of handing them
+        one, and the empty answer is what the dashboard words the button from.
+        """
+        self.social_account_id.write(
+            {"posts_need_import": False, "pending_initial_sync": False}
+        )
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ), patch.object(
+            type(self.SocialAccount),
+            "_update_posts_statistics",
+            autospec=True,
+        ) as mock_update:
+            answer = self.SocialAccount.update_posts_statistics()
+        mock_update.assert_not_called()
+        self.assertEqual(json.loads(answer), [])

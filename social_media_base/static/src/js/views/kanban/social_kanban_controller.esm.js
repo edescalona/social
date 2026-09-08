@@ -82,19 +82,32 @@ export class SocialKanbanController extends KanbanController {
         return refreshed;
     }
 
+    /**
+     * What the *Update* button answers with.
+     *
+     * Its own method so a module that brings in more than the figures can
+     * tell a run that imported something from one that had nothing to
+     * import. Base knows of no such thing and answers on the figures alone.
+     *
+     * @param {Boolean} refreshed whether any figure was refreshed.
+     * @returns {String}
+     */
+    _updateStatisticsMessage(refreshed) {
+        // Saying nothing came back is more useful than announcing an update
+        // that did not happen: a social media reporting no figures by day has
+        // nothing to bring in.
+        return refreshed
+            ? _t("The data was updated successfully.")
+            : _t("There are no statistics to bring in for these accounts.");
+    }
+
     async _onUpdatePostsAndStatistics() {
         this.socialState.syncPosts = true;
         const refreshed = await this._updatePostsAndStatistics();
         if (!session.social_error) {
-            // Saying nothing came back is more useful than announcing an
-            // update that did not happen: a social media reporting no figures
-            // by day has nothing to bring in.
-            this.notificationService.add(
-                refreshed
-                    ? _t("The data was updated successfully.")
-                    : _t("There are no statistics to bring in for these accounts."),
-                {type: "info"}
-            );
+            this.notificationService.add(this._updateStatisticsMessage(refreshed), {
+                type: "info",
+            });
         }
         this.socialState.syncPosts = false;
         session.social_error = false;

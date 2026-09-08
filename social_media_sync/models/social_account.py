@@ -149,7 +149,9 @@ class SocialAccount(models.Model):
 
         An empty recordset is every account as far as the connectors are
         concerned, so a narrowing that keeps nothing has to stop here instead
-        of handing them one.
+        of handing them one. The empty answer is what the dashboard reads to
+        tell that run from one that really imported something, and word the
+        button accordingly.
 
         :param post_id: post to update, all of them when not set.
         :param domain: additional domain on the posts.
