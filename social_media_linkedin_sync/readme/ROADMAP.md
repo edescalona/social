@@ -39,6 +39,30 @@ being counted.
 `_STATISTICS_HISTORY_MONTHS_LINKEDIN` stay in the connector and are asked for
 from here, so they have no caller of their own over there.
 
+Who wrote a comment
+-------------------
+
+- **A person cannot be named.** `GET /v2/socialActions/{urn}/comments`
+  identifies the author of a comment by a URN and nothing else, and no public
+  endpoint turns a `urn:li:person:` into a name: the
+  [Profile API](https://learn.microsoft.com/en-us/linkedin/shared/integrations/people/profile-api)
+  answers for the authenticated member alone, `r_1st_connections_profile` was
+  retired, and the token the connector holds belongs to the page and not to a
+  person. The website shows the name because it reads endpoints of its own
+  that are not exposed. Reading it needs the Partner Program, an access level
+  of the application.
+- What the module does with that limit is resolve what can be resolved and
+  say nothing where it cannot. The account itself is named from Odoo, an
+  organization is read with `GET /v2/organizations/{id}`, and everything else
+  is drawn as *LinkedIn member* or *LinkedIn page*. A comment is never signed
+  with the name of the page that did not write it.
+- An organization the account does not administer may answer `403`. The
+  thread keeps loading, that comment falls back to the neutral label and the
+  refusal is only logged: a name is not worth a thread.
+- The names are resolved once per thread and not kept. A cache of actors
+  would save the calls a reopened dialog repeats, and it would need its own
+  expiry and its own security; it is not implemented.
+
 Media in the comments
 ---------------------
 
