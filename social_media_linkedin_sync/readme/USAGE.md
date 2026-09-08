@@ -79,8 +79,10 @@ what matters is not the total number of calls but how they spread.
 
 - The scheduled action checking for updates costs **two calls per account and
   run**, whatever the number of publications, one when it does find something,
-  and none at all for an account already announcing updates or with no
-  organization linked. It reads the figures LinkedIn reports for the whole page
+  and none at all for an account already announcing publications to import, for
+  one whose credentials expired —what it is waiting for is a new authorization,
+  and the call could only end in a refusal— or for one with no organization
+  linked. It reads the figures LinkedIn reports for the whole page
   day by day and compares them against the ones the last import left: no
   publication is read one by one to decide whether the dashboard should
   announce updates. Running every two hours, that is around 24 calls a day per

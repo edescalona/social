@@ -415,20 +415,21 @@ media in particular.</p>
 <li><a class="reference internal" href="#configuration" id="toc-entry-2">Configuration</a></li>
 <li><a class="reference internal" href="#usage" id="toc-entry-3">Usage</a><ul>
 <li><a class="reference internal" href="#importing-what-an-account-already-published" id="toc-entry-4">Importing what an account already published.</a></li>
-<li><a class="reference internal" href="#noticing-what-was-deleted-on-the-social-media" id="toc-entry-5">Noticing what was deleted on the social media.</a></li>
-<li><a class="reference internal" href="#comments-and-reactions" id="toc-entry-6">Comments and reactions.</a></li>
+<li><a class="reference internal" href="#what-each-notice-on-a-card-announces" id="toc-entry-5">What each notice on a card announces.</a></li>
+<li><a class="reference internal" href="#noticing-what-was-deleted-on-the-social-media" id="toc-entry-6">Noticing what was deleted on the social media.</a></li>
+<li><a class="reference internal" href="#comments-and-reactions" id="toc-entry-7">Comments and reactions.</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-7">Known issues / Roadmap</a><ul>
-<li><a class="reference internal" href="#actor-urn" id="toc-entry-8"><tt class="docutils literal">actor_urn</tt></a></li>
-<li><a class="reference internal" href="#storage-of-the-imported-medias" id="toc-entry-9">Storage of the imported medias</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-8">Known issues / Roadmap</a><ul>
+<li><a class="reference internal" href="#actor-urn" id="toc-entry-9"><tt class="docutils literal">actor_urn</tt></a></li>
+<li><a class="reference internal" href="#storage-of-the-imported-medias" id="toc-entry-10">Storage of the imported medias</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-10">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-11">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-12">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-13">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-14">Maintainers</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-11">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-12">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-13">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-14">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-15">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -500,6 +501,16 @@ a different depth of history.</li>
 <li>Afterwards, the <em>Update</em> button of the dashboard imports again on
 demand. Without this module that button only refreshes the daily
 series; with it, it does both.</li>
+<li>Pressed with no account picked, the button imports only the accounts
+known to be behind: the ones announcing publications to import and the
+ones whose first import never ran. Pressed on a single account, it
+imports that account whatever it announces. The figures of every
+account are refreshed either way, because they cost a fixed number of
+calls and they move without anything being published; it is the import
+whose cost grows with the history of the account.</li>
+<li>When nothing needed importing, the button says so —<em>The data was
+updated. No new publications.</em>— instead of announcing publications it
+did not bring in.</li>
 <li>The figures imported for a publication — impressions, social media
 clicks, shares, likes, comments, interactions and engagement — are
 added by this module to the list of publications, to their form and to
@@ -508,8 +519,29 @@ the tracked clicks, which are counted by the link tracker of <em>Social
 Media Base</em>.</li>
 </ul>
 </div>
+<div class="section" id="what-each-notice-on-a-card-announces">
+<h2><a class="toc-backref" href="#toc-entry-5">What each notice on a card announces.</a></h2>
+<p>Three different things can be pending on an account, and each one has
+its own notice and its own way out. They are independent: an account may
+be carrying one, two or the three of them at once, and none of them says
+anything about the others.</p>
+<ul class="simple">
+<li><strong>The credentials expired.</strong> The warning of <em>Social Media Base</em>. Only
+a new authorization takes it down, and the <em>Update</em> button does not.</li>
+<li><strong>The first import is running.</strong> Drawn by this module while the
+scheduled action brings in what the account had already published.</li>
+<li><strong>There are publications to import.</strong> Added by this module when the
+check for updates finds that the account moved on the social media.
+The <em>Update</em> button is what resolves it, and the notice goes away on
+its own once the import is over, without the page being reloaded.</li>
+</ul>
+<p>Only a social media whose API can tell that an account moved without
+reading its publications raises the third one. Where it cannot —reading
+the timeline <em>is</em> the import— nothing is announced between two runs, and
+those accounts are imported on every pass instead.</p>
+</div>
 <div class="section" id="noticing-what-was-deleted-on-the-social-media">
-<h2><a class="toc-backref" href="#toc-entry-5">Noticing what was deleted on the social media.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-6">Noticing what was deleted on the social media.</a></h2>
 <ul class="simple">
 <li>The ordinary import asks the social media only about what it needs,
 which is what keeps it affordable on an account with thousands of
@@ -532,7 +564,7 @@ gone just because Odoo could not read it.</li>
 </ul>
 </div>
 <div class="section" id="comments-and-reactions">
-<h2><a class="toc-backref" href="#toc-entry-6">Comments and reactions.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-7">Comments and reactions.</a></h2>
 <ul class="simple">
 <li>Commenting a publication from the dashboard publishes the comment on
 the social media, under the account of the publication, which is what
@@ -562,9 +594,9 @@ not recognise and for a lost permission.</li>
 </div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-7">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-8">Known issues / Roadmap</a></h1>
 <div class="section" id="actor-urn">
-<h2><a class="toc-backref" href="#toc-entry-8"><tt class="docutils literal">actor_urn</tt></a></h2>
+<h2><a class="toc-backref" href="#toc-entry-9"><tt class="docutils literal">actor_urn</tt></a></h2>
 <p><tt class="docutils literal">social.post.account.actor_urn</tt> holds who the social media says
 published a publication: the organization page on LinkedIn, the author
 of the tweet on X. The import is what fills it, and no view shows it, so
@@ -573,7 +605,7 @@ which take the actor performing them as an argument, and it is the kind
 of field the family either starts using or drops.</p>
 </div>
 <div class="section" id="storage-of-the-imported-medias">
-<h2><a class="toc-backref" href="#toc-entry-9">Storage of the imported medias</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-10">Storage of the imported medias</a></h2>
 <p>The import downloads the medias of every publication it brings in and
 stores them as ordinary <tt class="docutils literal">ir.attachment</tt> records, so the filestore
 grows with the history of the accounts and not with what is published
@@ -597,7 +629,7 @@ somewhere else is configured at the level of Odoo, through
 </div>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-10">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-11">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -605,15 +637,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-11">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-12">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-12">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-13">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-13">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-14">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -622,7 +654,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-14">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-15">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

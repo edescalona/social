@@ -147,12 +147,44 @@ Importing what an account already published.
 - Afterwards, the *Update* button of the dashboard imports again on
   demand. Without this module that button only refreshes the daily
   series; with it, it does both.
+- Pressed with no account picked, the button imports only the accounts
+  known to be behind: the ones announcing publications to import and the
+  ones whose first import never ran. Pressed on a single account, it
+  imports that account whatever it announces. The figures of every
+  account are refreshed either way, because they cost a fixed number of
+  calls and they move without anything being published; it is the import
+  whose cost grows with the history of the account.
+- When nothing needed importing, the button says so —*The data was
+  updated. No new publications.*— instead of announcing publications it
+  did not bring in.
 - The figures imported for a publication — impressions, social media
   clicks, shares, likes, comments, interactions and engagement — are
   added by this module to the list of publications, to their form and to
   the *Statistics* dialog of a card. Without it those views show only
   the tracked clicks, which are counted by the link tracker of *Social
   Media Base*.
+
+What each notice on a card announces.
+-------------------------------------
+
+Three different things can be pending on an account, and each one has
+its own notice and its own way out. They are independent: an account may
+be carrying one, two or the three of them at once, and none of them says
+anything about the others.
+
+- **The credentials expired.** The warning of *Social Media Base*. Only
+  a new authorization takes it down, and the *Update* button does not.
+- **The first import is running.** Drawn by this module while the
+  scheduled action brings in what the account had already published.
+- **There are publications to import.** Added by this module when the
+  check for updates finds that the account moved on the social media.
+  The *Update* button is what resolves it, and the notice goes away on
+  its own once the import is over, without the page being reloaded.
+
+Only a social media whose API can tell that an account moved without
+reading its publications raises the third one. Where it cannot —reading
+the timeline *is* the import— nothing is announced between two runs, and
+those accounts are imported on every pass instead.
 
 Noticing what was deleted on the social media.
 ----------------------------------------------
