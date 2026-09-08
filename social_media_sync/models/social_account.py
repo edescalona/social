@@ -38,8 +38,14 @@ class SocialAccount(models.Model):
     pending_initial_sync = fields.Boolean(
         default=False,
         copy=False,
-        help="Technical field: the account was just associated and its posts "
-        "still have to be imported by the initial sync cron.",
+        help="The account was just associated and its posts still have to be "
+        "imported by the initial sync cron.",
+    )
+    posts_need_import = fields.Boolean(
+        default=False,
+        copy=False,
+        help="The periodic check found publications on the social media that "
+        "Odoo has not imported yet.",
     )
 
     def _update_posts_statistics(self, post_id, domain, imported=None):
@@ -345,6 +351,76 @@ class SocialAccount(models.Model):
                         account_name=account.name,
                         message_type="info",
                     ),
+                },
+            )
+
+    def _flag_posts_need_import(self):
+        """Record that these accounts have publications waiting to be imported.
+
+        The counterpart of :meth:`~.social.account._flag_credentials_expired`
+        for the other thing the dashboard has to announce. The two states are
+        separate: an account whose token works can still be behind its social
+        media, and one with nothing to import can still need a new
+        authorization.
+
+        An account already flagged is left alone. Its row is the one the
+        import writes on, and the dashboard is already drawing the notice, so
+        writing it again only pushes the same message a second time.
+        """
+        pending = self.filtered(lambda account: not account.posts_need_import)
+        if not pending:
+            return
+        pending.sudo().write({"posts_need_import": True})
+        pending._notify_posts_need_import()
+
+    def _clear_posts_need_import(self):
+        """Take down the notice the pending publications put on the dashboard.
+
+        The import that brings them in is what resolves the state, and the bus
+        message is what makes the notice go away without the user reloading
+        the page.
+        """
+        flagged = self.filtered("posts_need_import")
+        if not flagged:
+            return
+        flagged.sudo().write({"posts_need_import": False})
+        flagged._notify_posts_need_import(need_update=False)
+
+    def _notify_posts_need_import(self, need_update=True):
+        """Tell each user which of his accounts have publications to import.
+
+        The check that finds them runs in a cron, whose user is not the one
+        owning the account, so the message has to be addressed to each
+        responsible user. The payload names the accounts because the dashboard
+        has to tell the user which one is behind: somebody responsible for
+        four accounts can do nothing with a notice that only says *something
+        has to be imported*. Each partner is told about his own accounts and
+        about no others.
+
+        Its own bus type, and not the one the expired credentials use, is what
+        keeps the two notices apart: neither state implies the other and both
+        can be drawn at once on the same card.
+
+        :param need_update: whether the notice goes up or comes down.
+        """
+        partners = self.user_id.partner_id or self.env.user.partner_id
+        for partner in partners:
+            accounts = self.filtered(
+                lambda account, partner=partner: account.user_id.partner_id == partner
+            )
+            self.env["bus.bus"]._sendone(
+                partner,
+                "social_posts_need_import",
+                {
+                    "need_update": need_update,
+                    "accounts": [
+                        {
+                            "id": account.id,
+                            "name": account.name,
+                            "media": account.media_id.name,
+                        }
+                        for account in accounts
+                    ],
                 },
             )
 

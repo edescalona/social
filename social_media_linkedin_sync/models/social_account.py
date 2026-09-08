@@ -52,28 +52,28 @@ class SocialAccount(models.Model):
 
     linkedin_missing_sync_scopes = fields.Char(
         compute="_compute_linkedin_missing_sync_scopes",
-        help="Technical field: the scopes the token of this account was not "
-        "granted and the import of its history needs. A token keeps the "
-        "scopes it was issued with, so an account associated before this "
-        "module was installed has to be authorized again.",
+        help="The scopes the token of this account was not granted and the "
+        "import of its history needs. A token keeps the scopes it was issued "
+        "with, so an account associated before this module was installed has "
+        "to be authorized again.",
     )
     linkedin_sync_scopes_notified = fields.Boolean(
         default=False,
         copy=False,
-        help="Technical field: whether the responsible user was already told "
-        "that this account has to be authorized again before its history can "
-        "be imported. Kept so the check that runs every two hours warns once "
-        "and not on every pass.",
+        help="Whether the responsible user was already told that this account "
+        "has to be authorized again before its history can be imported. Kept "
+        "so the check that runs every two hours warns once and not on every "
+        "pass.",
     )
 
     linkedin_statistics_checkpoint = fields.Char(
         string="Statistics Checkpoint",
         copy=False,
         groups="base.group_system",
-        help="Technical field: the daily figures LinkedIn reported for the "
-        "whole page over the last days, as of the last time the publications "
-        "were imported. The check for updates compares the page against it "
-        "instead of reading the statistics of every publication.",
+        help="The daily figures LinkedIn reported for the whole page over the "
+        "last days, as of the last time the publications were imported. The "
+        "check for updates compares the page against it instead of reading "
+        "the statistics of every publication.",
     )
 
     @api.depends("media_id", "linkedin_granted_scopes")
@@ -780,7 +780,7 @@ class SocialAccount(models.Model):
             )
         update_account_data = {
             "post_account_ids": post_accounts,
-            "need_update": False,
+            "posts_need_import": False,
         }
         # The check for updates compares the daily figures of the page against
         # the ones of the last import, so the import is what leaves the mark to
@@ -1050,12 +1050,10 @@ class SocialAccount(models.Model):
         hours, so the note has to reach the Inbox of whoever owns it without
         anybody opening the account.
 
-        ``need_update`` is deliberately not turned on. In this module it means
-        "this account has publications to import", and
-        :meth:`_linkedin_check_updates` skips every account carrying it: an
-        account flagged here would never be checked again, because only the
-        import takes the flag down and the import is the very thing that
-        cannot run.
+        ``posts_need_import`` is deliberately not turned on.
+        :meth:`_linkedin_check_updates` skips every account carrying it, so an
+        account flagged here would never be checked again: only the import
+        takes the flag down, and the import is the very thing that cannot run.
         """
         self.ensure_one()
         if self.linkedin_sync_scopes_notified:
@@ -1089,15 +1087,15 @@ class SocialAccount(models.Model):
         return super()._on_account_associated()
 
     def _flag_linkedin_update(self):
-        """Announce on the dashboard that the account has updates to import."""
+        """Announce on the dashboard that the account has updates to import.
+
+        The state is ``posts_need_import`` and not ``need_update``: the latter
+        says that the credentials expired, which asks the user for a new
+        authorization instead of for an import, and an account whose token
+        works is exactly the one that has publications to bring in.
+        """
         self.ensure_one()
-        if self.need_update:
-            # Already announced. Writing again would touch the very row the
-            # statistics import writes on, and push the bus message a second
-            # time for something the dashboard already shows.
-            return
-        self.sudo().write({"need_update": True})
-        self._need_update()
+        self._flag_posts_need_import()
 
     def _linkedin_check_updates(self, buckets_by_account):
         """Flag the accounts whose page moved since the last import.
@@ -1108,13 +1106,18 @@ class SocialAccount(models.Model):
         catches a post published outside Odoo that nobody has interacted with
         yet.
 
-        The check never imports anything: it only turns on ``need_update``,
-        and the import the user asks for is what turns it off and leaves the
-        new figures to compare with.
+        The check never imports anything: it only turns on
+        ``posts_need_import``, and the import the user asks for is what turns
+        it off and leaves the new figures to compare with.
 
-        An account already announcing updates is skipped and costs no call at
-        all: only the import clears the flag, so asking LinkedIn again before
-        the user imports can only confirm what the dashboard already says.
+        Two kinds of account are skipped and cost no call at all. One already
+        announcing updates: only the import clears ``posts_need_import``, so
+        asking LinkedIn again before the user imports can only confirm what
+        the dashboard already says. And one whose credentials expired: a call
+        made with a token that is known to be dead is spent to arrive at a
+        ``SocialCredentialsError``, and what that account is waiting for is a
+        new authorization, not an import.
+
         That is why it is a ``filtered`` over what the sweep walked and not a
         search of its own: the sweep is the wider of the two, so every account
         reached here already has its buckets read, by construction rather than
@@ -1128,7 +1131,9 @@ class SocialAccount(models.Model):
         :rtype: bool
         """
         update = super()._linkedin_check_updates(buckets_by_account)
-        for account in self.filtered(lambda account: not account.need_update):
+        for account in self.filtered(
+            lambda account: not account.posts_need_import and not account.need_update
+        ):
             if account.linkedin_missing_sync_scopes:
                 # Nothing to check: the import this would announce cannot run.
                 # The responsible user is told instead of the log, which is

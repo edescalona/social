@@ -40,10 +40,10 @@ class SocialAccount(models.Model):
 
     linkedin_missing_ads_scopes = fields.Char(
         compute="_compute_linkedin_missing_ads_scopes",
-        help="Technical field: the Advertising API scopes the token of this "
-        "account was not granted. A token keeps the scopes it was issued "
-        "with, so an account associated before this module was installed "
-        "has to be authorized again to reach the Ads API.",
+        help="The Advertising API scopes the token of this account was not "
+        "granted. A token keeps the scopes it was issued with, so an account "
+        "associated before this module was installed has to be authorized "
+        "again to reach the Ads API.",
     )
 
     @api.depends("media_id", "linkedin_granted_scopes")

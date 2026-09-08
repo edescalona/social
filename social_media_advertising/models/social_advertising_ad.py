@@ -105,8 +105,8 @@ class SocialAdvertisingAd(models.Model):
     stage_level = fields.Selection(related="stage_id.level")
     stage_code = fields.Char(
         related="stage_id.code",
-        help="Technical field: status code of the social media, used by the "
-        "connector modules to tell their own statuses apart in the views.",
+        help="Status code of the social media, used by the connector modules "
+        "to tell their own statuses apart in the views.",
     )
     status_detail = fields.Char(
         help="Reason the social media gives for serving this ad or not.",
@@ -148,8 +148,8 @@ class SocialAdvertisingAd(models.Model):
     )
     can_delete_remote_ad = fields.Boolean(
         compute="_compute_can_delete_remote_ad",
-        help="Technical field: whether the connector module of this social "
-        "media deletes an ad, and this one is not gone already.",
+        help="Whether the connector module of this social media deletes an "
+        "ad, and this one is not gone already.",
     )
 
     _sql_constraints = [

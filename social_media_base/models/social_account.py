@@ -80,7 +80,13 @@ class SocialAccount(models.Model):
     )
 
     account_url = fields.Char(compute="_compute_account_url")
-    need_update = fields.Boolean(default=False)
+    need_update = fields.Boolean(
+        default=False,
+        help="The credentials of the account expired and it has to be "
+        "authorized again. It means that and nothing else; an account with "
+        "publications left to import is marked with posts_need_import, in "
+        "the synchronization module.",
+    )
     access_token = fields.Char(groups="base.group_system")
     refresh_access_token = fields.Char(groups="base.group_system")
     expire_access_token_date = fields.Date(string="Expire Access Token")

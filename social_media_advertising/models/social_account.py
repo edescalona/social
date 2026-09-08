@@ -42,8 +42,8 @@ class SocialAccount(models.Model):
     )
     can_sync_advertising_accounts = fields.Boolean(
         compute="_compute_can_sync_advertising_accounts",
-        help="Technical field: whether a connector module can list the "
-        "advertising accounts of this social media.",
+        help="Whether a connector module can list the advertising accounts of "
+        "this social media.",
     )
     campaign_count = fields.Integer(compute="_compute_campaign_counts")
     campaign_group_count = fields.Integer(compute="_compute_campaign_counts")
@@ -52,9 +52,9 @@ class SocialAccount(models.Model):
     ads_need_update = fields.Boolean(
         readonly=True,
         copy=False,
-        help="Technical field: the social media has ads this account does "
-        "not know about yet. It is raised by the cron checking for new ads "
-        "and cleared by the next synchronization.",
+        help="The social media has ads this account does not know about yet. "
+        "It is raised by the cron checking for new ads and cleared by the "
+        "next synchronization.",
     )
 
     @api.depends(
