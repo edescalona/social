@@ -152,10 +152,23 @@ declare that XML id.
 Every module keeps its endpoints, limits, scopes, URNs and mimetypes in a **top-level
 `social_<name>_utils.py`** (`social_media_linkedin/social_linkedin_utils.py`,
 `social_media_x/social_x_utils.py`,
-`social_media_advertising_linkedin/social_advertising_linkedin_utils.py`, …), never
-inline in the models. Names are `_UPPER_CASE_<NETWORK>` — the network suffix is what
-keeps two connectors' constants apart once both are imported. A new limit, endpoint or
-page size goes there, not next to the code that uses it.
+`social_media_linkedin_sync/social_linkedin_sync_utils.py`,
+`social_media_advertising/social_advertising_utils.py`,
+`social_media_advertising_linkedin/social_advertising_linkedin_utils.py`), never inline
+in the models. Names are `_UPPER_CASE_<NETWORK>` — the network suffix is what keeps two
+connectors' constants apart once both are imported. A new limit, endpoint or page size
+goes there, not next to the code that uses it.
+
+### How the network is reached
+
+Every connector funnels its HTTP through a single entry point on `social.account`, and
+that entry point is where an authentication failure becomes a `SocialCredentialsError`.
+LinkedIn has `_request_linkedin()` (`social_media_linkedin/models/social_account.py`),
+used by the sync and advertising bridges too; X builds the `tweepy.Client` /
+`tweepy.API` in one builder and maps `Unauthorized` / `Forbidden` / `TooManyRequests`
+there. A new call goes through the funnel instead of calling `requests` or `tweepy`
+directly — it is also the seam the tests patch
+(`PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin")`).
 
 ### Install hooks
 
@@ -250,17 +263,26 @@ Registry names in use, with the module that registers them:
 
 | Category | Name                                                                                         | Module        |
 | -------- | -------------------------------------------------------------------------------------------- | ------------- |
-| views    | `social_form`, `social_kanban`                                                               | base          |
+| views    | `social_kanban`                                                                              | base          |
 | views    | `social_calendar`                                                                            | calendar      |
 | views    | `social_ads_kanban`                                                                          | advertising   |
 | fields   | `social_post_preview`, `social_message`, `social_media_binary`, `social_post_account_kanban` | base          |
-| services | `social_media_notification` (drains what the session channel left)                           | base          |
+| services | `social_media_notification` (session channel + the `social_form_*` bus types)                | base          |
 | services | `social_service` (sync also patches mail's `ThreadService` prototype)                        | sync          |
 | services | `social_linkedin_service`                                                                    | linkedin_sync |
 
-Bus types consumed by the client: `social_kanban_danger`, `social_form_success`,
-`social_form_info`, `social_need_update`, `social_ads_need_update`,
-`social_posts_updated` (handled by `js/app/social_media_mixin.esm.js`) and `comments`.
+Bus types consumed by the client, and who consumes them:
+
+| Type                                                                 | Consumer                                            |
+| -------------------------------------------------------------------- | --------------------------------------------------- |
+| `social_form_danger`, `social_form_success`, `social_form_info`      | `social_media_notification` service                 |
+| `social_kanban_danger`, `social_need_update`, `social_posts_updated` | `js/app/social_media_mixin.esm.js`                  |
+| `social_ads_need_update`                                             | `social_ads_kanban_controller.esm.js` (advertising) |
+| `comments`                                                           | `social_comment_dialog.esm.js` (sync)               |
+
+The mixin composes its own danger type as
+`` `social_${this.notifView ?? "kanban"}_danger` ``, so a view that sets `notifView`
+listens on a different type without any server change.
 
 SCSS order matters and is enforced by the manifest globs: `_social_mixins.scss` is
 listed before the rest, because the whole bundle is compiled as one unit. Same reason
@@ -271,9 +293,10 @@ listed before the rest, because the whole bundle is compiled as one unit. Same r
 Base class `odoo.addons.base.tests.common.BaseCommon` (`HttpCase` where the test needs a
 web request). Each module keeps one common file with the shared `setUpClass` and the
 `PATCH_*` string templates used with `unittest.mock.patch` — the name varies
-(`test_social_common.py`, `test_common_linkedin.py`, `test_social_sync_common.py`,
-`test_sync_linkedin_common.py`, `test_social_advertising_common.py`), so look for the
-`*common*.py` in `tests/` rather than guessing it:
+(`test_social_common.py`, `test_common_linkedin.py`, `test_common_x.py`,
+`test_social_sync_common.py`, `test_sync_linkedin_common.py`, `test_sync_x_common.py`,
+`test_social_advertising_common.py`, `test_common_advertising_linkedin.py`), so look for
+the `*common*.py` in `tests/` rather than guessing it:
 
 ```python
 patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"), ...)
@@ -294,6 +317,12 @@ odoo -d <database> --test-enable --stop-after-init --workers=0 \
     -u social_media_base --test-tags card_footer_matrix
 ```
 
+Those Python tests drive JS tours registered under `<module>/static/tests/tours/`:
+`social_media_base.card_footer_matrix`, `social_media_sync.card_footer`,
+`social_media_linkedin_sync.card_footer` and `social_media_x_sync.card_footer`. What the
+footer draws is asserted in the tour, so a change to the card means editing the tour,
+not the Python side.
+
 ## Conventions
 
 - Odoo 17.0 Community + OCA guidelines. Code, comments and docstrings in English.
@@ -303,3 +332,26 @@ odoo -d <database> --test-enable --stop-after-init --workers=0 \
   `website: https://github.com/OCA/social`, `maintainers: ["edescalona"]`.
 - Commits for these modules belong on this repository's branch, not on the deployment
   repository, which only tracks orchestration files.
+
+## Publishing rules
+
+Never publish, post, comment, or otherwise submit content to a real account without my
+explicit approval in this conversation first.
+
+Before any publishing action:
+
+1. Show me the full text of the post or comment, plus the caption or copy that goes with
+   any image or video.
+2. Wait for my explicit "yes" or "approved".
+
+## Content rules
+
+- Published content: English only.
+- Topic: technology only.
+- If a draft falls outside technology, say so and propose an alternative instead of
+  publishing.
+
+## Conversation language
+
+Always talk to me in Spanish, including when the draft itself is in English.
+Explanations, questions, and suggestions: Spanish.
