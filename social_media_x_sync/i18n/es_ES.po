@@ -17,7 +17,7 @@ msgstr ""
 #. module: social_media_x_sync
 #: model:ir.model,name:social_media_x_sync.model_social_account
 msgid "Account Linked to a Social Media"
-msgstr ""
+msgstr "Cuenta vinculada a una red social"
 
 #. module: social_media_x_sync
 #: model:ir.model.fields,field_description:social_media_x_sync.field_social_account__enable_since
@@ -51,7 +51,7 @@ msgstr "Publicación desde"
 #. module: social_media_x_sync
 #: model:ir.model,name:social_media_x_sync.model_social_post_account
 msgid "Publication of a Post on a Social Account"
-msgstr ""
+msgstr "Publicación de una entrada en una cuenta social"
 
 #. module: social_media_x_sync
 #: model:ir.model.fields,help:social_media_x_sync.field_social_account__enable_since
@@ -100,7 +100,7 @@ msgstr ""
 #: code:addons/social_media_x_sync/models/social_post_account.py:0
 #, python-format
 msgid "The post does not exist or has been deleted."
-msgstr ""
+msgstr "La publicación no existe o ha sido eliminada."
 
 #. module: social_media_x_sync
 #: model:ir.model.fields,help:social_media_x_sync.field_social_account__post_since_id
@@ -122,4 +122,4 @@ msgstr "Con reposts"
 #: code:addons/social_media_x_sync/tests/test_sync_account_x.py:0
 #, python-format
 msgid "X refused the timeline"
-msgstr ""
+msgstr "X ha rechazado la cronología"

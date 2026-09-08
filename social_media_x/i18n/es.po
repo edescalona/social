@@ -29,7 +29,7 @@ msgstr "Secreto de API"
 #. module: social_media_x
 #: model:ir.model,name:social_media_x.model_social_account
 msgid "Account Linked to a Social Media"
-msgstr ""
+msgstr "Cuenta vinculada a una red social"
 
 #. module: social_media_x
 #. odoo-python
@@ -67,7 +67,7 @@ msgstr "Asociar cuenta de red social"
 #. module: social_media_x
 #: model:ir.model,name:social_media_x.model_social_post
 msgid "Content to Publish on Social Media"
-msgstr ""
+msgstr "Contenido para publicar en redes sociales"
 
 #. module: social_media_x
 #. odoo-python
@@ -129,7 +129,7 @@ msgstr "Publicar y eliminar"
 #. module: social_media_x
 #: model:ir.model,name:social_media_x.model_social_post_account
 msgid "Publication of a Post on a Social Account"
-msgstr ""
+msgstr "Publicación de una entrada en una cuenta social"
 
 #. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__quote_count
@@ -153,12 +153,12 @@ msgstr "Número de retweets"
 #. module: social_media_x
 #: model:ir.model,name:social_media_x.model_social_statistics_mixin
 msgid "Social Media Interaction Counters"
-msgstr ""
+msgstr "Contadores de interacción en redes sociales"
 
 #. module: social_media_x
 #: model:ir.model,name:social_media_x.model_social_media
 msgid "Social Media Supported by the System"
-msgstr ""
+msgstr "Red social admitida por el sistema"
 
 #. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.wizard_social_account_view_form_inherit
@@ -270,6 +270,8 @@ msgid ""
 "X only publishes JPG, PNG, WEBP and GIF images, so %(names)s cannot be "
 "published. Convert them or remove them from the post."
 msgstr ""
+"X solo publica imágenes JPG, PNG, WEBP y GIF, por lo que %(names)s no se "
+"pueden publicar. Conviértalas o quítelas de la publicación."
 
 #. module: social_media_x
 #. odoo-python
@@ -279,6 +281,8 @@ msgid ""
 "X only publishes MP4 videos, so %(names)s cannot be published. Convert them "
 "to MP4 or remove them from the post."
 msgstr ""
+"X solo publica vídeos MP4, por lo que %(names)s no se pueden publicar. "
+"Conviértalos a MP4 o quítelos de la publicación."
 
 #. module: social_media_x
 #. odoo-python
@@ -289,6 +293,9 @@ msgid ""
 "cannot be published. Leave one video or create a separate post for each of "
 "them."
 msgstr ""
+"X publica un único vídeo por publicación, por lo que esta publicación, que "
+"lleva %(videos)s vídeos, no se puede publicar. Deje un solo vídeo o cree una "
+"publicación aparte para cada uno de ellos."
 
 #. module: social_media_x
 #. odoo-python
@@ -298,6 +305,8 @@ msgid ""
 "X publishes at most %(limit)s characters per post, and this one has "
 "%(length)s. Shorten the message to publish it."
 msgstr ""
+"X publica como máximo %(limit)s caracteres por publicación, y esta tiene "
+"%(length)s. Acorte el mensaje para poder publicarla."
 
 #. module: social_media_x
 #. odoo-python
@@ -307,6 +316,8 @@ msgid ""
 "X publishes at most %(limit)s images per post, and this one carries "
 "%(images)s. Remove some of them or create a separate post."
 msgstr ""
+"X publica como máximo %(limit)s imágenes por publicación, y esta lleva "
+"%(images)s. Quite algunas o cree una publicación aparte."
 
 #. module: social_media_x
 #. odoo-python
@@ -316,6 +327,9 @@ msgid ""
 "X publishes either images or a video, not both in the same post. Leave one "
 "kind of media or create a separate post for each of them."
 msgstr ""
+"X publica imágenes o un vídeo, pero no ambos en la misma publicación. Deje "
+"un solo tipo de archivo multimedia o cree una publicación aparte para cada "
+"uno."
 
 #. module: social_media_x
 #. odoo-python
@@ -326,6 +340,9 @@ msgid ""
 "%(names)s cannot be published. Reduce their size or remove them from the "
 "post."
 msgstr ""
+"X publica imágenes de %(limit)s como máximo, %(gif_limit)s en el caso de un "
+"GIF, por lo que %(names)s no se pueden publicar. Reduzca su tamaño o "
+"quítelas de la publicación."
 
 #. module: social_media_x
 #. odoo-python
@@ -335,6 +352,8 @@ msgid ""
 "X publishes videos of at most %(limit)s, so %(names)s cannot be published. "
 "Reduce their size or remove them from the post."
 msgstr ""
+"X publica vídeos de %(limit)s como máximo, por lo que %(names)s no se pueden "
+"publicar. Reduzca su tamaño o quítelos de la publicación."
 
 #. module: social_media_x
 #. odoo-python

@@ -33,6 +33,8 @@ msgid ""
 "%(name)s (%(mimetype)s) is not an image and cannot be added to the images of "
 "the post."
 msgstr ""
+"%(name)s (%(mimetype)s) no es una imagen y no se puede añadir a las imágenes "
+"de la publicación."
 
 #. module: social_media_base
 #. odoo-python
@@ -72,6 +74,7 @@ msgstr ""
 #, python-format
 msgid "%(publication)s has the same media stored twice."
 msgstr ""
+"%(publication)s tiene el mismo archivo multimedia almacenado dos veces."
 
 #. module: social_media_base
 #. odoo-python
@@ -79,6 +82,8 @@ msgstr ""
 #, python-format
 msgid "%(publication)s references medias it does not have: %(medias)s."
 msgstr ""
+"%(publication)s hace referencia a archivos multimedia que no tiene: "
+"%(medias)s."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post_account__state
@@ -113,6 +118,11 @@ msgid ""
 "be\n"
 "                                watched there.</span>"
 msgstr ""
+"<i class=\"fa fa-video-camera me-1\" aria-hidden=\"true\"/>\n"
+"                            <span>Esta publicación tiene un vídeo en la red\n"
+"                                social. No se ha descargado, así que solo "
+"se\n"
+"                                puede ver allí.</span>"
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_media_post_preview
@@ -135,7 +145,7 @@ msgstr "Cuenta"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_account
 msgid "Account Linked to a Social Media"
-msgstr ""
+msgstr "Cuenta vinculada a una red social"
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__account_remote_ref
@@ -241,33 +251,11 @@ msgstr "Alguna publicación fallida"
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Archive account"
-msgstr "Archivar cuenta"
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_search
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_search
 msgid "Archived"
 msgstr "Archivado"
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid ""
-"Archiving the account only from the system does not delete the account on "
-"the social media."
-msgstr ""
-"Archivar la cuenta solo en el sistema no elimina la cuenta en la red social."
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid ""
-"Are you sure you want to archive the account? Please note that all data "
-"associated with this account will be archived."
-msgstr ""
-"¿Seguro que desea archivar la cuenta? Tenga en cuenta que se archivarán "
-"todos los datos asociados a esta cuenta."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_kanban
@@ -278,8 +266,10 @@ msgstr "¿Seguro que desea eliminar esta publicación?"
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 msgid ""
 "Ask the social media again for the figures of the last days, instead of "
-"waiting for the next automatic pass."
+"waiting for the next automatic pass. It imports no publication."
 msgstr ""
+"Vuelve a pedir a la red social las cifras de los últimos días, en lugar de "
+"esperar a la siguiente pasada automática. No se importa ninguna publicación."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.wizard_social_account_view_form
@@ -302,6 +292,15 @@ msgstr "Asociar cuenta"
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__message_attachment_count
 msgid "Attachment Count"
 msgstr "Número de archivos adjuntos"
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid ""
+"Authorize this account again and refresh the keys and the token it publishes "
+"with."
+msgstr ""
+"Vuelve a autorizar esta cuenta y actualiza las claves y el token con los que "
+"publica."
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_account__avatar_1920
@@ -389,6 +388,9 @@ msgid ""
 "of this campaign. Part of the clicks of the campaign, not something to add "
 "to them."
 msgstr ""
+"Clics que Odoo registró en los enlaces rastreados de las publicaciones en "
+"redes sociales de esta campaña. Forman parte de los clics de la campaña, no "
+"son algo que haya que sumarles."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post_account__link_click_count
@@ -453,7 +455,7 @@ msgstr "Contenido bloqueado"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_post
 msgid "Content to Publish on Social Media"
-msgstr ""
+msgstr "Contenido para publicar en redes sociales"
 
 #. module: social_media_base
 #: model_terms:ir.actions.act_window,help:social_media_base.social_post_action
@@ -529,8 +531,13 @@ msgstr "Eliminar publicación"
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Delete the account and its publication history from Odoo."
-msgstr "Elimina de Odoo la cuenta y su histórico de publicaciones."
+msgid ""
+"Delete the account and its publication history from Odoo: posts, metrics and "
+"comments. Nothing is deleted from the social media, and it cannot be undone."
+msgstr ""
+"Elimina de Odoo la cuenta y su histórico de publicaciones: entradas, "
+"métricas y comentarios. No se elimina nada de la red social y no se puede "
+"deshacer."
 
 #. module: social_media_base
 #: model:ir.model.fields.selection,name:social_media_base.selection__social_post_account__state__deleted
@@ -544,6 +551,9 @@ msgid ""
 "publication and not on the post because a post is spread over several social "
 "media."
 msgstr ""
+"Método de entrega que se comunica a la campaña de marketing. Reside en la "
+"publicación y no en la entrada porque una entrada se reparte entre varias "
+"redes sociales."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_media__utm_medium_id
@@ -593,6 +603,8 @@ msgid ""
 "Engagement rate as the social media reports it. It is a ratio, so periods "
 "are averaged instead of added up."
 msgstr ""
+"Tasa de interacción tal como la indica la red social. Es un ratio, así que "
+"los periodos se promedian en lugar de sumarse."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.utm_campaign_view_form
@@ -648,6 +660,9 @@ msgid ""
 "Go to Configuration &gt; Social Media and use\n"
 "                <b>Associate account</b> to link your LinkedIn or X account."
 msgstr ""
+"Vaya a Configuración &gt; Redes sociales y use\n"
+"                <b>Asociar cuenta</b> para vincular su cuenta de LinkedIn o "
+"de X."
 
 #. module: social_media_base
 #. odoo-javascript
@@ -816,7 +831,7 @@ msgstr "Número de interacciones"
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_account__engagement
 msgid "Interactions of the account over its impressions, as a ratio."
-msgstr ""
+msgstr "Interacciones de la cuenta sobre sus impresiones, como ratio."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_account__interactions_count
@@ -932,12 +947,12 @@ msgstr "Red social"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_post_mixin
 msgid "Media Attached to Posts and Publications"
-msgstr ""
+msgstr "Archivos multimedia adjuntos a entradas y publicaciones"
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__media_refs
 msgid "Media Refs"
-msgstr ""
+msgstr "Referencias multimedia"
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_account__media_type
@@ -970,7 +985,7 @@ msgstr "Error de entrega del mensaje"
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__message_error
 msgid "Message Error"
-msgstr ""
+msgstr "Error del mensaje"
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__message_info
@@ -1073,7 +1088,7 @@ msgstr "No hay vista previa disponible"
 #. module: social_media_base
 #: model_terms:ir.actions.act_window,help:social_media_base.social_account_statistics_action
 msgid "No statistics yet"
-msgstr ""
+msgstr "Todavía no hay estadísticas"
 
 #. module: social_media_base
 #: model:ir.model.fields.selection,name:social_media_base.selection__social_post__send_post__now
@@ -1128,6 +1143,8 @@ msgid ""
 "Only enable this field if the access token has expired and has to be "
 "requested again"
 msgstr ""
+"Active este campo solo si el token de acceso ha caducado y hay que "
+"solicitarlo de nuevo"
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_wizard_social_account__update_keys
@@ -1251,7 +1268,7 @@ msgstr "Imagen de la publicación"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_post_account
 msgid "Publication of a Post on a Social Account"
-msgstr ""
+msgstr "Publicación de una entrada en una cuenta social"
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_link_tracker_click__social_post_account_id
@@ -1294,6 +1311,9 @@ msgid ""
 "the identifier of its attachment. A media without an entry here is one the "
 "social media does not know about."
 msgstr ""
+"Referencia que cada archivo multimedia de esta publicación tiene en la red "
+"social, indexada por el identificador de su archivo adjunto. Los archivos "
+"multimedia sin entrada aquí son los que la red social no conoce."
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_account__refresh_access_token
@@ -1323,11 +1343,6 @@ msgstr "Responsable"
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__activity_user_id
 msgid "Responsible User"
 msgstr "Usuario responsable"
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Restore the account and everything archived with it."
-msgstr "Restaura la cuenta y todo lo que se archivó con ella."
 
 #. module: social_media_base
 #: model:ir.model.fields.selection,name:social_media_base.selection__social_post__send_post__schedule
@@ -1371,7 +1386,7 @@ msgstr "Comparticiones"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_account_statistics
 msgid "Social Account Daily Statistics"
-msgstr ""
+msgstr "Estadísticas diarias de la cuenta social"
 
 #. module: social_media_base
 #. odoo-javascript
@@ -1418,7 +1433,7 @@ msgstr "Impresiones en redes sociales"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_statistics_mixin
 msgid "Social Media Interaction Counters"
-msgstr ""
+msgstr "Contadores de interacción en redes sociales"
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_utm_campaign__social_interactions_count
@@ -1462,7 +1477,7 @@ msgstr "Compartidos en redes sociales"
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_media
 msgid "Social Media Supported by the System"
-msgstr ""
+msgstr "Red social admitida por el sistema"
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_utm_campaign__social_link_click_count
@@ -1594,13 +1609,15 @@ msgid ""
 "The campaign of a publication is the one of its post. Change the campaign on "
 "%(post)s instead."
 msgstr ""
+"La campaña de una publicación es la de su entrada. Cambie la campaña en "
+"%(post)s en su lugar."
 
 #. module: social_media_base
 #. odoo-javascript
 #: code:addons/social_media_base/static/src/components/social_account/social_account.xml:0
 #, python-format
 msgid "The credentials of"
-msgstr ""
+msgstr "Las credenciales de"
 
 #. module: social_media_base
 #. odoo-python
@@ -1610,6 +1627,8 @@ msgid ""
 "The credentials of the account are no longer valid and could not be renewed: "
 "%(error)s. Update the account to authorize it again."
 msgstr ""
+"Las credenciales de la cuenta ya no son válidas y no se han podido renovar: "
+"%(error)s. Actualice la cuenta para autorizarla de nuevo."
 
 #. module: social_media_base
 #. odoo-javascript
@@ -1626,6 +1645,11 @@ msgid ""
 "social\n"
 "                media reporting figures by day have a history to draw."
 msgstr ""
+"Las cifras las escriben las comprobaciones automáticas y el botón\n"
+"                <b>Actualizar estadísticas</b> de una cuenta. Solo las "
+"redes\n"
+"                sociales que dan las cifras por día tienen un histórico que "
+"dibujar."
 
 #. module: social_media_base
 #. odoo-python
@@ -1681,6 +1705,8 @@ msgid ""
 "The post reached at least one social media, so what it says can no longer be "
 "changed."
 msgstr ""
+"La publicación ha llegado al menos a una red social, así que lo que dice ya "
+"no se puede cambiar."
 
 #. module: social_media_base
 #. odoo-python
@@ -1767,7 +1793,7 @@ msgstr ""
 #: code:addons/social_media_base/models/social_account.py:0
 #, python-format
 msgid "The statistics of the account were updated."
-msgstr ""
+msgstr "Se han actualizado las estadísticas de la cuenta."
 
 #. module: social_media_base
 #. odoo-python
@@ -1789,6 +1815,9 @@ msgid ""
 "The user is able to see every social media account and post of the companies "
 "he has access to, and to configure the available social medias."
 msgstr ""
+"El usuario puede ver todas las cuentas y publicaciones de redes sociales de "
+"las compañías a las que tiene acceso, y configurar las redes sociales "
+"disponibles."
 
 #. module: social_media_base
 #: model:res.groups,comment:social_media_base.group_social_media_user
@@ -1804,12 +1833,12 @@ msgstr ""
 #: code:addons/social_media_base/static/src/js/views/kanban/social_kanban_controller.esm.js:0
 #, python-format
 msgid "There are no statistics to bring in for these accounts."
-msgstr ""
+msgstr "No hay estadísticas que traer para estas cuentas."
 
 #. module: social_media_base
 #: model:ir.model.constraint,message:social_media_base.constraint_social_account_statistics_unique_account_date
 msgid "There can only be one statistics row per account and day."
-msgstr ""
+msgstr "Solo puede haber una fila de estadísticas por cuenta y día."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
@@ -1830,6 +1859,10 @@ msgid ""
 "a\n"
 "                    new post to publish something different."
 msgstr ""
+"Esta publicación ya se ha publicado en al menos una red\n"
+"                    social, así que su contenido ya no se puede cambiar. "
+"Cree\n"
+"                    una publicación nueva para publicar algo diferente."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_kanban
@@ -1844,6 +1877,8 @@ msgid ""
 "This social media does not report statistics by day, so there is no history "
 "to update."
 msgstr ""
+"Esta red social no da estadísticas por día, así que no hay histórico que "
+"actualizar."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_account__impression_count
@@ -1874,7 +1909,7 @@ msgstr "Tipo de actividad de excepción en el registro."
 #: model:ir.model.fields,help:social_media_base.field_social_post_account__video_urls
 #: model:ir.model.fields,help:social_media_base.field_social_post_mixin__video_urls
 msgid "URL of each video of this record, in the order they were added."
-msgstr ""
+msgstr "URL de cada vídeo de este registro, en el orden en que se añadieron."
 
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_utm_campaign
@@ -1891,11 +1926,6 @@ msgstr "Medio UTM"
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
 msgid "Unarchive"
 msgstr "Desarchivar"
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Unarchive account"
-msgstr "Desarchivar cuenta"
 
 #. module: social_media_base
 #. odoo-javascript
@@ -1923,12 +1953,12 @@ msgstr "Actualizar cuenta"
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 msgid "Update statistics"
-msgstr ""
+msgstr "Actualizar estadísticas"
 
 #. module: social_media_base
 #: model:ir.model,name:social_media_base.model_social_media_base_mixin
 msgid "User Notifications About Social Media"
-msgstr ""
+msgstr "Notificaciones al usuario sobre redes sociales"
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_account__user_id
@@ -1938,6 +1968,8 @@ msgid ""
 "User this account belongs to. Only the responsible user and the social media "
 "administrators can see it."
 msgstr ""
+"Usuario al que pertenece esta cuenta. Solo el usuario responsable y los "
+"administradores de redes sociales pueden verlo."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post__user_id
@@ -1982,7 +2014,7 @@ msgstr "Vídeo ("
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__video_urls
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_mixin__video_urls
 msgid "Video Urls"
-msgstr ""
+msgstr "URL de los vídeos"
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form
@@ -1996,6 +2028,9 @@ msgid ""
 "written here. It does not stop anything: the post is published, changed by "
 "the social media."
 msgstr ""
+"Lo que alguna red social de la entrada va a publicar de forma distinta a lo "
+"que está escrito aquí. No impide nada: la entrada se publica, modificada por "
+"la red social."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post__message_error
@@ -2004,6 +2039,9 @@ msgid ""
 "It does not block saving, so the post can be finished later, but the "
 "publication is refused until it is fixed."
 msgstr ""
+"Lo que ninguna red social de la entrada podrá publicar tal como está. No "
+"impide guardarla, así que la entrada se puede terminar más tarde, pero su "
+"publicación se rechaza hasta que se corrija."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_account__can_manage_account
@@ -2011,6 +2049,8 @@ msgid ""
 "Whether the current user may update or archive this account: its responsible "
 "user and the social media administrators."
 msgstr ""
+"Indica si el usuario actual puede actualizar o archivar esta cuenta: su "
+"usuario responsable y los administradores de redes sociales."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_search
@@ -2060,6 +2100,8 @@ msgid ""
 "are no longer valid. Update each account to authorize\n"
 "                    it again."
 msgstr ""
+"ya no son válidas. Actualice cada cuenta para autorizarla\n"
+"                    de nuevo."
 
 #. module: social_media_base
 #. odoo-javascript
@@ -2069,6 +2111,8 @@ msgid ""
 "are no longer valid. Update the account to authorize\n"
 "                    it again."
 msgstr ""
+"ya no son válidas. Actualice la cuenta para autorizarla\n"
+"                    de nuevo."
 
 #. module: social_media_base
 #. odoo-javascript

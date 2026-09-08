@@ -226,29 +226,10 @@ msgstr ""
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Archive account"
-msgstr ""
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_search
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_search
 msgid "Archived"
-msgstr ""
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid ""
-"Archiving the account only from the system does not delete the account on "
-"the social media."
-msgstr ""
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid ""
-"Are you sure you want to archive the account? Please note that all data "
-"associated with this account will be archived."
 msgstr ""
 
 #. module: social_media_base
@@ -260,7 +241,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 msgid ""
 "Ask the social media again for the figures of the last days, instead of "
-"waiting for the next automatic pass."
+"waiting for the next automatic pass. It imports no publication."
 msgstr ""
 
 #. module: social_media_base
@@ -283,6 +264,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__message_attachment_count
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__message_attachment_count
 msgid "Attachment Count"
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid ""
+"Authorize this account again and refresh the keys and the token it publishes"
+" with."
 msgstr ""
 
 #. module: social_media_base
@@ -499,7 +487,10 @@ msgstr ""
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Delete the account and its publication history from Odoo."
+msgid ""
+"Delete the account and its publication history from Odoo: posts, metrics and"
+" comments. Nothing is deleted from the social media, and it cannot be "
+"undone."
 msgstr ""
 
 #. module: social_media_base
@@ -1279,11 +1270,6 @@ msgid "Responsible User"
 msgstr ""
 
 #. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Restore the account and everything archived with it."
-msgstr ""
-
-#. module: social_media_base
 #: model:ir.model.fields.selection,name:social_media_base.selection__social_post__send_post__schedule
 msgid "Schedule"
 msgstr ""
@@ -1812,11 +1798,6 @@ msgstr ""
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
 msgid "Unarchive"
-msgstr ""
-
-#. module: social_media_base
-#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
-msgid "Unarchive account"
 msgstr ""
 
 #. module: social_media_base

@@ -6,8 +6,6 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 17.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-10 16:21+0000\n"
-"PO-Revision-Date: 2026-08-10 16:21+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -22,6 +20,11 @@ msgid "Color"
 msgstr "Color"
 
 #. module: social_media_calendar
+#: model:ir.model,name:social_media_calendar.model_social_post
+msgid "Content to Publish on Social Media"
+msgstr "Contenido para publicar en redes sociales"
+
+#. module: social_media_calendar
 #: model:ir.model.fields,field_description:social_media_calendar.field_social_post__date_calendar
 msgid "Date Calendar"
 msgstr "Fecha en el calendario"
@@ -32,11 +35,6 @@ msgstr "Fecha en el calendario"
 #, python-format
 msgid "New Post"
 msgstr "Nueva publicación"
-
-#. module: social_media_calendar
-#: model:ir.model,name:social_media_calendar.model_social_post
-msgid "Social Post"
-msgstr "Publicación social"
 
 #. module: social_media_calendar
 #: model_terms:ir.ui.view,arch_db:social_media_calendar.social_post_view_calendar
