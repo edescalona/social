@@ -14,6 +14,7 @@
                 class="btn btn-primary o__kanban_new_account me-1"
                 t-on-click.prevent="_onAddAccount"
                 t-if="!isAccountPanelHidden"
+                title="Authorize Odoo on a social media and link one of its accounts."
             >
                 Add account
             </button>
@@ -22,6 +23,7 @@
                 class="btn btn-primary o_kanban_new_post me-1"
                 t-on-click.prevent="_onAddPost"
                 t-if="!isAccountPanelHidden"
+                title="Write a new post and choose the accounts it goes to."
             >
                 Add Post
             </button>
@@ -30,6 +32,7 @@
                 class="btn btn-primary o_kanban_statistics_refresh_now"
                 t-on-click.prevent="_onUpdatePostsAndStatistics"
                 t-if="!isAccountPanelHidden"
+                title="Ask the social media again for the publications and the figures of these accounts, instead of waiting for the next automatic pass."
             >
                 <span>
                 <i

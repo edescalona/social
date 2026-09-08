@@ -52,6 +52,7 @@
                             name="action_open_posts"
                             class="oe_stat_button"
                             icon="fa-paper-plane"
+                            title="Posts this account is one of the targets of."
                         >
                             <field name="post_count" widget="statinfo" string="Posts" />
                         </button>
@@ -60,6 +61,7 @@
                             name="action_open_utm_campaigns"
                             class="oe_stat_button"
                             icon="fa-line-chart"
+                            title="Marketing campaigns the publications of this account report to."
                         >
                             <field
                                 name="utm_campaign_count"

@@ -37,6 +37,7 @@
                             type="object"
                             class="oe_stat_button"
                             icon="fa-bullhorn"
+                            title="Campaigns of this campaign group."
                         >
                             <field
                                 name="campaign_count"

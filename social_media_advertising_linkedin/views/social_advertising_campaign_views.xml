@@ -24,6 +24,7 @@
                     string="Create in LinkedIn"
                     class="btn-primary"
                     invisible="media_type != 'linkedin' or remote_ref or linkedin_locked"
+                    title="Create the campaign on LinkedIn in draft status, together with its campaign group when that one is not there yet. It spends nothing while it stays in draft: activating it is done from Campaign Manager."
                     confirm="The campaign group and the campaign will be created on LinkedIn in draft status. Continue?"
                 />
                 <button
@@ -32,6 +33,7 @@
                     string="Update in LinkedIn"
                     class="btn-primary"
                     invisible="media_type != 'linkedin' or not remote_ref or not linkedin_needs_update or linkedin_locked"
+                    title="Send to LinkedIn the name, the unit cost and the daily budget held in Odoo. Anything else is only changed from Campaign Manager."
                     confirm="Do you want to update the values on LinkedIn?"
                 />
                 <button

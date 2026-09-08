@@ -165,6 +165,7 @@
                             icon="fa-external-link"
                             string="Open publication"
                             invisible="not post_account_url or state == 'deleted'"
+                            title="Open this publication on the social media, in a new tab."
                         />
                     </div>
                     <group>

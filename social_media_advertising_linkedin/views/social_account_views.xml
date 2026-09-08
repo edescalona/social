@@ -40,6 +40,7 @@
                     string="Fetch campaigns"
                     class="oe_highlight mb-3 ms-2"
                     invisible="media_type != 'linkedin'"
+                    title="Bring in from LinkedIn the campaign groups and the campaigns of the advertising account in use, with the figures LinkedIn reports for them. It creates nothing on LinkedIn."
                     confirm="Campaign groups and campaigns of the advertising account will be fetched from LinkedIn. Continue?"
                 />
             </xpath>

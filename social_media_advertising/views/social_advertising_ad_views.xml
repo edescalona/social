@@ -189,6 +189,7 @@
                             icon="fa-comment-o"
                             string="Publication"
                             invisible="not post_account_id"
+                            title="Open the publication this ad promotes."
                         />
                         <button
                             type="object"
@@ -197,6 +198,7 @@
                             icon="fa-external-link"
                             string="Open ad"
                             invisible="not url"
+                            title="Open this ad on the social media, in a new tab."
                         />
                     </div>
                     <group>

@@ -80,6 +80,7 @@
                             type="button"
                             class="btn btn-link btn-sm p-0 text-muted"
                             t-on-click="onLikeComment"
+                            title="Recommend this comment on the social media, as the account that owns the publication. Pressing it again withdraws the reaction."
                         >
                             <i
                                 t-attf-class="fa #{ state.liked ? 'fa-thumbs-up' : 'fa-thumbs-o-up' } me-1"
@@ -100,6 +101,7 @@
                             t-att-aria-pressed="isReplyTarget"
                             t-att-disabled="props.posting"
                             t-on-click="onReplyComment"
+                            title="Write a reply to this comment. It is published on the social media as the account that owns the publication."
                         >
                             <i class="fa fa-comments me-1" aria-hidden="true" />
                             <t t-if="isReplyTarget">
@@ -114,6 +116,7 @@
                             type="button"
                             class="btn btn-link btn-sm p-0 text-muted"
                             t-on-click="onToggleReplies"
+                            title="Show or hide the replies to this comment, asking the social media for them the first time."
                         >
                             <i
                                 t-attf-class="fa me-1 {{ state.loading ? 'fa-spinner fa-spin' : state.expanded ? 'fa-chevron-up' : 'fa-chevron-down' }}"

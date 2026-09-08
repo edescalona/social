@@ -15,6 +15,7 @@
                     class="oe_highlight"
                     string="New Post"
                     groups="social_media_base.group_social_media_user"
+                    title="Create a post already linked to this marketing campaign, so what it publishes reports its clicks under it."
                 />
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
@@ -28,6 +29,7 @@
                     icon="fa-share-alt"
                     invisible="social_post_count == 0"
                     groups="social_media_base.group_social_media_user"
+                    title="Posts published under this marketing campaign."
                 >
                     <field name="social_post_count" widget="statinfo" string="Posts" />
                 </button>

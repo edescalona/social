@@ -32,6 +32,7 @@
                                     type="object"
                                     class="btn btn-primary"
                                     name="action_open_account"
+                                    title="Authorize Odoo on this social media and link one of its accounts. It opens the association wizard of the social media."
                                 >Associate account
                                 </button>
                             </div>

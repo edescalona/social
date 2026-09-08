@@ -38,6 +38,7 @@
                         string="Use this account"
                         class="btn-primary"
                         invisible="is_current"
+                        title="Work with this advertising account: its campaigns, its ads and their figures are the ones read from the social media."
                     />
                 </header>
                 <sheet>
@@ -53,6 +54,7 @@
                             name="action_open_campaigns"
                             class="oe_stat_button"
                             icon="fa-bullhorn"
+                            title="Campaigns of this advertising account."
                         >
                             <field
                                 name="campaign_count"
@@ -65,6 +67,7 @@
                             name="action_open_campaign_groups"
                             class="oe_stat_button"
                             icon="fa-folder-open-o"
+                            title="Campaign groups of this advertising account."
                         >
                             <field
                                 name="campaign_group_count"

@@ -18,6 +18,7 @@
                     class="oe_stat_button"
                     icon="fa-bullhorn"
                     invisible="not can_sync_advertising_accounts"
+                    title="Campaigns of the advertising accounts of this account."
                 >
                     <field name="campaign_count" widget="statinfo" string="Campaigns" />
                 </button>
@@ -27,6 +28,7 @@
                     class="oe_stat_button"
                     icon="fa-folder-open-o"
                     invisible="not can_sync_advertising_accounts"
+                    title="Campaign groups of the advertising accounts of this account."
                 >
                     <field
                         name="campaign_group_count"
@@ -40,6 +42,7 @@
                     class="oe_stat_button"
                     icon="fa-picture-o"
                     invisible="not can_sync_advertising_accounts"
+                    title="Ads the social media serves for this account."
                 >
                     <field name="ad_count" widget="statinfo" string="Ads" />
                 </button>
@@ -65,6 +68,7 @@
                         name="action_sync_advertising_accounts_notify"
                         string="Fetch advertising accounts"
                         class="oe_highlight mb-3"
+                        title="Ask the social media which advertising accounts this account may work with. It brings in no campaign and no ad: choose one of them afterwards to work with it."
                     />
                     <field name="advertising_account_ids" readonly="1" nolabel="1">
                         <tree
@@ -91,6 +95,7 @@
                                 string="Use this account"
                                 icon="fa-check-circle"
                                 invisible="is_current"
+                                title="Work with this advertising account: its campaigns, its ads and their figures are the ones read from the social media."
                             />
                         </tree>
                     </field>

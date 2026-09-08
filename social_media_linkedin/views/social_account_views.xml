@@ -62,6 +62,7 @@
                         type="object"
                         name="action_validate_access_token"
                         string="Validate token"
+                        title="Ask LinkedIn whether the token still works. The automatic check answers from the stored dates, this one calls LinkedIn, so it also notices a token revoked there and renews it when it can."
                     />
                 </div>
             </xpath>

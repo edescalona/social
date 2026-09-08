@@ -15,24 +15,28 @@
                         class="oe_highlight"
                         string="Post"
                         invisible="hide_post"
+                        title="Publish the post right away on the selected accounts, without waiting for the planned date. Only the publications still pending are sent: what already reached the social media is not sent twice."
                     />
                     <button
                         type="object"
                         name="action_draft"
                         string="Draft"
                         invisible="state in ('draft','published','publishing','partially_published')"
+                        title="Take the post back to draft to work on it again. Nothing is sent to the social media, and nothing already published is withdrawn."
                     />
                     <button
                         type="object"
                         name="action_cancel"
                         string="Cancel"
                         invisible="state in ('draft','cancelled','published','publishing','partially_published')"
+                        title="Give up on sending this post. It can only be cancelled while nothing has left for the social media, and it can be taken back to draft afterwards."
                     />
                     <button
                         type="object"
                         name="toggle_active"
                         string="Unarchive"
                         invisible="active"
+                        title="Bring the post back to the lists it was taken out of. It publishes nothing by itself."
                     />
                     <field name="state" widget="statusbar" />
                     <field name="active" invisible="1" />
