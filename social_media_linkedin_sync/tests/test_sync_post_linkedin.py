@@ -734,7 +734,10 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
                     "id": "comment1",
                     "commentUrn": "urn:li:comment:(urn:li:activity:1,comment1)",
                     "message": {"text": "Great post!"},
-                    "lastModified": {"actor": {"id": "actor1"}, "time": 1609459200000},
+                    "lastModified": {
+                        "actor": "urn:li:person:actor1",
+                        "time": 1609459200000,
+                    },
                     "content": [{"url": "http://example.com/image1.jpg"}],
                 }
             ]
@@ -748,7 +751,12 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
             data[0]["remote_ref"], "urn:li:comment:(urn:li:activity:1,comment1)"
         )
         self.assertEqual(data[0]["text"], "Great post!")
-        self.assertEqual(data[0]["actor"]["id"], "actor1")
+        self.assertEqual(
+            data[0]["actor"],
+            "LinkedIn member",
+            msg="The client is answered a name to draw, and LinkedIn does "
+            "not let a member be named.",
+        )
         self.assertEqual(data[0]["images_url"], ["http://example.com/image1.jpg"])
 
         mock_response = MagicMock()
@@ -775,7 +783,12 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         mock_request.return_value = mock_response
         result = self.SocialPostAccountLinkedin.get_comments()
         self.assertTrue(result["success"])
-        self.assertEqual(result["data"][0]["actor"], {})
+        self.assertEqual(
+            result["data"][0]["actor"],
+            "LinkedIn page",
+            msg="An unstamped comment says nothing about who wrote it, and "
+            "a neutral label is what is drawn instead of the account.",
+        )
 
     @mute_logger(LOGGER_POST_ACCOUNT_SYNC_LINKEDIN)
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
@@ -955,9 +968,9 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         self.assertEqual(comment["text"], "A reply")
         self.assertEqual(
             comment["actor"],
-            "urn:li:person:_prFA0zDNN",
+            "LinkedIn member",
             msg="A comment just created is stamped in ``created``, not in "
-            "``lastModified``.",
+            "``lastModified``, and that stamp is what names its author.",
         )
         self.assertIsInstance(
             comment["published_time"],
@@ -1031,7 +1044,9 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
             self.SocialPostAccountLinkedin._linkedin_comment_values(element)[
                 "published_time"
             ],
-            "7 days ago",
+            "1 week ago",
+            msg="The sentence is the one babel builds for the distance, and "
+            "it counts in the largest unit that fits.",
         )
 
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))

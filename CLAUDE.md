@@ -330,6 +330,10 @@ not the Python side.
   `tests/`, `readme/`, `static/`) and OCA manifests: `version: "17.0.x.y.z"`,
   `license: AGPL-3`, `author: "Binhex, Odoo Community Association (OCA)"`,
   `website: https://github.com/OCA/social`, `maintainers: ["edescalona"]`.
+- **The nine `social_media_*` modules stay at `version: "17.0.1.0.0"`.** None of them
+  has been released yet, so there is no installed base to migrate from and nothing to
+  read a bump against: a change goes in with the version untouched. The first release is
+  what starts moving `x.y.z`.
 - Commits for these modules belong on this repository's branch, not on the deployment
   repository, which only tracks orchestration files.
 
