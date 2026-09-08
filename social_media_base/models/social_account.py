@@ -219,14 +219,15 @@ class SocialAccount(models.Model):
         self.ensure_one()
         # ``media`` is what the notification is built around: without it
         # ``_format_user_notification`` answers an empty message and nothing
-        # reaches the user at all.
+        # reaches the user at all. It already prefixes the social media, so
+        # the name goes in raw: ``display_name`` would repeat it.
         media = self.media_type or self.media_id.name
         if self._refresh_statistics():
             self._notify_user_client(
                 notif_type="social_form_success",
                 notif_message=_("The statistics of the account were updated."),
                 media=media,
-                account_name=self.display_name,
+                account_name=self.name,
             )
         else:
             self._notify_user_client(
@@ -236,7 +237,7 @@ class SocialAccount(models.Model):
                     "there is no history to update."
                 ),
                 media=media,
-                account_name=self.display_name,
+                account_name=self.name,
             )
 
     def action_archive_account(self):

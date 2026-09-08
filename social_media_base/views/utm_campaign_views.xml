@@ -107,12 +107,11 @@
                                              a long post does not stretch the
                                              card past the others, and offers
                                              the link that shows it whole. -->
-                                        <div
-                                            class="flex-grow-1 p-2 border-bottom fw-bold"
-                                        >
+                                        <div class="flex-grow-1 p-2 border-bottom">
                                             <field
                                                 name="message"
                                                 widget="social_message"
+                                                class="social-text-justify"
                                             />
                                         </div>
                                         <!-- The block is tinted as a whole so
