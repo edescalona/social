@@ -14,9 +14,9 @@ Remotes: `oca` (upstream) and `edescalona`/`origin` (the fork). Working branch
 `17.0-add-social_media`, aggregated as `oca 17.0` + `edescalona 17.0-add-social_media`.
 
 Everything except `social_media_*` is upstream OCA (`mail_*`, `mass_mailing_*`, …) and
-is only carried along. **All development happens in the nine `social_media_*` modules.**
-They are still untracked in the working copy, so `git status` showing them as `??` is
-the normal state, not a mistake.
+is only carried along. **All development happens in the nine `social_media_*` modules**,
+which are tracked on the fork branch `17.0-add-social_media`. A `git status` touching
+anything else means an upstream addon was modified by mistake.
 
 ## Commands
 
@@ -147,6 +147,45 @@ Post previews are resolved by convention: `social.post._render_template_preview(
 up `social_media_{media_type}.social_media_post_preview`, so a connector only has to
 declare that XML id.
 
+### Where the network-specific constants live
+
+Every module keeps its endpoints, limits, scopes, URNs and mimetypes in a **top-level
+`social_<name>_utils.py`** (`social_media_linkedin/social_linkedin_utils.py`,
+`social_media_x/social_x_utils.py`,
+`social_media_advertising_linkedin/social_advertising_linkedin_utils.py`, …), never
+inline in the models. Names are `_UPPER_CASE_<NETWORK>` — the network suffix is what
+keeps two connectors' constants apart once both are imported. A new limit, endpoint or
+page size goes there, not next to the code that uses it.
+
+### Install hooks
+
+`social_media_base/hooks.py` exposes `remove_social_media(env, media_type)`; each
+connector's `uninstall_hook` calls it so uninstalling drops its `social.media` record
+(otherwise the row survives with a `media_type` no longer in the selection).
+`post_init_hook` is used the other way around, to tell the user something the code
+cannot fix by itself — `social_media_linkedin_sync` and
+`social_media_advertising_linkedin` post on the chatter of the affected accounts that
+the widened OAuth scopes need a fresh authorization.
+
+### Comments and reactions (`social_media_sync`)
+
+The chatter of a `social.post.account` is not a chatter:
+`social_media_sync/controllers/thread.py` overrides `/mail/message/post` so that, for
+that model, the message is published on the network through `create_comment()` instead
+of being stored as a `mail.message`, and the result is pushed to the author's partner
+channel with the bus type `comments` (the payload carries `post_account_id` because
+every open dialog listens on the same partner channel). Nothing is mirrored into Odoo —
+reading a thread is `get_comments()` / `get_comment_replies(comment_ref)` against the
+network each time.
+
+Connector hooks on `social.post.account` (empty in `social_media_sync`, filled by
+`social_media_linkedin_sync` / `social_media_x_sync`): `get_comments`,
+`get_comment_replies`, `create_comment`, `action_like_post` / `action_unlike_post`,
+`action_like_comment` / `action_unlike_comment`, `_check_remote_post_exists`. A
+connector whose API returns the whole thread nested leaves `get_comment_replies`
+unimplemented. When an action reveals the publication is gone, the answer carries
+`post_deleted` and `_register_remote_post_gone()` marks the line `deleted`.
+
 ## Rules that are easy to break
 
 1. **Publication isolation.** Connectors wrap their per-account loop in
@@ -162,7 +201,9 @@ declare that XML id.
    stashed in the session and delivered by `ir.http.session_info`. Code reached from
    both calls `_notify_user()`, which picks the session when the context carries
    `social_media_oauth_callback` and the bus otherwise. Messages render as markup
-   client-side, so anything not already `Markup` is escaped.
+   client-side, so anything not already `Markup` is escaped. The callbacks are
+   `/linkedin/callback` and `/social_x/callback` (`auth="user"`), and they are the only
+   code that sets `social_media_oauth_callback` in the context.
 3. **`SocialCredentialsError`** (`social_media_base/exceptions.py`) is the only failure
    worth retrying on the spot — refreshing the token may be all it takes. Everything the
    network refuses about the content itself is not.
@@ -200,18 +241,26 @@ a manager sees all. `can_manage_account` / `is_property_account` are computed wi
 
 ## Frontend
 
-`social_media_base/static/src/`: OWL components under `components/`, services under
-`js/services/`, views under `js/views/`. Files use the `.esm.js` suffix and the
-`/** @odoo-module */` header. Connectors extend by adding files under the same globs in
-their own manifest `assets`.
+`static/src/` in every module: OWL components under `components/`, services under
+`js/services/`, views under `js/views/`, shared behaviour under `js/app/`. Files use the
+`.esm.js` suffix and the `/** @odoo-module */` header. Connectors extend by adding files
+under the same globs in their own manifest `assets`.
 
-Registry names in use: views `social_form`, `social_kanban`, `social_calendar`,
-`social_ads_kanban`; fields `social_post_preview`, `social_message`,
-`social_media_binary`; services `social_media_notification` (drains the messages the
-session channel left), `social_service`, `social_linkedin_service`.
+Registry names in use, with the module that registers them:
+
+| Category | Name                                                                                         | Module        |
+| -------- | -------------------------------------------------------------------------------------------- | ------------- |
+| views    | `social_form`, `social_kanban`                                                               | base          |
+| views    | `social_calendar`                                                                            | calendar      |
+| views    | `social_ads_kanban`                                                                          | advertising   |
+| fields   | `social_post_preview`, `social_message`, `social_media_binary`, `social_post_account_kanban` | base          |
+| services | `social_media_notification` (drains what the session channel left)                           | base          |
+| services | `social_service` (sync also patches mail's `ThreadService` prototype)                        | sync          |
+| services | `social_linkedin_service`                                                                    | linkedin_sync |
 
 Bus types consumed by the client: `social_kanban_danger`, `social_form_success`,
-`social_form_info`, `social_need_update`, `social_ads_need_update`.
+`social_form_info`, `social_need_update`, `social_ads_need_update`,
+`social_posts_updated` (handled by `js/app/social_media_mixin.esm.js`) and `comments`.
 
 SCSS order matters and is enforced by the manifest globs: `_social_mixins.scss` is
 listed before the rest, because the whole bundle is compiled as one unit. Same reason
@@ -219,9 +268,12 @@ listed before the rest, because the whole bundle is compiled as one unit. Same r
 
 ## Tests
 
-Base class `odoo.addons.base.tests.common.BaseCommon` (`HttpCase` for tours). Each
-module keeps a `tests/test_*_common.py` with the shared `setUpClass` and the `PATCH_*`
-string templates used with `unittest.mock.patch`:
+Base class `odoo.addons.base.tests.common.BaseCommon` (`HttpCase` where the test needs a
+web request). Each module keeps one common file with the shared `setUpClass` and the
+`PATCH_*` string templates used with `unittest.mock.patch` — the name varies
+(`test_social_common.py`, `test_common_linkedin.py`, `test_social_sync_common.py`,
+`test_sync_linkedin_common.py`, `test_social_advertising_common.py`), so look for the
+`*common*.py` in `tests/` rather than guessing it:
 
 ```python
 patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"), ...)
@@ -231,10 +283,11 @@ patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"), ...)
 `@tagged("post_install", "-at_install")`: at install time the connector's `media_type`
 is not yet a legal value of the selection.
 
-`test_card_footer_matrix.py` (and the `test_card_footer_*.py` of the bridges) are tagged
-`-standard, card_footer_matrix` on purpose: they assert what an installation _without_
-the matching sync module draws, which the full suite can never reproduce. Run them
-against the install-matrix databases:
+`social_media_base/tests/test_card_footer_matrix.py` is the one file tagged
+`-standard, card_footer_matrix` on purpose: it asserts what an installation _without_
+the sync modules draws, which the full suite can never reproduce. The bridges'
+`test_card_footer_*.py` are ordinary `post_install` tests. Run the matrix one against
+the install-matrix databases:
 
 ```bash
 odoo -d <database> --test-enable --stop-after-init --workers=0 \
