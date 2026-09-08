@@ -213,9 +213,18 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertFalse(post.message_info)
 
     def test_action_post_refuses_what_the_form_shows(self):
-        """The publication fails its own line, with the text of the form."""
-        self.SocialPostAccountX.write({"state": "ready", "remote_ref": False})
-        self.SocialPostX.write({"message": "x" * (_MAX_MESSAGE_LENGTH_X + 1)})
+        """The publication fails its own line, with the text of the form.
+
+        The message travels on both records because that is what publishing
+        does: the post is what the form shows, the publication is what is
+        measured, and ``_sync_pending_lines_message`` puts the text of the
+        one on the other right before the line reaches the social media.
+        """
+        message = "x" * (_MAX_MESSAGE_LENGTH_X + 1)
+        self.SocialPostAccountX.write(
+            {"state": "ready", "remote_ref": False, "message": message}
+        )
+        self.SocialPostX.write({"message": message})
         with patch.object(
             type(self.SocialPostX),
             "_filter_by_media_types",
