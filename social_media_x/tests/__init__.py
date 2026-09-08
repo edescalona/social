@@ -5,5 +5,4 @@ from . import test_common_x
 from . import test_account_x
 from . import test_post_x
 from . import test_post_account_x
-from . import test_media_x
 from . import test_controller

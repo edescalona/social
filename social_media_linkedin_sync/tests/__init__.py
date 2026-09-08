@@ -2,7 +2,6 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from . import test_sync_linkedin_common
-from . import test_sync_media_linkedin
 from . import test_sync_scopes_linkedin
 from . import test_sync_account_linkedin
 from . import test_sync_check_linkedin

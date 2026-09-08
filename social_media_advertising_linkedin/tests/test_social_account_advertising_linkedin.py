@@ -3,22 +3,32 @@
 
 from unittest.mock import MagicMock, patch
 
+from odoo import fields
 from odoo.exceptions import UserError
 from odoo.fields import Command
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    _SCOPE_LINKEDIN,
     default_statistics_window,
+    epoch_milliseconds,
 )
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
 )
 
 from ..hooks import post_init_hook
-from ..social_advertising_linkedin_utils import _CHUNK_SIZE_ANALYTICS_LINKEDIN
+from ..social_advertising_linkedin_utils import (
+    _CHUNK_SIZE_ANALYTICS_LINKEDIN,
+    _RUN_SCHEDULE_DAYS_LINKEDIN,
+    _SCOPE_ADS_LINKEDIN,
+    run_schedule_window_linkedin,
+)
 from .test_common_advertising_linkedin import (
     PATCH_ADVERTISING_ACCOUNT_LINKEDIN,
     TestSocialCommonAdvertisingLinkedin,
 )
+
+MILLISECONDS_PER_DAY = 24 * 3600 * 1000
 
 
 class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
@@ -1037,3 +1047,32 @@ class TestSocialAccountAdsScopesLinkedin(TestSocialCommonAdvertisingLinkedin):
         before = len(account.message_ids)
         post_init_hook(self.env)
         self.assertEqual(len(account.message_ids), before)
+
+
+class TestUtilsAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
+    def test_run_schedule_window_linkedin(self):
+        """The schedule starts now and lasts what LinkedIn proposes."""
+        before = epoch_milliseconds(fields.Datetime.now())
+        start, end = run_schedule_window_linkedin()
+        after = epoch_milliseconds(fields.Datetime.now())
+        self.assertGreaterEqual(start, before)
+        self.assertLessEqual(start, after)
+        self.assertEqual(
+            end - start,
+            _RUN_SCHEDULE_DAYS_LINKEDIN * MILLISECONDS_PER_DAY,
+            msg="How long the window lasts is a decision of LinkedIn, not of "
+            "the base helpers, which only convert the bounds.",
+        )
+
+
+class TestSocialMediaAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
+    def test_get_linkedin_scopes_adds_the_ads_ones(self):
+        """The authorization must ask for the Ads scopes on top of the base ones."""
+        scopes = self.media_linkedin_data_id._get_linkedin_scopes()
+        self.assertTrue(set(_SCOPE_LINKEDIN).issubset(scopes))
+        self.assertTrue(set(_SCOPE_ADS_LINKEDIN).issubset(scopes))
+        self.assertEqual(
+            len(scopes),
+            len(set(scopes)),
+            msg="A scope requested twice is refused by LinkedIn.",
+        )

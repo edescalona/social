@@ -16,6 +16,7 @@ from odoo.addons.social_media_base.models.social_account import (
     SocialAccount as SocialAccountBaseCls,
 )
 from odoo.addons.social_media_base.tests.test_social_common import (
+    PATCH_MEDIA,
     PATCH_MIXIN_REQUEST,
     PATCH_WIZARD_ACCOUNT,
 )
@@ -1138,3 +1139,19 @@ class TestSocialAccountX(TestSocialCommonX):
             }
         )
         self.assertEqual(self.SocialAccountX.interactions_count, 21)
+
+
+class TestSocialMediaX(TestSocialCommonX):
+    def test_action_open_account(self):
+        with patch(
+            PATCH_MEDIA.format("action_open_account")
+        ) as mock_action_open_account:
+            res = self.media_x_id.action_open_account()
+            self.assertEqual(res["context"]["default_media_id"], self.media_x_id.id)
+            mock_action_open_account.assert_called_once()
+
+        with patch(
+            PATCH_MEDIA.format("action_open_account")
+        ) as mock__action_open_account:
+            self.SocialMedia.action_open_account()
+            mock__action_open_account.assert_called_once()
