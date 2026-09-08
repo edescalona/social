@@ -446,14 +446,17 @@ class SocialAccount(models.Model):
         :rtype: dict
         """
         self.ensure_one()
-        asked = [
+        # Filtered before being deduplicated: a comment LinkedIn stamped
+        # with nothing carries a dict where the URN goes, and a dict cannot
+        # be a key.
+        asked = dict.fromkeys(
             urn
-            for urn in dict.fromkeys(urns or [])
+            for urn in urns or []
             if isinstance(urn, str)
             and urn
             and urn != self.remote_ref
             and not urn.startswith(_URN_PERSON_LINKEDIN)
-        ]
+        )
         if not asked:
             return {}
         headers = self.media_id._get_linkedin_headers(
