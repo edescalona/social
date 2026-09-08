@@ -664,6 +664,26 @@ reports no daily figures. It is accurate — nobody asked the social media
 — but it reads like a broken dashboard, and there is no way from here to
 tell the two apart.
 
+Storage of the medias of a post
+-------------------------------
+
+The images and videos of a post and of its publications are ordinary
+``ir.attachment`` records, kept for as long as the record that owns
+them. A post published on several accounts stores each media once,
+because every publication points at the attachments of the post instead
+of copying them, and what each social media made of that media is a
+reference in ``media_refs``.
+
+What is missing is a policy for the bytes. There is no retention:
+nothing ages a media out, and the only deletions are the cascade that
+takes the medias of a post or of a publication when the record itself is
+deleted, and ``social.account.action_purge_account``, which drops an
+account with its publication history. Moving those bytes out of the
+filestore is not something this module decides either: an external
+backend is configured at the level of Odoo, through
+``ir_attachment.location``, and applies to every attachment of the
+database.
+
 Bug Tracker
 ===========
 
