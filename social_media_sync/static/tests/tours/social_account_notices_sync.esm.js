@@ -90,6 +90,35 @@ registry.category("web_tour.tours").add("social_media_sync.account_notices_both"
     ],
 });
 
+/**
+ * The *Update* button when it refreshed the figures and found no account to
+ * import from. Announcing publications it did not bring in is what would make
+ * the button look broken the next time an account really is behind.
+ */
+registry
+    .category("web_tour.tours")
+    .add("social_media_sync.update_without_new_publications", {
+        test: true,
+        url: "/web#action=social_media_base.social_post_account_action",
+        steps: () => [
+            {
+                content: "The card of the account is drawn",
+                trigger: CARD,
+                isCheck: true,
+            },
+            {
+                content: "The user asks for an update",
+                trigger: "button.o_kanban_statistics_refresh_now",
+            },
+            {
+                content: "And is told that the figures moved and the feed did not",
+                trigger:
+                    ".o_notification .o_notification_content:contains('The data was updated. No new publications.')",
+                isCheck: true,
+            },
+        ],
+    });
+
 /** Neither: an account nothing is pending on carries no notice at all. */
 registry.category("web_tour.tours").add("social_media_sync.account_notices_none", {
     test: true,

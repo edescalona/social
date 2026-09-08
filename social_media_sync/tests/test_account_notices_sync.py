@@ -10,12 +10,13 @@ DASHBOARD_URL = "/web#action=social_media_base.social_post_account_action"
 
 @tagged("post_install", "-at_install")
 class TestAccountNoticesSync(HttpCase, TestSocialMediaSyncCommon):
-    """Which notice the dashboard draws, and for which state.
+    """What the dashboard says about what is pending on an account.
 
-    The two are independent: expired credentials ask the user for a new
-    authorization and pending publications ask him for an import, so an
-    account can be carrying either, both or neither, and the card has to say
-    exactly that and nothing else.
+    On the cards, where expired credentials and publications left to import
+    are independent — one asks the user for a new authorization and the other
+    for an import, so an account can be carrying either, both or neither and
+    the card has to say exactly that. And on the *Update* button, which has to
+    tell a run that imported something from one that had nothing to import.
     """
 
     def _account_of_the_notices(self, **flags):
@@ -86,5 +87,26 @@ class TestAccountNoticesSync(HttpCase, TestSocialMediaSyncCommon):
         self.start_tour(
             DASHBOARD_URL,
             "social_media_sync.account_notices_none",
+            login="admin",
+        )
+
+    def test_update_says_nothing_was_imported(self):
+        """The button refreshed the figures and had no account to read.
+
+        Announcing publications it did not bring in is what would make the
+        button look broken the next time an account really is behind.
+        """
+        self._account_of_the_notices()
+        # Every connector can tell what moved, and nothing moved: the
+        # narrowing keeps no account and the import is never asked for. The
+        # figures are refreshed all the same, which is the case under test —
+        # they cost a fixed number of calls and move on their own.
+        self.patch(
+            type(self.SocialAccount), "_detects_pending_posts", lambda self: True
+        )
+        self.patch(type(self.SocialAccount), "_refresh_statistics", lambda self: True)
+        self.start_tour(
+            DASHBOARD_URL,
+            "social_media_sync.update_without_new_publications",
             login="admin",
         )
