@@ -438,8 +438,9 @@ class SocialAccount(models.Model):
         logged and left out of the result, and the caller draws it with a
         neutral label. Nothing raises out of here.
 
-        :param urns: the URNs naming the actors of the comments, repetitions
-            and actors of any other kind included.
+        :param urns: what LinkedIn named the actors of the comments with,
+            repetitions included and the dict a comment with no stamp
+            carries among them.
         :return: ``{urn: {"name": str, "image": str or False}}``, holding
             only the organizations that answered a name.
         :rtype: dict
@@ -448,7 +449,8 @@ class SocialAccount(models.Model):
         asked = [
             urn
             for urn in dict.fromkeys(urns or [])
-            if urn
+            if isinstance(urn, str)
+            and urn
             and urn != self.remote_ref
             and not urn.startswith(_URN_PERSON_LINKEDIN)
         ]
