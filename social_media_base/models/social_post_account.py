@@ -72,7 +72,15 @@ class SocialPostAccount(models.Model):
         store=True,
         help="The post of this publication is scheduled and not published yet.",
     )
-    message = fields.Text(required=True)
+    message = fields.Text(
+        required=True,
+        help="Text this publication sends to the social media, which is not "
+        "the text of its post: every publication carries its own UTM source, "
+        "so each link is rewritten into a tracker of its own and the same "
+        "post reads differently on every account. "
+        "Publications imported from the social media have no post to read a "
+        "message from either.",
+    )
     remote_ref = fields.Char(
         string="Remote Reference",
         copy=False,

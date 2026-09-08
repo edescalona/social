@@ -673,6 +673,12 @@ class SocialPost(models.Model):
         ``Command.set`` and not ``Command.link`` because the line is being
         created: what it ends up with is exactly what the post carries.
 
+        The message is the one thing the line stores for itself. It starts as
+        the text of the post, but ``_shorten_message_links`` then rewrites its
+        links through the UTM source of the account, so what each line ends up
+        holding is a text of its own. That is what keeps the field stored and
+        not related to the post.
+
         :rtype: list
         """
         posts_account = []
@@ -709,6 +715,13 @@ class SocialPost(models.Model):
         call site right before the publications reach the social media, so it
         is where the links are converted whatever the order the connector
         modules are loaded in.
+
+        Tracking is also why ``message`` cannot be related to the post: each
+        publication tracks the same link through its own UTM source, so the
+        rewrite leaves one text per account, and a related field would send
+        the untracked text of the post and lose the attribution of the click.
+        Publications imported by ``social_media_sync`` have no post to read
+        from at all, and the field is required.
         """
         self.ensure_one()
         pending = self.post_account_ids.filtered(
