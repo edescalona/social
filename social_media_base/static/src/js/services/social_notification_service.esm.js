@@ -4,10 +4,36 @@ import {markup} from "@odoo/owl";
 import {registry} from "@web/core/registry";
 import {session} from "@web/session";
 
-/** Displays the notifications left in the session by an OAuth callback. */
+/** Bus notification types the server sends from an action of a form. */
+const FORM_NOTIFICATION_TYPES = [
+    "social_form_danger",
+    "social_form_info",
+    "social_form_success",
+];
+
+/**
+ * Displays the notifications of the social media modules.
+ *
+ * Two sources, one service: what an OAuth callback left in the session,
+ * which is delivered on the next page load because the redirect of the
+ * callback would outrun a bus message, and what the server pushes through
+ * the bus from an action of a form. Listening from the service and not from
+ * a renderer keeps a view type from having to exist only to reach the bus.
+ */
 export const socialNotificationService = {
-    dependencies: ["notification"],
-    start(env, {notification}) {
+    dependencies: ["bus_service", "notification"],
+    start(env, {bus_service: busService, notification}) {
+        busService.addEventListener("notification", ({detail: notifications}) => {
+            for (const {payload, type} of notifications || []) {
+                if (!FORM_NOTIFICATION_TYPES.includes(type) || !payload?.message) {
+                    continue;
+                }
+                notification.add(markup(payload.message), {
+                    type: payload.message_type,
+                    sticky: false,
+                });
+            }
+        });
         const pending = session.social_media_notification;
         if (!pending || !pending.length) {
             return;

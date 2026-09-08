@@ -7,7 +7,7 @@
         <field name="name">social.post.form</field>
         <field name="model">social.post</field>
         <field name="arch" type="xml">
-            <form js_class="social_form">
+            <form>
                 <header>
                     <button
                         type="object"
