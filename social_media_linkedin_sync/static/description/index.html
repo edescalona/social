@@ -421,18 +421,19 @@ on the same pass instead of asking LinkedIn for the same days twice.</li>
 <li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-11">Known issues / Roadmap</a><ul>
 <li><a class="reference internal" href="#one-definition-per-symbol" id="toc-entry-12">One definition per symbol</a></li>
 <li><a class="reference internal" href="#the-history-of-the-daily-series-needs-this-module" id="toc-entry-13">The history of the daily series needs this module</a></li>
-<li><a class="reference internal" href="#media-in-the-comments" id="toc-entry-14">Media in the comments</a></li>
-<li><a class="reference internal" href="#the-weekly-full-resync-is-not-spread-over-the-days" id="toc-entry-15">The weekly full resync is not spread over the days</a></li>
-<li><a class="reference internal" href="#asking-linkedin-only-for-what-changed" id="toc-entry-16">Asking LinkedIn only for what changed</a></li>
-<li><a class="reference internal" href="#reactions-other-than-like" id="toc-entry-17">Reactions other than Like</a></li>
-<li><a class="reference internal" href="#video-of-a-publication" id="toc-entry-18">Video of a publication</a></li>
+<li><a class="reference internal" href="#who-wrote-a-comment" id="toc-entry-14">Who wrote a comment</a></li>
+<li><a class="reference internal" href="#media-in-the-comments" id="toc-entry-15">Media in the comments</a></li>
+<li><a class="reference internal" href="#the-weekly-full-resync-is-not-spread-over-the-days" id="toc-entry-16">The weekly full resync is not spread over the days</a></li>
+<li><a class="reference internal" href="#asking-linkedin-only-for-what-changed" id="toc-entry-17">Asking LinkedIn only for what changed</a></li>
+<li><a class="reference internal" href="#reactions-other-than-like" id="toc-entry-18">Reactions other than Like</a></li>
+<li><a class="reference internal" href="#video-of-a-publication" id="toc-entry-19">Video of a publication</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-19">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-20">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-21">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-22">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-23">Maintainers</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-20">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-21">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-22">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-23">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-24">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -698,8 +699,35 @@ not what is being counted.</p>
 <tt class="docutils literal">_STATISTICS_HISTORY_MONTHS_LINKEDIN</tt> stay in the connector and are
 asked for from here, so they have no caller of their own over there.</p>
 </div>
+<div class="section" id="who-wrote-a-comment">
+<h2><a class="toc-backref" href="#toc-entry-14">Who wrote a comment</a></h2>
+<ul class="simple">
+<li><strong>A person cannot be named.</strong> <tt class="docutils literal">GET <span class="pre">/v2/socialActions/{urn}/comments</span></tt>
+identifies the author of a comment by a URN and nothing else, and no
+public endpoint turns a <tt class="docutils literal">urn:li:person:</tt> into a name: the <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/shared/integrations/people/profile-api">Profile
+API</a>
+answers for the authenticated member alone,
+<tt class="docutils literal">r_1st_connections_profile</tt> was retired, and the token the connector
+holds belongs to the page and not to a person. The website shows the
+name because it reads endpoints of its own that are not exposed.
+Reading it needs the Partner Program, an access level of the
+application.</li>
+<li>What the module does with that limit is resolve what can be resolved
+and say nothing where it cannot. The account itself is named from
+Odoo, an organization is read with <tt class="docutils literal">GET <span class="pre">/v2/organizations/{id}</span></tt>, and
+everything else is drawn as <em>LinkedIn member</em> or <em>LinkedIn page</em>. A
+comment is never signed with the name of the page that did not write
+it.</li>
+<li>An organization the account does not administer may answer <tt class="docutils literal">403</tt>.
+The thread keeps loading, that comment falls back to the neutral label
+and the refusal is only logged: a name is not worth a thread.</li>
+<li>The names are resolved once per thread and not kept. A cache of actors
+would save the calls a reopened dialog repeats, and it would need its
+own expiry and its own security; it is not implemented.</li>
+</ul>
+</div>
 <div class="section" id="media-in-the-comments">
-<h2><a class="toc-backref" href="#toc-entry-14">Media in the comments</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-15">Media in the comments</a></h2>
 <ul class="simple">
 <li>A comment is published with its text alone: the connector sends
 <tt class="docutils literal">actor</tt>, <tt class="docutils literal">message</tt> and <tt class="docutils literal">object</tt>, never <tt class="docutils literal">content</tt>, and the
@@ -727,7 +755,7 @@ that answers does not accept the field.</li>
 </ul>
 </div>
 <div class="section" id="the-weekly-full-resync-is-not-spread-over-the-days">
-<h2><a class="toc-backref" href="#toc-entry-15">The weekly full resync is not spread over the days</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-16">The weekly full resync is not spread over the days</a></h2>
 <ul class="simple">
 <li>The <em>Full resync</em> button reconciles <strong>one account</strong>, the one it is
 pressed on. The scheduled action does not: it walks every account of
@@ -741,7 +769,7 @@ implemented.</li>
 </ul>
 </div>
 <div class="section" id="asking-linkedin-only-for-what-changed">
-<h2><a class="toc-backref" href="#toc-entry-16">Asking LinkedIn only for what changed</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-17">Asking LinkedIn only for what changed</a></h2>
 <ul>
 <li><p class="first"><strong>It is not possible with these endpoints</strong>, so the statistics cost
 one call per batch of identifiers whatever moved:</p>
@@ -775,7 +803,7 @@ Linkedin</em>.</p>
 </ul>
 </div>
 <div class="section" id="reactions-other-than-like">
-<h2><a class="toc-backref" href="#toc-entry-17">Reactions other than Like</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-18">Reactions other than Like</a></h2>
 <ul class="simple">
 <li>Only <tt class="docutils literal">LIKE</tt> is sent, both on a publication and on a comment. The
 <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api">Reactions
@@ -788,7 +816,7 @@ an entry that is no longer one thumb with two states.</li>
 </ul>
 </div>
 <div class="section" id="video-of-a-publication">
-<h2><a class="toc-backref" href="#toc-entry-18">Video of a publication</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-19">Video of a publication</a></h2>
 <ul class="simple">
 <li>The video of a published post is not attached to the publication
 imported from LinkedIn: only the <em>has video</em> flag is kept. Bringing
@@ -798,7 +826,7 @@ synchronization, which is not implemented.</li>
 </div>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-19">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-20">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -806,15 +834,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-20">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-21">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-21">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-22">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-22">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -823,7 +851,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-23">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-24">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

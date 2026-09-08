@@ -15,7 +15,10 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     linkedin_reaction_id,
 )
 
-from ..social_linkedin_sync_utils import _SCOPE_SYNC_LINKEDIN
+from ..social_linkedin_sync_utils import (
+    _SCOPE_SYNC_LINKEDIN,
+    _URN_PERSON_LINKEDIN,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -449,6 +452,67 @@ class SocialPostAccount(models.Model):
             comment["liked"] = comment.get("remote_ref") in reacted
         return comments
 
+    def _resolve_comment_actors(self, comments):
+        """Write the name and the picture of whoever signed each comment.
+
+        The brother of :meth:`_mark_liked_comments`, and for the same
+        reason: the URNs of the whole batch are collected first and
+        ``_get_linkedin_actors`` is called **once**, because the alternative
+        is asking LinkedIn once per comment and a thread has as many comments
+        as it has.
+
+        What arrives in ``actor`` is the raw URN ``_linkedin_comment_values``
+        copied from LinkedIn, and what leaves is always a readable name: the
+        contract ``get_comments`` documents, and the one
+        ``social_media_x_sync`` already answers.
+
+        :param comments: the comments as the client draws them, their
+            ``actor`` still holding the URN LinkedIn answered.
+        :return: the same comments, with ``actor`` and ``author_image``
+            written.
+        :rtype: list
+        """
+        actors = self.account_id._get_linkedin_actors(
+            [comment.get("actor") for comment in comments]
+        )
+        for comment in comments:
+            name, image = self._linkedin_actor_label(comment.get("actor"), actors)
+            comment["actor"] = name
+            comment["author_image"] = image
+        return comments
+
+    def _linkedin_actor_label(self, urn, actors):
+        """Return the name and the picture to draw for the actor of a comment.
+
+        Three cases, tried in this order: the account itself, whose name and
+        avatar are already in Odoo; an organization ``_get_linkedin_actors``
+        resolved; and anything else, a neutral label. Nothing here falls back
+        to whoever wrote the publication --a false name is worse than no
+        name, and a comment signed by the page that did not write it is what
+        this method exists to stop.
+
+        The two neutral labels are told apart by the prefix of the URN.
+        LinkedIn does not let a person be read at all, so that one is
+        certain; anything else is a page whose name could not be read this
+        time, and knowing it is a company is worth the second string.
+
+        :param urn: what LinkedIn named the actor of the comment with,
+            usually a URN and, on the comment that carries no stamp, a dict.
+        :param actors: what ``_get_linkedin_actors`` resolved.
+        :return: the ``(name, image)`` pair, the image being a URL or
+            ``False``.
+        :rtype: tuple
+        """
+        account = self.account_id
+        if urn and urn == account.remote_ref:
+            return account.name, f"/web/image/social.account/{account.id}/image_128"
+        actor = actors.get(urn) if isinstance(urn, str) else None
+        if actor:
+            return actor["name"], actor.get("image", False)
+        if isinstance(urn, str) and urn.startswith(_URN_PERSON_LINKEDIN):
+            return _("LinkedIn member"), False
+        return _("LinkedIn page"), False
+
     def get_comments(self):
         data = super().get_comments()
         if self.account_id.media_type != "linkedin":
@@ -471,11 +535,13 @@ class SocialPostAccount(models.Model):
             )
             if response.status_code == 200:
                 response_comments = response.json().get("elements", [])
-                comments = self._mark_liked_comments(
-                    [
-                        self._linkedin_comment_values(comment)
-                        for comment in response_comments
-                    ]
+                comments = self._resolve_comment_actors(
+                    self._mark_liked_comments(
+                        [
+                            self._linkedin_comment_values(comment)
+                            for comment in response_comments
+                        ]
+                    )
                 )
             else:
                 return_message = _(
@@ -528,11 +594,13 @@ class SocialPostAccount(models.Model):
             payload = response.json()
             return {
                 "success": True,
-                "data": self._mark_liked_comments(
-                    [
-                        self._linkedin_comment_values(element)
-                        for element in payload.get("elements", [])
-                    ]
+                "data": self._resolve_comment_actors(
+                    self._mark_liked_comments(
+                        [
+                            self._linkedin_comment_values(element)
+                            for element in payload.get("elements", [])
+                        ]
+                    )
                 ),
                 # LinkedIn answers how many replies the comment has in the same
                 # payload as the replies themselves, which is the only moment it
@@ -626,7 +694,9 @@ class SocialPostAccount(models.Model):
         comment = self._linkedin_comment_values(element)
         if not comment.get("remote_ref"):
             return {}
-        return {"comment": comment}
+        # The comment was just written by this account, so its actor resolves
+        # out of Odoo and the shortcut costs no call to LinkedIn.
+        return {"comment": self._resolve_comment_actors([comment])[0]}
 
     def create_comment(self, post_data, context=None):
         if self.account_id.media_type == "linkedin":

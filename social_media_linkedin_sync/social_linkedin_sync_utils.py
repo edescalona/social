@@ -26,3 +26,17 @@ _SCOPE_OPTIONAL_SYNC_LINKEDIN = [
     "r_organization_social_feed",
     "w_organization_social_feed",
 ]
+
+# The prefix of the URN LinkedIn names a member with. It is the actor of a
+# comment that cannot be resolved into a name: the Profile API only answers
+# for the authenticated member, and the token of the connector belongs to the
+# organization. Comments signed by one of these are drawn with a neutral
+# label, never with the name of the account reading the thread.
+_URN_PERSON_LINKEDIN = "urn:li:person:"
+
+# What is asked for of the organization behind a comment. Narrower than the
+# projection the association reads, because a comment only needs the name to
+# write and the logo to draw: the vanity name names nothing on screen. The
+# logo travels as the URL of a playable stream and is drawn from there, so
+# nothing is downloaded to show a thread.
+_PROJECTION_ACTOR_LINKEDIN = "(id,name,logoV2(original~:playableStreams))"

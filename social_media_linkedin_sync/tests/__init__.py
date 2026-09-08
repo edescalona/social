@@ -7,4 +7,5 @@ from . import test_sync_scopes_linkedin
 from . import test_sync_account_linkedin
 from . import test_sync_check_linkedin
 from . import test_sync_post_linkedin
+from . import test_sync_actors_linkedin
 from . import test_card_footer_linkedin

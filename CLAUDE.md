@@ -330,8 +330,28 @@ not the Python side.
   `tests/`, `readme/`, `static/`) and OCA manifests: `version: "17.0.x.y.z"`,
   `license: AGPL-3`, `author: "Binhex, Odoo Community Association (OCA)"`,
   `website: https://github.com/OCA/social`, `maintainers: ["edescalona"]`.
+- **The nine `social_media_*` modules stay at `version: "17.0.1.0.0"`.** None of them
+  has been released yet, so there is no installed base to migrate from and nothing to
+  read a bump against: a change goes in with the version untouched. The first release is
+  what starts moving `x.y.z`.
 - Commits for these modules belong on this repository's branch, not on the deployment
   repository, which only tracks orchestration files.
+
+## Spec branches
+
+Every spec is implemented on its own branch (`spec-<n>-<slug>`), branched off
+`17.0-add-social_media`.
+
+When a spec moves to `Implementado` (or any equivalent closing state), close its branch
+in the same step, without being asked again:
+
+1. `git checkout 17.0-add-social_media`.
+2. Merge the spec branch into it.
+3. Delete the spec branch, local and remote: `git branch -d <branch>` and
+   `git push edescalona --delete <branch>`.
+4. Stay on `17.0-add-social_media` — that is the branch the working tree is left on.
+
+Pushing `17.0-add-social_media` itself stays with me, like every other commit and push.
 
 ## Publishing rules
 

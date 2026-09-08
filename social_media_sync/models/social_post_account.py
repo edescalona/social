@@ -190,7 +190,8 @@ class SocialPostAccount(models.Model):
                 "parent_ref": False,
                 "reply_count": None,
                 "text": "Comment",
-                "actor": "urn:li:person:_prFA0zDNN",
+                "actor": "Acme Corporation",
+                "author_image": "https://media.licdn.com/dms/image/…",
                 "published_time": "2 weeks ago",
                 "images_url": [],
                 "liked": False,
@@ -204,6 +205,15 @@ class SocialPostAccount(models.Model):
         asked for it — LinkedIn answers the comments of a post without any
         summary of their replies, so the count only arrives with
         ``get_comment_replies``.
+
+        ``actor`` is a name to draw, never an identifier of the social media:
+        a connector whose API answers only a reference resolves it before
+        answering, and where it cannot --LinkedIn does not let a member be
+        read-- it answers a neutral label of its own. The client draws what
+        arrives, so an unresolved reference here would be shown to the user
+        as it is. ``author_image`` is the URL of the picture of that actor,
+        ``False`` or ``None`` when the social media reports none, and then
+        the client draws a generic icon.
 
         ``published_time`` is the sentence :meth:`_format_published_time`
         builds, never a date: the client draws it as it arrives, so a
