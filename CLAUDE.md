@@ -339,6 +339,10 @@ not the Python side.
 
 ## Spec branches
 
+Specs live outside this repository, in `~/Documents/02-WORK/05-SPECIFICATIONS/SOCIAL/` —
+that folder, not one derived from the checkout directory name. Spec numbers are global
+to the project and the sequence continues there.
+
 Every spec is implemented on its own branch (`spec-<n>-<slug>`), branched off
 `17.0-add-social_media`.
 
