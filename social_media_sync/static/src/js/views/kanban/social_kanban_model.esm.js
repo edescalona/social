@@ -64,8 +64,9 @@ patch(SocialKanbanModel.prototype, {
     },
 
     /**
-     * The flag the card reads to announce the import in the background. Base
-     * does not ask for it because base does not have it.
+     * The two flags the card reads to announce what this module imports: the
+     * import running in the background and the publications waiting for one.
+     * Base asks for neither, because base has neither.
      *
      * @override
      */
@@ -77,12 +78,13 @@ patch(SocialKanbanModel.prototype, {
         const pending = await this.orm.silent.read(
             "social.account",
             accounts.map((account) => account.id),
-            ["pending_initial_sync"]
+            ["pending_initial_sync", "posts_need_import"]
         );
         const byId = new Map(pending.map((row) => [row.id, row]));
         return accounts.map((account) => ({
             ...account,
             pending_initial_sync: Boolean(byId.get(account.id)?.pending_initial_sync),
+            posts_need_import: Boolean(byId.get(account.id)?.posts_need_import),
         }));
     },
 });

@@ -80,6 +80,47 @@ class SocialAccount(models.Model):
         if imported is not None:
             imported.update(self.ids)
 
+    def _detects_pending_posts(self):
+        """Whether the social media can say that this account has posts to import.
+
+        Not every API can. The only endpoint of X that knows whether the
+        timeline moved is the one that reads it, and reading it *is* the
+        import, so its connector answers ``False`` here and its accounts are
+        imported on every pass instead of announcing anything first.
+
+        This is what keeps :meth:`_accounts_to_import` from dropping those
+        accounts for good: a filter on ``posts_need_import`` alone would skip
+        forever the very accounts that can never carry it.
+
+        :rtype: bool
+        """
+        self.ensure_one()
+        return False
+
+    def _accounts_to_import(self):
+        """Narrow these accounts down to the ones worth importing.
+
+        The import is the call whose cost grows with the history of the
+        account, which is the whole reason this module exists; spending it on
+        an account nothing moved on is what that line was cut to avoid. The
+        daily figures are refreshed on every account regardless: they cost a
+        fixed number of calls and they move without anything being published.
+
+        An account whose connector cannot detect changes is kept, always. One
+        whose connector can is kept when something says it is behind:
+        ``posts_need_import``, or a first import that never ran.
+        ``pending_initial_sync`` is not decorative here — a freshly associated
+        account has been through no check, and without it the button could not
+        unblock an initial sync that failed, which is a job it has.
+
+        :rtype: recordset
+        """
+        return self.filtered(
+            lambda account: not account._detects_pending_posts()
+            or account.posts_need_import
+            or account.pending_initial_sync
+        )
+
     def update_posts_statistics(self, post_id=None, domain=None):
         """Refresh the posts and the statistics of the accounts.
 
@@ -94,18 +135,41 @@ class SocialAccount(models.Model):
         it would tell the dashboard about posts that are not there and take
         the account out of the monthly import for good.
 
+        ``posts_need_import`` is taken down on the same terms and for the same
+        reason: the import is the only thing that resolves it. A connector
+        clearing it itself, as the LinkedIn one does at the point where the
+        feed answered, leaves nothing for this pass to do; the pass is what
+        covers the ones that do not.
+
+        Asked for every account, only the ones :meth:`_accounts_to_import`
+        keeps are read. Asked for a given account, that account is read
+        whatever its flags say: the user pressing *Update* on one card has
+        already said which one he wants, and the narrowing is only there to
+        save the calls nobody asked for.
+
+        An empty recordset is every account as far as the connectors are
+        concerned, so a narrowing that keeps nothing has to stop here instead
+        of handing them one.
+
         :param post_id: post to update, all of them when not set.
         :param domain: additional domain on the posts.
         :rtype: str
         """
         accounts = self or self.search([])
+        if not self:
+            accounts = accounts._accounts_to_import()
+            if not accounts:
+                return json.dumps([])
         imported = set()
-        statistics = self._update_posts_statistics(post_id, domain, imported)
+        statistics = accounts._update_posts_statistics(post_id, domain, imported)
         pending = accounts.filtered(
             lambda account: account.pending_initial_sync and account.id in imported
         )
         if pending:
             pending.sudo().write({"pending_initial_sync": False})
+        accounts.filtered(
+            lambda account: account.posts_need_import and account.id in imported
+        )._clear_posts_need_import()
         return json.dumps(statistics)
 
     def _full_resync(self):

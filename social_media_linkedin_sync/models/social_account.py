@@ -780,7 +780,6 @@ class SocialAccount(models.Model):
             )
         update_account_data = {
             "post_account_ids": post_accounts,
-            "posts_need_import": False,
         }
         # The check for updates compares the daily figures of the page against
         # the ones of the last import, so the import is what leaves the mark to
@@ -795,6 +794,11 @@ class SocialAccount(models.Model):
                 "linkedin_statistics_checkpoint"
             ] = self._linkedin_statistics_checkpoint(buckets)
         self.write(update_account_data)
+        # Through the method of the flag and not as one more key of the write:
+        # it is what pushes the notice down on the dashboards already open,
+        # and this import is also reached from the full resync, which never
+        # goes through ``update_posts_statistics``.
+        self._clear_posts_need_import()
 
     def _get_account_statistics(self, statistics=None):
         data = self.search_read(
@@ -1085,6 +1089,21 @@ class SocialAccount(models.Model):
             lambda account: account.media_type == "linkedin"
         ).linkedin_sync_scopes_notified = False
         return super()._on_account_associated()
+
+    def _detects_pending_posts(self):
+        """LinkedIn says the page moved without the publications being read.
+
+        One call per account against the share statistics of the whole page,
+        which is what :meth:`_linkedin_check_updates` compares: an account
+        whose figures did not move is known to have nothing to import, so the
+        *Update* button is free to leave it alone.
+
+        :rtype: bool
+        """
+        self.ensure_one()
+        if self.media_type != "linkedin":
+            return super()._detects_pending_posts()
+        return True
 
     def _flag_linkedin_update(self):
         """Announce on the dashboard that the account has updates to import.
