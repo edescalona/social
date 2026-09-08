@@ -3,7 +3,10 @@
 
 import itertools
 import logging
+from datetime import datetime
 from urllib.parse import quote
+
+import pytz
 
 from odoo import Command, _, models
 
@@ -365,6 +368,27 @@ class SocialPostAccount(models.Model):
         """
         return element.get("lastModified") or element.get("created") or {}
 
+    def _linkedin_comment_time(self, element):
+        """Return the moment LinkedIn stamps a comment with.
+
+        LinkedIn answers it as an epoch in milliseconds, and the conversion
+        belongs here: the generic side takes a moment from every connector and
+        turns it into the same sentence for all of them.
+
+        The epoch is read in UTC, which is what the API answers. An element
+        LinkedIn stamped with nothing answers nothing, so the comment is drawn
+        without a date instead of one written in 1970.
+
+        :param element: one comment as LinkedIn answered it.
+        :return: the moment it was written, or ``False`` when it is not
+            stamped.
+        :rtype: datetime.datetime or bool
+        """
+        milliseconds = self._linkedin_comment_stamp(element).get("time")
+        if not milliseconds:
+            return False
+        return datetime.fromtimestamp(milliseconds / 1000, tz=pytz.utc)
+
     def _linkedin_comment_values(self, element):
         """Map one comment as LinkedIn answers it to what the client draws.
 
@@ -395,7 +419,7 @@ class SocialPostAccount(models.Model):
             # comment LinkedIn has just created answers with.
             "actor": self._linkedin_comment_stamp(element).get("actor", {}),
             "published_time": self._format_published_time(
-                self._linkedin_comment_stamp(element).get("time", 0)
+                self._linkedin_comment_time(element)
             ),
             "images_url": [val.get("url", {}) for val in element.get("content", {})],
             # Filled in for the whole thread at once by

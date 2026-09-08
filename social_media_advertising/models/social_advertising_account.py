@@ -21,7 +21,7 @@ class SocialAdvertisingAccount(models.Model):
     """
 
     _name = "social.advertising.account"
-    _description = "Social Advertising Account"
+    _description = "Advertising Account Mirrored from a Social Media"
     _order = "is_current desc, name, id"
 
     account_id = fields.Many2one(

@@ -9,7 +9,7 @@ class SocialAdvertisingCampaign(models.Model):
 
     _name = "social.advertising.campaign"
     _inherit = ["mail.thread", "mail.activity.mixin"]
-    _description = "Social Advertising Campaign"
+    _description = "Campaign Promoting the Posts of a Social Media Account"
     _order = "name"
 
     name = fields.Char(required=True, tracking=True)

@@ -9,7 +9,10 @@ class SocialMedia(models.Model):
 
     _inherit = "social.media"
 
-    media_type = fields.Selection(selection_add=[("x", "X")])
+    media_type = fields.Selection(
+        selection_add=[("x", "X")],
+        ondelete={"x": "cascade"},
+    )
 
     def action_open_account(self):
         res = super().action_open_account()

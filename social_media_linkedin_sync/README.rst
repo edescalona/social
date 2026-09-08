@@ -454,7 +454,7 @@ Authors
 Contributors
 ------------
 
-- `Binhex Cloud <https://www.binhex.cloud>`__:
+- `Binhex <https://www.binhex.cloud>`__:
 
   - Edilio Escalona Almira e.escalona@binhex.cloud
 

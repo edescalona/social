@@ -12,7 +12,10 @@ class SocialMedia(models.Model):
 
     _inherit = "social.media"
 
-    media_type = fields.Selection(selection_add=[("linkedin", "LinkedIn")])
+    media_type = fields.Selection(
+        selection_add=[("linkedin", "LinkedIn")],
+        ondelete={"linkedin": "cascade"},
+    )
 
     def _get_linkedin_headers(
         self, access_token=None, content_type=None, x_restli_method=None

@@ -10,7 +10,7 @@
     "author": "Binhex, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/social",
     "maintainers": ["edescalona"],
-    "depends": ["base", "web", "mail", "utm", "link_tracker"],
+    "depends": ["mail", "utm", "link_tracker"],
     "excludes": ["social"],
     "data": [
         "security/social_media_base_groups.xml",

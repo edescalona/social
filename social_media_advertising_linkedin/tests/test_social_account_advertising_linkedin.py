@@ -6,6 +6,9 @@ from unittest.mock import MagicMock, patch
 from odoo.exceptions import UserError
 from odoo.fields import Command
 
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    default_statistics_window,
+)
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
 )
@@ -967,9 +970,7 @@ class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
         ), self._patch_statistics_ads([]):
             values = self.SocialAccountLinkedin._fetch_ads()
         self.assertEqual(len(values), 1)
-        start_date, end_date = self.SocialAccountLinkedin._get_default_filter_date(
-            None, None
-        )
+        start_date, end_date = default_statistics_window(None, None)
         self.assertEqual(values[0]["statistics_date_from"], start_date)
         self.assertEqual(values[0]["statistics_date_to"], end_date)
 

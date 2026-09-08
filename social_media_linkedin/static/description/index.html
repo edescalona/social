@@ -822,24 +822,38 @@ only step that needs the browser.</li>
 </div>
 <div class="section" id="linkedin-limits-and-validations">
 <h1>LinkedIn limits and validations</h1>
+<p>What LinkedIn refuses is checked in Odoo before the publication is sent.
+The post shows the reason while it is being written, saving is never
+blocked, and the publication of the account that raises the objection is
+refused instead of being sent and failing on LinkedIn. The same checks
+are applied when the post reaches the publication through an import or
+an RPC call, so nothing gets past them.</p>
 <ul class="simple">
-<li>The text of the post is <strong>not</strong> checked in Odoo: the <tt class="docutils literal">commentary</tt>
-field of the <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api">Posts
+<li>The message is checked against <strong>3000 characters</strong>, the length the
+<tt class="docutils literal">commentary</tt> field of the <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api">Posts
 API</a>
-limits the body of a publication to 3.000 characters. A longer text
-fails when it is sent and the line is left as <em>Failed</em> with the
-validation error LinkedIn answers, so check the length before
-publishing.</li>
-<li>The number of images is not checked either: one image is published as
-a single image and two or more as a <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/multiimage-post-api">multi-image
+takes. A longer message is reported on the post and the publication is
+not sent.</li>
+<li>The images are checked against <strong>20</strong> per post, against the formats
+LinkedIn publishes, <strong>JPG, PNG and GIF</strong>, and against <strong>10 MB</strong> each.
+One image is published as a single image and two or more as a
+<a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/multiimage-post-api">multi-image
 post</a>.
-Its limits are applied by LinkedIn when it receives the post, so a
-number of images it does not accept is only detected when publishing.</li>
-<li>LinkedIn publishes <strong>JPG, PNG and GIF</strong> images and <strong>MP4</strong> videos. Any
-other format is announced on the post as soon as it is attached and
-refuses the publication of that line, which is left as <em>Failed</em> naming
-the file. The images are only checked when the post carries no video,
-because a video leaves them out anyway.</li>
+The message names the files that cannot be published.</li>
+<li>The video is checked against <strong>one</strong> per post, against <strong>MP4</strong> and
+against <strong>500 MB</strong>.</li>
+<li>A post carrying images and a video is not refused: LinkedIn publishes
+the video and leaves the images out, so the post is told what goes out
+instead of being stopped. That is also why the image rules are not
+applied at all to a post carrying a video — its images decide nothing.</li>
+<li>The file picker only filters what the browser proposes, so a file
+added by drag and drop reaches the checks all the same, and they are
+what refuses the ones LinkedIn does not take.</li>
+<li>What is left to LinkedIn is everything about the content itself: the
+dimensions and the aspect ratio of an image, the codecs and the
+duration of a video, the text it reads as spam. Nothing of that is
+checked here, and a publication LinkedIn refuses for one of those
+reasons is left as <em>Failed</em> with the validation error it answered.</li>
 <li>Every call to LinkedIn has a timeout of <strong>10 seconds</strong>, not
 configurable. If LinkedIn or the connection take longer, the operation
 fails with <em>Error connecting to LinkedIn</em> and has to be retried; a
@@ -990,7 +1004,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <div class="section" id="contributors">
 <h1>Contributors</h1>
 <ul class="simple">
-<li><a class="reference external" href="https://www.binhex.cloud">Binhex Cloud</a>:<ul>
+<li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
 </ul>
 </li>

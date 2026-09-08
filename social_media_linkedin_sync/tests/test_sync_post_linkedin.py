@@ -2,8 +2,12 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import base64
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 from urllib.parse import quote
+
+import pytz
+from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import UserError
@@ -29,7 +33,7 @@ LOGGER_POST_ACCOUNT_SYNC_LINKEDIN = (
 class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
     """Comments, reactions and remote verification of a LinkedIn publication."""
 
-    @patch("odoo.addons.social_media_base.models.social_post_account.requests.get")
+    @patch("odoo.addons.social_media_sync.models.social_post_account.requests.get")
     def test_get_assets_save(self, mock_get):
         """Only the images that are not stored yet are downloaded."""
         fake_content = b"fake image data"
@@ -955,7 +959,12 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
             msg="A comment just created is stamped in ``created``, not in "
             "``lastModified``.",
         )
-        self.assertTrue(comment["published_time"])
+        self.assertIsInstance(
+            comment["published_time"],
+            str,
+            msg="The epoch LinkedIn stamps the comment with is turned into "
+            "the sentence the client draws, not handed over as a date.",
+        )
 
     @mute_logger(LOGGER_POST_ACCOUNT_SYNC_LINKEDIN)
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
@@ -994,6 +1003,35 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
             self.SocialPostAccountLinkedin._linkedin_comment_stamp({}),
             {},
             msg="An element with neither stamp answers nothing to read.",
+        )
+
+    def test_linkedin_comment_time_reads_the_epoch_in_utc(self):
+        """The epoch of LinkedIn is converted here, in UTC, into a moment."""
+        element = {"created": {"actor": "urn:li:person:wrote", "time": 1756000000000}}
+        self.assertEqual(
+            self.SocialPostAccountLinkedin._linkedin_comment_time(element),
+            datetime(2025, 8, 24, 1, 46, 40, tzinfo=pytz.utc),
+        )
+
+    def test_linkedin_comment_time_without_a_stamp(self):
+        """An element LinkedIn stamped with nothing is not dated at the epoch."""
+        self.assertFalse(self.SocialPostAccountLinkedin._linkedin_comment_time({}))
+
+    @freeze_time("2025-08-31 01:46:40")
+    def test_linkedin_comment_values_say_how_long_ago(self):
+        """What the client draws is the sentence, whatever LinkedIn answered."""
+        element = {
+            "id": "120381273128",
+            "$URN": "urn:li:comment:(urn:li:activity:6666,120381273128)",
+            "message": {"text": "A comment"},
+            "created": {"actor": "urn:li:person:wrote", "time": 1756000000000},
+            "content": [],
+        }
+        self.assertEqual(
+            self.SocialPostAccountLinkedin._linkedin_comment_values(element)[
+                "published_time"
+            ],
+            "7 days ago",
         )
 
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))

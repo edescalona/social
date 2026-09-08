@@ -6,6 +6,8 @@ from odoo.exceptions import UserError
 
 
 class UtmMedium(models.Model):
+    """Delivery method the social media publications are reported under."""
+
     _inherit = "utm.medium"
 
     @api.ondelete(at_uninstall=False)

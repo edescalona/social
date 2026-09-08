@@ -43,7 +43,7 @@
                 </header>
                 <div
                     invisible="not message_error or state not in ('draft','planned')"
-                    class="alert alert-warning"
+                    class="alert alert-danger"
                     role="alert"
                 >
                     <field name="message_error" readonly="1" />
@@ -64,7 +64,7 @@
                 </div>
                 <div
                     invisible="not content_locked"
-                    class="alert alert-warning"
+                    class="alert alert-info"
                     role="alert"
                 >
                     This post is already published on at least one social

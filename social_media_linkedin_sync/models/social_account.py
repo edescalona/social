@@ -4,10 +4,9 @@
 import itertools
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import psycopg2
-import pytz
 
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
@@ -26,6 +25,7 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _URN_UGC_POST_LINKEDIN,
     _URN_VIDEO_LINKEDIN,
     _batch_urns_by_url_size,
+    datetime_from_epoch_milliseconds,
     linkedin_reaction_id,
     social_url_encode,
 )
@@ -498,11 +498,11 @@ class SocialAccount(models.Model):
     def _full_resync(self):
         """Read the whole feed of the LinkedIn accounts and reconcile it.
 
-        This is what the ordinary refresh used to do on every run. It is kept
-        apart because reading a feed of thousands of publications costs one
-        call per hundred, and the only thing that needs it is reconciling what
-        was deleted on LinkedIn: the statistics are asked for by URN and Odoo
-        already knows the URNs.
+        The whole feed page by page, and not the single page the ordinary
+        refresh reads. It is kept apart because a feed of thousands of
+        publications costs one call per hundred, and the only thing that needs
+        all of it is reconciling what was deleted on LinkedIn: the statistics
+        are asked for by URN and Odoo already knows the URNs.
 
         :return: whatever the other connectors answer for their own accounts.
         """
@@ -618,12 +618,13 @@ class SocialAccount(models.Model):
                 "post_account_url": f"{_URL_FEED_UPDATE_LINKEDIN}{ugc_post_urn}",
                 "message": ugc_post.get("commentary", ""),
                 "account_id": self.id,
-                "published_date": datetime.fromtimestamp(
-                    (
-                        ugc_post.get("publishedAt")
-                        or int(datetime.now(tz=pytz.UTC).timestamp() * 1000)
-                    )
-                    / 1000
+                # LinkedIn dates the publication in epoch milliseconds, and a
+                # feed it answers without one is stored as read now: the
+                # publication exists, only its moment is missing.
+                "published_date": (
+                    datetime_from_epoch_milliseconds(ugc_post["publishedAt"])
+                    if ugc_post.get("publishedAt")
+                    else fields.Datetime.now()
                 ),
                 "actor_urn": ugc_post.get("author", False),
                 "has_video": str(content.get("media", {}).get("id", "")).startswith(
@@ -778,9 +779,9 @@ class SocialAccount(models.Model):
         left out because it is a ratio LinkedIn recomputes, so it moves
         without anything having happened on the page.
 
-        Pure on purpose: this is what the check used to ask LinkedIn for and
-        it now reads from the buckets the refresh of the same pass already
-        brought back.
+        Pure on purpose: the figures come from the buckets the refresh of the
+        same pass already brought back, so the check compares what it needs
+        without asking LinkedIn for anything of its own.
 
         :param buckets: the buckets as ``_get_linkedin_daily_statistics``
             builds them, keyed by ISO day.

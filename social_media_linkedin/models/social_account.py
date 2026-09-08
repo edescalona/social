@@ -36,6 +36,8 @@ from ..social_linkedin_utils import (
     _linkedin_error_code,
     _linkedin_error_detail,
     _linkedin_is_credentials_error,
+    datetime_from_epoch_milliseconds,
+    default_statistics_window,
     epoch_milliseconds,
     social_url_encode,
 )
@@ -1394,7 +1396,7 @@ class SocialAccount(models.Model):
         end = fields.Date.to_date(date_to)
         if not (start and end) or start > end:
             return None, None
-        start_time, end_time = self._get_default_filter_date(
+        start_time, end_time = default_statistics_window(
             datetime.combine(start, datetime.min.time()),
             datetime.combine(end + timedelta(days=1), datetime.min.time()),
         )
@@ -1550,7 +1552,7 @@ class SocialAccount(models.Model):
             if not bucket_start:
                 continue
             share_statistics = element.get("totalShareStatistics", {})
-            day = datetime.fromtimestamp(bucket_start / 1000).date().isoformat()
+            day = datetime_from_epoch_milliseconds(bucket_start).date().isoformat()
             bucket = (
                 share_statistics.get("clickCount", 0),
                 share_statistics.get("likeCount", 0),

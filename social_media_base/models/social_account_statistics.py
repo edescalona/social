@@ -8,7 +8,7 @@ class SocialAccountStatistics(models.Model):
     """One row per account and day: what the social media reported for it."""
 
     _name = "social.account.statistics"
-    _description = "Social Account Daily Statistics"
+    _description = "Daily Figures a Social Media Reports for an Account"
     _order = "date desc, account_id"
     _rec_name = "date"
 

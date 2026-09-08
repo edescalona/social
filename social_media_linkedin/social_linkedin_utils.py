@@ -2,8 +2,10 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import json
-from datetime import timezone
+from datetime import datetime, timezone
 from urllib.parse import quote
+
+from dateutil.relativedelta import relativedelta
 
 from odoo import fields
 
@@ -428,3 +430,59 @@ def epoch_milliseconds(value):
     """
     value = fields.Datetime.to_datetime(value)
     return int(value.replace(tzinfo=timezone.utc).timestamp() * 1000)
+
+
+def datetime_from_epoch_milliseconds(value):
+    """Read epoch milliseconds and return the moment they name, in UTC.
+
+    The exact inverse of :func:`epoch_milliseconds` and the only conversion
+    in that direction the connector makes. LinkedIn dates everything it
+    answers in milliseconds since the epoch — the start of a statistics
+    bucket, the moment a publication went out — and always in UTC.
+
+    The result is naive and in UTC, which is what a ``Datetime`` field holds
+    and what ``fields.Datetime`` answers. Building it without a time zone
+    would read the epoch as local time of the process instead, and both the
+    day a bucket is filed under and the moment a publication is stored with
+    would shift with the ``TZ`` of the server.
+
+    What the moment becomes is left to the caller: a day of the series wants
+    its ``date().isoformat()``, a field to write wants the value as it is.
+
+    :param value: int — milliseconds since the epoch, as LinkedIn answers
+        them.
+    :return: the same instant, naive and read as UTC.
+    :rtype: datetime
+    """
+    return datetime.fromtimestamp(int(value) / 1000, tz=timezone.utc).replace(
+        tzinfo=None
+    )
+
+
+def default_statistics_window(start_date, end_date, months=1):
+    """Complete the bounds of a statistics window that were left out.
+
+    Every LinkedIn endpoint reporting figures takes a window, and the bounds
+    do not always reach it: a cron has no dates to give, a form may have had
+    only one of the two filled in, and a hook the framework calls without
+    arguments has none at all. A missing bound is the ordinary case rather
+    than a mistake, and filling it in one place keeps each of those callers
+    from inventing a default of its own.
+
+    The end defaults to now and not to the end of the day: LinkedIn has
+    nothing to report about a moment that has not happened yet.
+
+    The bounds are returned as they arrive, without being converted. What
+    each endpoint expects — epoch milliseconds for the analytics finders, a
+    ``(year:,month:,day:)`` struct for the Ads API — belongs to whoever
+    builds the call.
+
+    :param start_date: first moment asked for, ``months`` back when missing.
+    :param end_date: last moment asked for, now when missing.
+    :param months: how far back the default start reaches.
+    :return: the ``(start, end)`` pair of the window.
+    :rtype: tuple
+    """
+    start = start_date or (fields.Datetime.now() - relativedelta(months=months))
+    end = end_date or fields.Datetime.now()
+    return start, end

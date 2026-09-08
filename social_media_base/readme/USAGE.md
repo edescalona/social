@@ -151,7 +151,8 @@ Scheduled publishing.
   formats of the file picker only filter what the browser proposes, not what a
   drag and drop adds. Which formats are really published is decided by each
   social media and described in its connector, so the same image may be
-  accepted here and refused when publishing.
+  accepted here and refused by the social media, which the post says as soon
+  as the file is attached: see *What the social media will refuse* below.
 - The check reads the file type Odoo deduces from the name of the file, so a
   file renamed to another extension gets through. The social media remains the
   last authority on what it accepts.
@@ -167,6 +168,51 @@ Scheduled publishing.
 - The scheduled action never sends a post twice: as soon as the publication
   is over, the post leaves the states it looks for. What happens when it does
   not go through everywhere is described in *Partial failures* below.
+
+What the social media will refuse.
+---------------
+
+- While the post is being written, each social media of its accounts is asked
+  what it would refuse of that post and what it would only publish
+  differently, and the answer is shown as a block at the top of the form. The
+  question is asked once per social media and not once per account, because
+  what a social media refuses is a limit of the social media: every account of
+  the same one gets the same answer.
+- There are two blocks, and they do not mean the same thing. One is blocking:
+  while it is there, no publication of that social media goes out. The other
+  is informative: the post is published, changed by the social media — the
+  images left behind by one that publishes the video instead, for instance —
+  and nothing is stopped.
+- Neither of them blocks saving. A post is written before it is finished, and
+  the account raising the objection may well be removed from it a moment
+  later, so a draft is always saved as it stands. The publication is where an
+  objection stops something.
+- The blocks are recomputed while the post is edited, from its accounts, its
+  message, its images and its videos, and they are shown as long as the post
+  is a draft or planned. Once it has left for the social media its content is
+  frozen and there is nothing left to fix from the form.
+- **What each social media refuses is decided by its connector** — how long
+  the message may be, how many images and videos, in which formats and up to
+  which size — and it is documented in that connector, not here. This module
+  asks the question and shows the answer, so an account whose social media has
+  no connector behind it is asked nothing.
+- The same question is asked again when the post is sent, on each publication
+  separately and this time naming the account that is publishing. Both sides
+  read the same rules, so a post the form says nothing about is not stopped by
+  a rule it never mentioned. Two things are still only known when the post
+  goes out: a rule that is about that one account rather than about its social
+  media, which is answered for the account that is publishing and fails that
+  publication alone, and the length of the message that is really sent, which
+  is measured on the publication and not on the post — a publication promoting
+  a marketing campaign carries tracked links, frequently longer than the ones
+  written, as described in *Tracked links* below.
+- A publication refused that way is left as *Failed* with the reason on it,
+  and the other accounts of the post go out as usual, exactly like any other
+  partial failure. If every account was refused the post comes back to
+  *Draft*, where the block is read again and the post corrected before pressing
+  *Post* again. If part of it published, its content is frozen like any
+  partially published post, so only what lies outside the post — the account
+  itself, its authorization — can still be fixed for the accounts left behind.
 
 Marketing campaigns.
 ---------------

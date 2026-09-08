@@ -5,8 +5,10 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytz
+import requests
 from freezegun import freeze_time
 
+from odoo.fields import Command
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
@@ -108,11 +110,19 @@ class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
 
     @freeze_time("2025-05-30 12:00:00")
     def test_format_published_time_says_how_long_ago(self):
-        """The moment arrives from the API in epoch milliseconds, in UTC."""
+        """A moment carrying its time zone is answered as a sentence."""
         published = datetime(2025, 5, 27, 12, 0, 0, tzinfo=pytz.utc)
         self.assertEqual(
+            self.social_post_account_id._format_published_time(published),
+            "3 days ago",
+        )
+
+    @freeze_time("2025-05-30 12:00:00")
+    def test_format_published_time_reads_a_naive_moment_as_utc(self):
+        """A moment without a time zone is the one Odoo stores, and it is UTC."""
+        self.assertEqual(
             self.social_post_account_id._format_published_time(
-                published.timestamp() * 1000
+                datetime(2025, 5, 27, 12, 0, 0)
             ),
             "3 days ago",
         )
@@ -122,11 +132,13 @@ class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
         """Babel answers the largest unit that fits, never two of them."""
         published = datetime(2023, 2, 28, 12, 0, 0, tzinfo=pytz.utc)
         self.assertEqual(
-            self.social_post_account_id._format_published_time(
-                published.timestamp() * 1000
-            ),
+            self.social_post_account_id._format_published_time(published),
             "2 years ago",
         )
+
+    def test_format_published_time_without_a_moment(self):
+        """A comment the social media did not stamp is drawn without a date."""
+        self.assertEqual(self.social_post_account_id._format_published_time(False), "")
 
     def test_action_like_comment(self):
         result = self.SocialPostAccount.action_like_comment()
@@ -207,3 +219,140 @@ class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
         self.assertEqual(post_account.state, "deleted")
         self.assertFalse(post_account.post_account_url)
         self.assertEqual(post_account.remote_ref, "urn:li:share:kept")
+
+    def test_map_medias_account_keeps_nothing_when_the_download_fails(self):
+        """A failed download must not attach anything.
+
+        Otherwise the publication would hold an empty attachment that the
+        next synchronization has no reason to replace.
+        """
+        response = patch("requests.get")
+        with mute_logger(LOGGER_SYNC_POST_ACCOUNT), response as mock_get:
+            mock_get.return_value.status_code = 500
+            self.assertFalse(
+                self.social_post_account_id._map_medias_account(
+                    **{"name": "urn:li:image:1", "url": "https://fake/1.jpg"}
+                )
+            )
+        self.assertFalse(
+            self.social_post_account_id._get_medias_account(["urn:li:image:1"])
+        )
+
+    def test_map_medias_account_survives_a_request_exception(self):
+        with mute_logger(LOGGER_SYNC_POST_ACCOUNT), patch(
+            "requests.get", side_effect=requests.exceptions.RequestException("boom")
+        ):
+            self.assertFalse(
+                self.social_post_account_id._map_medias_account(
+                    **{"name": "urn:li:image:2", "url": "https://fake/2.jpg"}
+                )
+            )
+
+    def test_map_medias_account_without_url_creates_the_attachment(self):
+        attachment = self.social_post_account_id._map_medias_account(
+            **{"name": "urn:li:image:local", "datas": self.image_base64}
+        )
+        self.assertEqual(attachment._name, "ir.attachment")
+        self.assertTrue(attachment.id)
+        self.assertEqual(attachment.name, "urn:li:image:local")
+
+    def test_get_medias_account_of_an_empty_recordset(self):
+        """The import asks before the publication exists."""
+        self.assertEqual(
+            self.SocialPostAccount._get_medias_account(["urn:li:image:1"]), []
+        )
+
+    def test_get_medias_account_does_not_see_another_publication(self):
+        """The same image gives a different reference on each account.
+
+        Two publications of one post share the attachment, so the answer can
+        only come from the publication being asked.
+        """
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": "shared.png",
+                "type": "binary",
+                "datas": b"ZmFrZS1pbWFnZQ==",
+            }
+        )
+        other_account = self.SocialAccount.create(
+            {
+                "name": "Linkedin second account",
+                "media_id": self.social_media_id.id,
+                "username": "linkedin_second_account",
+            }
+        )
+        first = self.social_post_account_id
+        second = self.SocialPostAccount.create(
+            {
+                "message": "Same image, other account",
+                "account_id": other_account.id,
+            }
+        )
+        for post_account, urn in (
+            (first, "urn:li:image:A"),
+            (second, "urn:li:image:B"),
+        ):
+            post_account.write(
+                {
+                    "image_ids": [Command.set(attachment.ids)],
+                    "media_refs": {str(attachment.id): urn},
+                }
+            )
+        self.assertEqual(
+            first._get_medias_account(["urn:li:image:A", "urn:li:image:B"]),
+            ["urn:li:image:A"],
+        )
+        self.assertEqual(
+            second._get_medias_account(["urn:li:image:A", "urn:li:image:B"]),
+            ["urn:li:image:B"],
+        )
+
+    def test_get_medias_account_finds_medias_for_a_manager(self):
+        """A manager synchronizing another user's account gets the same answer.
+
+        The medias already stored are read from the publication itself, and a
+        manager sees every publication, so running the synchronization on
+        somebody else's account does not download a duplicate. A plain user
+        cannot reach the publication at all, which is what the record rule of
+        ``social.post.account`` is for.
+        """
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": "shared.png",
+                "type": "binary",
+                "res_model": "social.post.account",
+                "res_id": self.social_post_account_id.id,
+                "datas": b"ZmFrZS1pbWFnZQ==",
+            }
+        )
+        self.social_post_account_id.write(
+            {
+                "image_ids": [Command.set(attachment.ids)],
+                "media_refs": {str(attachment.id): "urn:li:image:SHARED"},
+            }
+        )
+        manager = self.env["res.users"].create(
+            {
+                "name": "Other social manager",
+                "login": "other_media_manager_sync_test",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref(
+                                "social_media_base.group_social_media_manager"
+                            ).id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.assertEqual(
+            self.social_post_account_id.with_user(manager)._get_medias_account(
+                ["urn:li:image:SHARED"]
+            ),
+            ["urn:li:image:SHARED"],
+            "The medias already downloaded must be found whoever runs the "
+            "synchronization, otherwise every run creates a duplicate",
+        )

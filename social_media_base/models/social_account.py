@@ -5,7 +5,6 @@ import base64
 import logging
 
 import psycopg2
-from dateutil.relativedelta import relativedelta
 
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import AccessError
@@ -522,9 +521,10 @@ class SocialAccount(models.Model):
         optional: the figures come from those rows, so the other order would
         recompute the card from what was already on screen.
 
-        There is no throttle. There was one while opening the dashboard cost
-        calls; now it costs none, and throttling the button would make it look
-        broken, which is exactly what the button is there to fix.
+        There is no throttle. Opening the dashboard costs no call at all, so
+        the only calls there are to spare are the ones the user asked for by
+        pressing the button, and a button that answers with the same figures
+        looks broken — which is exactly what it is there to fix.
 
         :return: whether anything was refreshed.
         :rtype: bool
@@ -777,11 +777,11 @@ class SocialAccount(models.Model):
     def _clear_credentials_flag(self):
         """Take down the warning the expired credentials put on the dashboard.
 
-        The counterpart of :meth:`_flag_credentials_expired`, which is what its
-        docstring already promised: a new authorization clears the flag and
-        nothing else does. Until now nothing in base did, and the flag only
-        ever went down as a side effect of the import, which is not base's any
-        more.
+        The counterpart of :meth:`_flag_credentials_expired`, and what its
+        docstring promises: a new authorization clears the flag and nothing
+        else does. Base lowers it nowhere else — not on a call that answered,
+        not on an import that went through — because both of those happen just
+        as well with credentials the social media is about to refuse.
 
         Called on a successful re-authorization, so it checks nothing: whoever
         calls it has just proven the credentials work.
@@ -901,17 +901,3 @@ class SocialAccount(models.Model):
         if menu and menu.action:
             return f"/web#menu_id={menu.id}&action={menu.action.id}"
         return "/web"
-
-    def _get_default_filter_date(self, start_date, end_date, months=1):
-        """Complete the bounds of a statistics window that were left out.
-
-        :param start_date: first moment asked for, ``months`` back when
-            missing.
-        :param end_date: last moment asked for, now when missing.
-        :param months: how far back the default start reaches.
-        :return: the ``(start, end)`` pair of the window.
-        :rtype: tuple
-        """
-        start = start_date or (fields.Datetime.now() - relativedelta(months=months))
-        end = end_date or fields.Datetime.now()
-        return start, end

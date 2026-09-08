@@ -11,6 +11,10 @@ from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT
 
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    default_statistics_window,
+)
+
 from ..social_advertising_linkedin_utils import (
     _CHUNK_SIZE_ANALYTICS_LINKEDIN,
     _ENDPOINT_AD_ACCOUNT_USERS_LINKEDIN,
@@ -705,7 +709,7 @@ class SocialAccount(models.Model):
 
     def _get_linkedin_statistics(self, ads_ids=None, start_date=None, end_date=None):
         self._check_linkedin_scopes(["r_ads_reporting"])
-        start_date, end_date = self._get_default_filter_date(start_date, end_date)
+        start_date, end_date = default_statistics_window(start_date, end_date)
         start_date = (
             start_date.strftime(DEFAULT_SERVER_DATE_FORMAT).split("-")
             if not isinstance(start_date, str)
@@ -807,7 +811,7 @@ class SocialAccount(models.Model):
         res = super()._fetch_ads()
         if self.media_id.media_type != "linkedin":
             return res
-        start_date, end_date = self._get_default_filter_date(None, None)
+        start_date, end_date = default_statistics_window(None, None)
         return res + self._fetch_linkedin_ads(start_date, end_date)
 
     def _fetch_linkedin_ads(self, start_date, end_date):

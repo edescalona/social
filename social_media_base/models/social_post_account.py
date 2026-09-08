@@ -1,13 +1,11 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import base64
 import logging
 import re
 from contextlib import contextmanager
 
 import psycopg2
-import requests
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
@@ -116,7 +114,6 @@ class SocialPostAccount(models.Model):
     failed_description = fields.Html()
     post_account_url = fields.Char()
     author = fields.Char(related="account_id.name", store=True)
-    actor_urn = fields.Char()
     campaign_id = fields.Many2one(
         "utm.campaign",
         string="Campaign",
@@ -398,6 +395,18 @@ class SocialPostAccount(models.Model):
         social media: here there is one account and it is the one publishing,
         so a rule about that account alone stops that account alone.
 
+        The message the rules are measured against is the one of this
+        publication and not the one of the post. The two differ once
+        :meth:`_shorten_message_links` has replaced the links of a
+        publication promoting a campaign by tracked ones, which are
+        frequently longer than what the user wrote, so a post that fits the
+        limit of the social media while it is being written can be over it by
+        the time it goes out. It travels in the context because every
+        connector reads it through
+        :meth:`~odoo.addons.social_media_base.models.social_post.SocialPost.
+        _get_checked_message`, whatever the order the modules extending the
+        rules are loaded in.
+
         The warnings of :meth:`~odoo.addons.social_media_base.models.
         social_post.SocialPost._get_post_warnings` are not read here: by
         definition they do not stop a publication.
@@ -405,7 +414,9 @@ class SocialPostAccount(models.Model):
         :raise UserError: when the post cannot be published as it stands.
         """
         self.ensure_one()
-        errors = self.post_id._get_post_errors(self.media_type, account=self.account_id)
+        errors = self.post_id.with_context(
+            social_checked_message=self.message
+        )._get_post_errors(self.media_type, account=self.account_id)
         if errors:
             raise UserError("\n".join(errors))
 
@@ -623,64 +634,3 @@ class SocialPostAccount(models.Model):
                 attachments.sudo().write(
                     {"res_model": post_account._name, "res_id": post_account.id}
                 )
-
-    def _get_medias_account(self, medias):
-        """Return which of ``medias`` this publication already holds.
-
-        ``medias`` are references on the social media, and the answer comes
-        from ``media_refs``: the question is whether this publication has
-        that media, not whether some attachment of the database carries that
-        name. Two publications of the same post therefore answer for
-        themselves, even when the same image gave a different reference on
-        each account.
-
-        An empty recordset holds nothing, which is what the import asks
-        about a publication it has not created yet.
-
-        :rtype: list
-        """
-        if not self or not medias:
-            return []
-        self.ensure_one()
-        stored = set((self.media_refs or {}).values())
-        return [media for media in medias if media in stored]
-
-    def _map_medias_account(self, **values):
-        """Download a media of the social media and attach it here.
-
-        Nothing is created when the download fails, so that the publication
-        is not left with an empty attachment the next synchronization has no
-        reason to replace.
-
-        The attachment is created here and not returned as a command, because
-        its caller needs the identifier to key ``media_refs`` by it: nested in
-        a command the identifier would only exist once the write it belongs to
-        had run, and the reference would be lost.
-
-        :return: the attachment created, or an empty recordset on failure.
-        :rtype: odoo.models.Model
-        """
-        Attachment = self.env["ir.attachment"]
-        attach_values = values or {}
-        if not values.get("url", False):
-            return Attachment.create(attach_values)
-        try:
-            media_content = requests.get(values["url"], timeout=10)
-        except requests.exceptions.RequestException:
-            _logger.warning("Could not download the media %s", values["url"])
-            return Attachment
-        if media_content.status_code != 200:
-            _logger.warning(
-                "Could not download the media %(url)s: %(status)s",
-                {"url": values["url"], "status": media_content.status_code},
-            )
-            return Attachment
-        attach_values.update(
-            {
-                "type": "binary",
-                "res_model": self._name,
-                "res_id": self.id,
-                "datas": base64.b64encode(media_content.content),
-            }
-        )
-        return Attachment.create(attach_values)

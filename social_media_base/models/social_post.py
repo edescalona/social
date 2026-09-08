@@ -378,6 +378,33 @@ class SocialPost(models.Model):
                 post_account.state == "failed" for post_account in post.post_account_ids
             ) or (post.state == "publishing" and not post.post_account_ids)
 
+    def _get_checked_message(self):
+        """Return the text the rules of the social media are measured against.
+
+        A connector counting characters counts this and never ``message``
+        directly. While the post is being written the two are the same, so
+        the block of the form reads exactly what the user is typing. What
+        reaches the social media, though, is the message of each
+        ``social.post.account``: a publication promoting a marketing campaign
+        has its links replaced by tracked ones by
+        :meth:`~odoo.addons.social_media_base.models.social_post_account.
+        SocialPostAccount._shorten_message_links`, and a tracked link is
+        frequently longer than the one written, so a post inside the limit of
+        the social media when it is saved can be over it when it goes out.
+
+        The publication puts its own message in the context before asking, and
+        the check then counts the string that is really published. The context
+        is what carries it so that every rule of every connector reads the
+        same text without each of them having to hand it down the chain.
+
+        :rtype: str
+        """
+        self.ensure_one()
+        message = self.env.context.get("social_checked_message")
+        if message is None:
+            message = self.message
+        return message or ""
+
     def _get_post_errors(self, media_type, account=None):
         """Return what stops this post from being published on a social media.
 
@@ -393,6 +420,10 @@ class SocialPost(models.Model):
         really about one account — a feature its plan does not include, an
         advertising account it has not chosen — is answered only when the
         publication asks, so that it fails that publication alone.
+
+        A rule about the text of the post reads :meth:`_get_checked_message`,
+        which answers what the form is showing while the post is written and
+        what the publication is about to send while it is being published.
 
         :param str media_type: the social media the post is checked against.
         :param account: the ``social.account`` about to publish, when the

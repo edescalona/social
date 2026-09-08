@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import psycopg2
-import requests
 from freezegun import freeze_time
 from psycopg2 import errorcodes
 
@@ -356,34 +355,6 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             raise UserError(_("The post could not be sent"))
         self.assertFalse(post_account.remote_ref)
         self.assertEqual(post_account.state, "failed")
-
-    def test_map_medias_account_keeps_nothing_when_the_download_fails(self):
-        """A failed download must not attach anything.
-
-        Otherwise the publication would hold an empty attachment that the
-        next synchronization has no reason to replace.
-        """
-        response = patch("requests.get")
-        with mute_logger(LOGGER_POST_ACCOUNT), response as mock_get:
-            mock_get.return_value.status_code = 500
-            self.assertFalse(
-                self.social_post_account_id._map_medias_account(
-                    **{"name": "urn:li:image:1", "url": "https://fake/1.jpg"}
-                )
-            )
-        self.assertFalse(
-            self.social_post_account_id._get_medias_account(["urn:li:image:1"])
-        )
-
-    def test_map_medias_account_survives_a_request_exception(self):
-        with mute_logger(LOGGER_POST_ACCOUNT), patch(
-            "requests.get", side_effect=requests.exceptions.RequestException("boom")
-        ):
-            self.assertFalse(
-                self.social_post_account_id._map_medias_account(
-                    **{"name": "urn:li:image:2", "url": "https://fake/2.jpg"}
-                )
-            )
 
     def test_publish_guard_reraises_concurrency_errors(self):
         """Concurrency errors must bubble up so the server retries."""
@@ -819,14 +790,6 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             post._action_create_post_account()
         self.assertEqual(post.state, "draft")
 
-    def test_map_medias_account_without_url_creates_the_attachment(self):
-        attachment = self.social_post_account_id._map_medias_account(
-            **{"name": "urn:li:image:local", "datas": self.image_base64}
-        )
-        self.assertEqual(attachment._name, "ir.attachment")
-        self.assertTrue(attachment.id)
-        self.assertEqual(attachment.name, "urn:li:image:local")
-
     def test_post_check_messages_default(self):
         """A connector implementing nothing leaves both fields empty."""
         self.assertFalse(self.social_post_id.message_info)
@@ -958,6 +921,58 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
         ) as mock_warnings:
             self.social_post_account_id._check_publishable()
         mock_warnings.assert_not_called()
+
+    def test_get_checked_message_answers_the_post_by_default(self):
+        """The form asks about the post, so it reads what the user is writing."""
+        self.assertEqual(
+            self.social_post_id._get_checked_message(), self.social_post_id.message
+        )
+
+    def test_check_publishable_measures_the_message_that_is_published(self):
+        """The rules count what goes out, not what the post was written with.
+
+        A publication promoting a marketing campaign has its links replaced
+        by tracked ones, and a tracked link is longer than the short one it
+        replaces, so a message inside the limit of the social media while it
+        is written can be over it by the time it is sent. The rule is faked
+        because base declares no limit of its own: what is under test is
+        which of the two strings the rules are handed.
+        """
+        written = "Read https://oca.io"
+        limit = len(written)
+        campaign = self.env["utm.campaign"].create({"name": "Tracked links"})
+        self.social_post_id.write({"message": written, "campaign_id": campaign.id})
+        post_account = self.social_post_account_id
+        post_account.write({"message": written})
+        post_account._shorten_message_links()
+        self.assertGreater(
+            len(post_account.message),
+            limit,
+            msg="The tracked link has to be longer than the one written, or "
+            "there is nothing here for the check to catch.",
+        )
+
+        def refuse_a_message_over_the_limit(post, media_type, account=None):
+            message = post._get_checked_message()
+            if len(message) <= limit:
+                return []
+            return [f"{len(message)} characters is over the limit of {limit}."]
+
+        with self._fake_media_types(alpha=self.social_media_id), patch.object(
+            type(self.social_post_id),
+            "_get_post_errors",
+            autospec=True,
+            side_effect=refuse_a_message_over_the_limit,
+        ):
+            self.social_post_id.invalidate_recordset(["message_error"])
+            self.assertFalse(
+                self.social_post_id.message_error,
+                msg="The post as it is written fits, so the banner of the "
+                "form has nothing to say.",
+            )
+            with self.assertRaises(UserError) as error:
+                post_account._check_publishable()
+        self.assertIn("over the limit", str(error.exception))
 
     def test_post_preview_names_the_videos(self):
         """A post carrying only a video used to preview no media at all."""
@@ -1667,51 +1682,6 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
         )
         self.assertEqual(post_account.image_ids, image)
 
-    def test_get_medias_account_of_an_empty_recordset(self):
-        """The import asks before the publication exists."""
-        self.assertEqual(
-            self.SocialPostAccount._get_medias_account(["urn:li:image:1"]), []
-        )
-
-    def test_get_medias_account_does_not_see_another_publication(self):
-        """The same image gives a different reference on each account.
-
-        Two publications of one post share the attachment, so the answer can
-        only come from the publication being asked.
-        """
-        attachment = self.env["ir.attachment"].create(
-            {
-                "name": "shared.png",
-                "type": "binary",
-                "datas": b"ZmFrZS1pbWFnZQ==",
-            }
-        )
-        first = self.social_post_account_id
-        second = self.SocialPostAccount.create(
-            {
-                "message": "Same image, other account",
-                "account_id": self.other_account_id.id,
-            }
-        )
-        for post_account, urn in (
-            (first, "urn:li:image:A"),
-            (second, "urn:li:image:B"),
-        ):
-            post_account.write(
-                {
-                    "image_ids": [Command.set(attachment.ids)],
-                    "media_refs": {str(attachment.id): urn},
-                }
-            )
-        self.assertEqual(
-            first._get_medias_account(["urn:li:image:A", "urn:li:image:B"]),
-            ["urn:li:image:A"],
-        )
-        self.assertEqual(
-            second._get_medias_account(["urn:li:image:A", "urn:li:image:B"]),
-            ["urn:li:image:B"],
-        )
-
     def test_filter_by_media_types(self):
         with patch(
             "odoo.models.BaseModel.search",
@@ -1756,55 +1726,6 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
 @tagged("post_install", "-at_install")
 class TestSocialPostBaseUsers(TestSocialMediaBaseCommon):
     """Users are created here, so every module has to be in the registry."""
-
-    def test_get_medias_account_finds_medias_for_a_manager(self):
-        """A manager synchronizing another user's account gets the same answer.
-
-        The medias already stored are read from the publication itself, and a
-        manager sees every publication, so running the synchronization on
-        somebody else's account does not download a duplicate. A plain user
-        cannot reach the publication at all, which is what the record rule of
-        ``social.post.account`` is for.
-        """
-        attachment = self.env["ir.attachment"].create(
-            {
-                "name": "shared.png",
-                "type": "binary",
-                "res_model": "social.post.account",
-                "res_id": self.social_post_account_id.id,
-                "datas": b"ZmFrZS1pbWFnZQ==",
-            }
-        )
-        self.social_post_account_id.write(
-            {
-                "image_ids": [Command.set(attachment.ids)],
-                "media_refs": {str(attachment.id): "urn:li:image:SHARED"},
-            }
-        )
-        manager = self.env["res.users"].create(
-            {
-                "name": "Other social manager",
-                "login": "other_media_manager_test",
-                "groups_id": [
-                    Command.set(
-                        [
-                            self.env.ref("base.group_user").id,
-                            self.env.ref(
-                                "social_media_base.group_social_media_manager"
-                            ).id,
-                        ]
-                    )
-                ],
-            }
-        )
-        self.assertEqual(
-            self.social_post_account_id.with_user(manager)._get_medias_account(
-                ["urn:li:image:SHARED"]
-            ),
-            ["urn:li:image:SHARED"],
-            "The medias already downloaded must be found whoever runs the "
-            "synchronization, otherwise every run creates a duplicate",
-        )
 
     def test_partial_publication_notifies_the_responsible_of_the_account(self):
         """The user notified is the one in charge of the account that failed."""

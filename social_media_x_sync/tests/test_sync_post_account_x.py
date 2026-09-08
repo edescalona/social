@@ -203,7 +203,12 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             msg="The images went up from Odoo, so they are drawn from Odoo "
             "instead of asking X for them.",
         )
-        self.assertTrue(comment["published_time"])
+        self.assertIsInstance(
+            comment["published_time"],
+            str,
+            msg="The client draws the moment as it arrives, so what travels "
+            "is the sentence saying how long ago it was and never a date.",
+        )
 
     def test_create_x_comment_first_level_has_no_parent(self):
         """A comment on the publication hangs from nothing."""
@@ -288,6 +293,12 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         )
         self.assertEqual(by_ref["100"]["reply_count"], 1)
         self.assertEqual(by_ref["200"]["reply_count"], 0)
+        self.assertIsInstance(
+            by_ref["100"]["published_time"],
+            str,
+            msg="The moment X stamps the tweet with is turned into the "
+            "sentence the client draws, not handed over as a date.",
+        )
 
     @mute_logger(LOGGER_POST_ACCOUNT_X_SYNC)
     def test_create_x_comment_exception(self):

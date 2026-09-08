@@ -474,23 +474,38 @@ LinkedIn tokens
 LinkedIn limits and validations
 -------------------------------
 
-- The text of the post is **not** checked in Odoo: the ``commentary``
-  field of the `Posts
+What LinkedIn refuses is checked in Odoo before the publication is sent.
+The post shows the reason while it is being written, saving is never
+blocked, and the publication of the account that raises the objection is
+refused instead of being sent and failing on LinkedIn. The same checks
+are applied when the post reaches the publication through an import or
+an RPC call, so nothing gets past them.
+
+- The message is checked against **3000 characters**, the length the
+  ``commentary`` field of the `Posts
   API <https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api>`__
-  limits the body of a publication to 3.000 characters. A longer text
-  fails when it is sent and the line is left as *Failed* with the
-  validation error LinkedIn answers, so check the length before
-  publishing.
-- The number of images is not checked either: one image is published as
-  a single image and two or more as a `multi-image
+  takes. A longer message is reported on the post and the publication is
+  not sent.
+- The images are checked against **20** per post, against the formats
+  LinkedIn publishes, **JPG, PNG and GIF**, and against **10 MB** each.
+  One image is published as a single image and two or more as a
+  `multi-image
   post <https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/multiimage-post-api>`__.
-  Its limits are applied by LinkedIn when it receives the post, so a
-  number of images it does not accept is only detected when publishing.
-- LinkedIn publishes **JPG, PNG and GIF** images and **MP4** videos. Any
-  other format is announced on the post as soon as it is attached and
-  refuses the publication of that line, which is left as *Failed* naming
-  the file. The images are only checked when the post carries no video,
-  because a video leaves them out anyway.
+  The message names the files that cannot be published.
+- The video is checked against **one** per post, against **MP4** and
+  against **500 MB**.
+- A post carrying images and a video is not refused: LinkedIn publishes
+  the video and leaves the images out, so the post is told what goes out
+  instead of being stopped. That is also why the image rules are not
+  applied at all to a post carrying a video — its images decide nothing.
+- The file picker only filters what the browser proposes, so a file
+  added by drag and drop reaches the checks all the same, and they are
+  what refuses the ones LinkedIn does not take.
+- What is left to LinkedIn is everything about the content itself: the
+  dimensions and the aspect ratio of an image, the codecs and the
+  duration of a video, the text it reads as spam. Nothing of that is
+  checked here, and a publication LinkedIn refuses for one of those
+  reasons is left as *Failed* with the validation error it answered.
 - Every call to LinkedIn has a timeout of **10 seconds**, not
   configurable. If LinkedIn or the connection take longer, the operation
   fails with *Error connecting to LinkedIn* and has to be retried; a
@@ -642,7 +657,7 @@ Authors
 Contributors
 ------------
 
-- `Binhex Cloud <https://www.binhex.cloud>`__:
+- `Binhex <https://www.binhex.cloud>`__:
 
   - Edilio Escalona Almira e.escalona@binhex.cloud
 

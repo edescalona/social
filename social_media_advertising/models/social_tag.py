@@ -8,7 +8,7 @@ class SocialTag(models.Model):
     """Free tag used to classify the social media campaigns."""
 
     _name = "social.tag"
-    _description = "Social Tag"
+    _description = "Tag Classifying the Social Media Campaigns"
     _order = "name"
 
     name = fields.Char(required=True)

@@ -145,7 +145,13 @@ class SocialPostAccount(models.Model):
                                 ),
                                 "text": comment.text,
                                 "actor": author.name,
-                                "published_time": comment.created_at,
+                                # X stamps a tweet with a moment carrying its
+                                # offset, and what the client draws is how
+                                # long ago it was, the same sentence every
+                                # social media answers with.
+                                "published_time": self._format_published_time(
+                                    comment.created_at
+                                ),
                                 "author_image": author.profile_image_url
                                 if author.profile_image_url
                                 else None,
@@ -290,7 +296,9 @@ class SocialPostAccount(models.Model):
                 # comes back shortened when it carries a link.
                 "text": data.get("text") or "",
                 "actor": self.account_id.name,
-                "published_time": fields.Datetime.now(),
+                # The reply was written just now, and the client draws how
+                # long ago that is like it does for every other comment.
+                "published_time": self._format_published_time(fields.Datetime.now()),
                 "author_image": None,
                 "images_url": [
                     f"/web/image/{attachment.id}" for attachment in attachments

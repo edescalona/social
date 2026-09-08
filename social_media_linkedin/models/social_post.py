@@ -65,18 +65,25 @@ class SocialPost(models.Model):
         :meth:`_render_values_preview`), so their number, their format and
         their size decide nothing and checking them would refuse a post
         LinkedIn takes just fine.
+
+        The characters counted are the ones of
+        :meth:`~odoo.addons.social_media_base.models.social_post.SocialPost.
+        _get_checked_message`, so the limit of LinkedIn is measured against
+        the text the publication is about to send and not against an earlier
+        version of it.
         """
         errors = super()._get_post_errors(media_type, account=account)
         if media_type != "linkedin":
             return errors
-        if len(self.message or "") > _MAX_MESSAGE_LENGTH_LINKEDIN:
+        message = self._get_checked_message()
+        if len(message) > _MAX_MESSAGE_LENGTH_LINKEDIN:
             errors.append(
                 _(
                     "LinkedIn publishes at most %(limit)s characters per post, "
                     "and this one has %(length)s. Shorten the message to "
                     "publish it.",
                     limit=_MAX_MESSAGE_LENGTH_LINKEDIN,
-                    length=len(self.message),
+                    length=len(message),
                 )
             )
         if len(self.video_ids) > _MAX_VIDEOS_LINKEDIN:

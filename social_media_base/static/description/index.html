@@ -443,20 +443,18 @@ go out as usual.</li>
 <p><strong>Table of contents</strong></p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#installation" id="toc-entry-1">Installation</a><ul>
-<li><a class="reference internal" href="#upgrading-from-a-version-before-social-media-sync-existed" id="toc-entry-2">Upgrading from a version before <em>Social Media Sync</em> existed.</a></li>
+<li><a class="reference internal" href="#installation" id="toc-entry-1">Installation</a></li>
+<li><a class="reference internal" href="#configuration" id="toc-entry-2">Configuration</a><ul>
+<li><a class="reference internal" href="#tracked-links" id="toc-entry-3">Tracked links.</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#configuration" id="toc-entry-3">Configuration</a><ul>
-<li><a class="reference internal" href="#tracked-links" id="toc-entry-4">Tracked links.</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#usage" id="toc-entry-5">Usage</a><ul>
-<li><a class="reference internal" href="#posts-on-the-dashboard" id="toc-entry-6">Posts on the dashboard.</a></li>
-<li><a class="reference internal" href="#statistics" id="toc-entry-7">Statistics.</a></li>
-<li><a class="reference internal" href="#archive-an-account" id="toc-entry-8">Archive an account.</a></li>
-<li><a class="reference internal" href="#delete-an-account-permanently" id="toc-entry-9">Delete an account permanently.</a></li>
-<li><a class="reference internal" href="#scheduled-publishing" id="toc-entry-10">Scheduled publishing.</a></li>
+<li><a class="reference internal" href="#usage" id="toc-entry-4">Usage</a><ul>
+<li><a class="reference internal" href="#posts-on-the-dashboard" id="toc-entry-5">Posts on the dashboard.</a></li>
+<li><a class="reference internal" href="#statistics" id="toc-entry-6">Statistics.</a></li>
+<li><a class="reference internal" href="#archive-an-account" id="toc-entry-7">Archive an account.</a></li>
+<li><a class="reference internal" href="#delete-an-account-permanently" id="toc-entry-8">Delete an account permanently.</a></li>
+<li><a class="reference internal" href="#scheduled-publishing" id="toc-entry-9">Scheduled publishing.</a></li>
+<li><a class="reference internal" href="#what-the-social-media-will-refuse" id="toc-entry-10">What the social media will refuse.</a></li>
 <li><a class="reference internal" href="#marketing-campaigns" id="toc-entry-11">Marketing campaigns.</a></li>
 <li><a class="reference internal" href="#campaign-badge" id="toc-entry-12">Campaign badge.</a></li>
 <li><a class="reference internal" href="#follow-the-posts-from-the-marketing-campaign" id="toc-entry-13">Follow the posts from the marketing campaign.</a></li>
@@ -492,28 +490,11 @@ the same database.</p>
 the installation with an error when the other module is already
 installed, and the other way round. The whole <em>Social Media</em> family is
 affected, since every module of it depends on this one.</p>
-<div class="section" id="upgrading-from-a-version-before-social-media-sync-existed">
-<h2><a class="toc-backref" href="#toc-entry-2">Upgrading from a version before <em>Social Media Sync</em> existed.</a></h2>
-<p>Importing the publications, their figures and their comments used to be
-part of this module and is now <em>Social Media Sync</em>. The move takes a
-field (<tt class="docutils literal">pending_initial_sync</tt>), two scheduled actions and a controller
-route from one module to the other, and it changes what the figures of
-an account are made of: they are added up from the daily series instead
-of written by the import.</p>
-<p><strong>No migration script is provided</strong>, and none of the modules of the
-family carries a <tt class="docutils literal">migrations/</tt> directory. They are all on
-<tt class="docutils literal">17.0.1.0.0</tt> and none of them has been released, so there is no
-published version to migrate from: the supported way to pick this up is
-to recreate the database. Install <em>Social Media Sync</em> alongside the
-connectors to keep importing.</p>
-<p>If a database ever runs a released version of these modules, this note
-stops being enough and a migration script becomes required.</p>
-</div>
 </div>
 <div class="section" id="configuration">
-<h1><a class="toc-backref" href="#toc-entry-3">Configuration</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-2">Configuration</a></h1>
 <div class="section" id="tracked-links">
-<h2><a class="toc-backref" href="#toc-entry-4">Tracked links.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-3">Tracked links.</a></h2>
 <ul class="simple">
 <li>The short links published on the social media point at this Odoo, so
 <strong>``web.base.url`` has to be the address the social media audience can
@@ -533,9 +514,9 @@ and it can be overridden per social media.</li>
 </div>
 </div>
 <div class="section" id="usage">
-<h1><a class="toc-backref" href="#toc-entry-5">Usage</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-4">Usage</a></h1>
 <div class="section" id="posts-on-the-dashboard">
-<h2><a class="toc-backref" href="#toc-entry-6">Posts on the dashboard.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-5">Posts on the dashboard.</a></h2>
 <ul>
 <li><p class="first">The dashboard lists the publications that exist on the social media,
 together with their statistics. A scheduled publication is not online
@@ -618,7 +599,7 @@ nobody ever asked the social media about it.</p>
 </ul>
 </div>
 <div class="section" id="statistics">
-<h2><a class="toc-backref" href="#toc-entry-7">Statistics.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-6">Statistics.</a></h2>
 <ul>
 <li><p class="first">Go to <em>Social Media</em> &gt; Statistics</p>
 </li>
@@ -662,7 +643,7 @@ case it is.</p>
 </ul>
 </div>
 <div class="section" id="archive-an-account">
-<h2><a class="toc-backref" href="#toc-entry-8">Archive an account.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-7">Archive an account.</a></h2>
 <ul>
 <li><p class="first">The account form provides an <em>Archive account</em> button, available to
 the user responsible for the account.</p>
@@ -689,7 +670,7 @@ Reschedule it to publish it.</p>
 </ul>
 </div>
 <div class="section" id="delete-an-account-permanently">
-<h2><a class="toc-backref" href="#toc-entry-9">Delete an account permanently.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-8">Delete an account permanently.</a></h2>
 <ul class="simple">
 <li>The account form provides a <em>Delete permanently</em> button, available
 only to the <em>Social Media / Administrator</em> group. A regular user can
@@ -706,7 +687,7 @@ instead.</li>
 </ul>
 </div>
 <div class="section" id="scheduled-publishing">
-<h2><a class="toc-backref" href="#toc-entry-10">Scheduled publishing.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-9">Scheduled publishing.</a></h2>
 <ul class="simple">
 <li>Setting <em>Send post</em> to <em>Schedule</em> proposes a date one hour from now
 and leaves the post in the <em>Planned</em> state. The date can be changed,
@@ -718,8 +699,9 @@ in <em>Videos</em>, and a file of the wrong kind is refused when saving: the
 accepted formats of the file picker only filter what the browser
 proposes, not what a drag and drop adds. Which formats are really
 published is decided by each social media and described in its
-connector, so the same image may be accepted here and refused when
-publishing.</li>
+connector, so the same image may be accepted here and refused by the
+social media, which the post says as soon as the file is attached: see
+<em>What the social media will refuse</em> below.</li>
 <li>The check reads the file type Odoo deduces from the name of the file,
 so a file renamed to another extension gets through. The social media
 remains the last authority on what it accepts.</li>
@@ -737,6 +719,55 @@ its date.</li>
 publication is over, the post leaves the states it looks for. What
 happens when it does not go through everywhere is described in
 <em>Partial failures</em> below.</li>
+</ul>
+</div>
+<div class="section" id="what-the-social-media-will-refuse">
+<h2><a class="toc-backref" href="#toc-entry-10">What the social media will refuse.</a></h2>
+<ul class="simple">
+<li>While the post is being written, each social media of its accounts is
+asked what it would refuse of that post and what it would only publish
+differently, and the answer is shown as a block at the top of the
+form. The question is asked once per social media and not once per
+account, because what a social media refuses is a limit of the social
+media: every account of the same one gets the same answer.</li>
+<li>There are two blocks, and they do not mean the same thing. One is
+blocking: while it is there, no publication of that social media goes
+out. The other is informative: the post is published, changed by the
+social media — the images left behind by one that publishes the video
+instead, for instance — and nothing is stopped.</li>
+<li>Neither of them blocks saving. A post is written before it is
+finished, and the account raising the objection may well be removed
+from it a moment later, so a draft is always saved as it stands. The
+publication is where an objection stops something.</li>
+<li>The blocks are recomputed while the post is edited, from its accounts,
+its message, its images and its videos, and they are shown as long as
+the post is a draft or planned. Once it has left for the social media
+its content is frozen and there is nothing left to fix from the form.</li>
+<li><strong>What each social media refuses is decided by its connector</strong> — how
+long the message may be, how many images and videos, in which formats
+and up to which size — and it is documented in that connector, not
+here. This module asks the question and shows the answer, so an
+account whose social media has no connector behind it is asked
+nothing.</li>
+<li>The same question is asked again when the post is sent, on each
+publication separately and this time naming the account that is
+publishing. Both sides read the same rules, so a post the form says
+nothing about is not stopped by a rule it never mentioned. Two things
+are still only known when the post goes out: a rule that is about that
+one account rather than about its social media, which is answered for
+the account that is publishing and fails that publication alone, and
+the length of the message that is really sent, which is measured on
+the publication and not on the post — a publication promoting a
+marketing campaign carries tracked links, frequently longer than the
+ones written, as described in <em>Tracked links</em> below.</li>
+<li>A publication refused that way is left as <em>Failed</em> with the reason on
+it, and the other accounts of the post go out as usual, exactly like
+any other partial failure. If every account was refused the post comes
+back to <em>Draft</em>, where the block is read again and the post corrected
+before pressing <em>Post</em> again. If part of it published, its content is
+frozen like any partially published post, so only what lies outside
+the post — the account itself, its authorization — can still be fixed
+for the accounts left behind.</li>
 </ul>
 </div>
 <div class="section" id="marketing-campaigns">
@@ -1029,7 +1060,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <div class="section" id="contributors">
 <h2><a class="toc-backref" href="#toc-entry-26">Contributors</a></h2>
 <ul class="simple">
-<li><a class="reference external" href="https://www.binhex.cloud">Binhex Cloud</a>:<ul>
+<li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
 </ul>
 </li>

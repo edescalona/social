@@ -3,15 +3,20 @@
 
 import os
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pytz
+from dateutil.relativedelta import relativedelta
+
+from odoo import fields
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _QUERY_STRING_MARGIN_BYTES_LINKEDIN,
     _QUERY_STRING_MAX_BYTES_LINKEDIN,
     _batch_urns_by_url_size,
     _encoded_urns_bytes,
+    datetime_from_epoch_milliseconds,
+    default_statistics_window,
     epoch_milliseconds,
     social_url_encode,
 )
@@ -421,6 +426,72 @@ class TestEpochMilliseconds(TestSocialCommonLinkedin):
         """An aware datetime is a mistake, and it is pointed at, not tolerated."""
         with self.assertRaises(ValueError):
             epoch_milliseconds(self.fixed_now)
+
+    def test_datetime_from_epoch_milliseconds(self):
+        """The milliseconds LinkedIn answers name the moment in UTC."""
+        self.assertEqual(
+            datetime_from_epoch_milliseconds(1735689600000), datetime(2025, 1, 1)
+        )
+
+    def test_datetime_from_epoch_milliseconds_answers_a_naive_value(self):
+        """A ``Datetime`` field holds a naive value and refuses an aware one."""
+        self.assertIsNone(datetime_from_epoch_milliseconds(1735689600000).tzinfo)
+
+    def test_datetime_from_epoch_milliseconds_is_the_inverse(self):
+        """Both directions read and write the same naive UTC moment."""
+        for value in (self.date_start, self.date_end):
+            with self.subTest(value=value):
+                milliseconds = epoch_milliseconds(value)
+                self.assertEqual(
+                    epoch_milliseconds(datetime_from_epoch_milliseconds(milliseconds)),
+                    milliseconds,
+                )
+
+    def test_datetime_from_epoch_milliseconds_ignores_the_process_timezone(self):
+        """The day a bucket falls on does not move with the host.
+
+        The first instant of a day in UTC is the evening before west of it,
+        so a conversion reading the epoch as local time files the bucket
+        under the wrong day for every account of the database.
+        """
+        for timezone_name in ("UTC", "Europe/Madrid", "America/New_York"):
+            with self.subTest(timezone=timezone_name):
+                self._run_under_timezone(timezone_name)
+                self.assertEqual(
+                    datetime_from_epoch_milliseconds(1735689600000).date(),
+                    date(2025, 1, 1),
+                )
+
+
+class TestDefaultStatisticsWindow(TestSocialCommonLinkedin):
+    """``default_statistics_window`` only fills in the bounds nobody gave.
+
+    A pure function of ``social_linkedin_utils``, tested here rather than
+    through the accounts that happen to call it.
+    """
+
+    def test_default_statistics_window_keeps_both_bounds(self):
+        """A window the caller bounded travels untouched."""
+        start_date = datetime(2025, 1, 1)
+        end_date = start_date + timedelta(days=30)
+        self.assertEqual(
+            default_statistics_window(start_date, end_date), (start_date, end_date)
+        )
+
+    def test_default_statistics_window_fills_both_bounds(self):
+        """A caller with no dates to give asks for the last ``months``."""
+        before = fields.Datetime.now()
+        start, end = default_statistics_window(None, None, months=3)
+        self.assertGreaterEqual(end, before)
+        self.assertLess(start, before - relativedelta(months=2))
+        self.assertGreater(start, before - relativedelta(months=4))
+
+    def test_default_statistics_window_fills_only_what_is_missing(self):
+        """The bound the caller gave is kept, the other one is completed."""
+        end_date = datetime(2025, 2, 1)
+        start, end = default_statistics_window(None, end_date)
+        self.assertEqual(end, end_date)
+        self.assertLess(start, fields.Datetime.now())
 
 
 class TestBatchUrnsByUrlSize(TestSocialCommonLinkedin):

@@ -24,7 +24,7 @@ class SocialAdvertisingAd(models.Model):
     """
 
     _name = "social.advertising.ad"
-    _description = "Social Advertising Ad"
+    _description = "Ad Served on a Social Media and its Statistics"
     _order = "created_date desc, id desc"
 
     name = fields.Char(

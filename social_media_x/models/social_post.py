@@ -65,18 +65,25 @@ class SocialPost(models.Model):
         Unlike LinkedIn, which publishes the video of a post carrying both
         and drops the images, X takes one kind of media or the other, so a
         post mixing them is refused instead of warned about.
+
+        The characters counted are the ones of
+        :meth:`~odoo.addons.social_media_base.models.social_post.SocialPost.
+        _get_checked_message`, so the limit of X is measured against the text
+        the publication is about to send and not against an earlier version of
+        it.
         """
         errors = super()._get_post_errors(media_type, account=account)
         if media_type != "x":
             return errors
-        if len(self.message or "") > _MAX_MESSAGE_LENGTH_X:
+        message = self._get_checked_message()
+        if len(message) > _MAX_MESSAGE_LENGTH_X:
             errors.append(
                 _(
                     "X publishes at most %(limit)s characters per post, and "
                     "this one has %(length)s. Shorten the message to publish "
                     "it.",
                     limit=_MAX_MESSAGE_LENGTH_X,
-                    length=len(self.message),
+                    length=len(message),
                 )
             )
         if self.image_ids and self.video_ids:

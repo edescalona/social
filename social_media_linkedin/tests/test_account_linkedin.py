@@ -25,6 +25,7 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _STATISTICS_MAX_BUCKETS_LINKEDIN,
     _TOKEN_MARGIN_DAYS_LINKEDIN,
     _UPDATE_CHECK_DAYS_LINKEDIN,
+    datetime_from_epoch_milliseconds,
 )
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
@@ -599,32 +600,24 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         )
 
     def _patch_daily_statistics(self, elements):
-        """Patch the finder answering one bucket per day."""
-        return (
-            self.generate_patch(
-                **{
-                    "type_object": True,
-                    "model_patch": self.SocialAccountLinkedin,
-                    "method_patch": "_get_default_filter_date",
-                    "return_value": (
-                        "2025-01-01T00:00:00",
-                        "2025-01-07T23:59:59",
-                    ),
-                }
-            ),
-            self.generate_patch(
-                **{
-                    "type_object": True,
-                    "model_patch": self.SocialAccountLinkedin,
-                    "method_patch": "_request_linkedin",
-                    "return_value": self.generate_magic_mock(
-                        **{
-                            "status_code": 200,
-                            "json_return_value": {"elements": elements},
-                        }
-                    ),
-                }
-            ),
+        """Patch the finder answering one bucket per day.
+
+        The window is not patched: the finder is called with the timestamps
+        the test gives it, and the day a bucket is filed under comes from its
+        own ``timeRange.start``, never from the bounds of the call.
+        """
+        return self.generate_patch(
+            **{
+                "type_object": True,
+                "model_patch": self.SocialAccountLinkedin,
+                "method_patch": "_request_linkedin",
+                "return_value": self.generate_magic_mock(
+                    **{
+                        "status_code": 200,
+                        "json_return_value": {"elements": elements},
+                    }
+                ),
+            }
         )
 
     def _daily_bucket(self, start, **statistics):
@@ -635,7 +628,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
 
     def test_get_linkedin_daily_statistics_keys_the_buckets_by_day(self):
         """Every bucket is keyed by the ISO day of its ``timeRange.start``."""
-        _patch_dates, patch_request = self._patch_daily_statistics(
+        patch_request = self._patch_daily_statistics(
             [
                 self._daily_bucket(1735776000000, impressionCount=100),
                 self._daily_bucket(1736035200000, impressionCount=180),
@@ -651,7 +644,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
 
     def test_get_linkedin_daily_statistics_adds_up_the_same_day(self):
         """Two buckets of one day are added up, not overwritten."""
-        _patch_dates, patch_request = self._patch_daily_statistics(
+        patch_request = self._patch_daily_statistics(
             [
                 # Both are hours of the 2nd of january, so both are that day.
                 self._daily_bucket(1735776000000, impressionCount=100),
@@ -821,8 +814,8 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         asked = []
         for call in mock_reader.call_args_list:
             start_time, end_time = call.args[1:3]
-            first = datetime.fromtimestamp(start_time / 1000).date()
-            last = datetime.fromtimestamp(end_time / 1000).date() - timedelta(days=1)
+            first = datetime_from_epoch_milliseconds(start_time).date()
+            last = datetime_from_epoch_milliseconds(end_time).date() - timedelta(days=1)
             asked.append((first, last))
         return asked
 
@@ -864,7 +857,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         date_to = date_from + timedelta(days=_STATISTICS_MAX_BUCKETS_LINKEDIN)
 
         def one_bucket_per_chunk(account, start_time, _end_time, _granularity):
-            day = datetime.fromtimestamp(start_time / 1000).date()
+            day = datetime_from_epoch_milliseconds(start_time).date()
             return {day.isoformat(): (1, 2, 3, 4, 0.5, 100)}
 
         with self._patch_reader(side_effect=one_bucket_per_chunk):
@@ -889,7 +882,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         date_to = date_from + timedelta(days=_STATISTICS_MAX_BUCKETS_LINKEDIN)
 
         def nothing_for_the_first(account, start_time, _end_time, _granularity):
-            day = datetime.fromtimestamp(start_time / 1000).date()
+            day = datetime_from_epoch_milliseconds(start_time).date()
             if day == date_from:
                 return {}
             return {day.isoformat(): (1, 2, 3, 4, 0.5, 100)}
@@ -1117,16 +1110,6 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
             account._check_linkedin_scopes(["r_ads", "r_ads_reporting"])
         self.assertIn("r_ads_reporting", str(error.exception))
 
-    def test_get_default_filter_date(self):
-        start_date = datetime.now()
-        end_date = start_date + timedelta(days=30)
-        self.assertEqual(
-            self.SocialAccountLinkedinData._get_default_filter_date(
-                start_date=start_date, end_date=end_date
-            ),
-            (start_date, end_date),
-        )
-
     @patch("odoo.addons.social_media_linkedin.models.social_account.requests.request")
     def test_request_linkedin(self, mock_request):
         url_test = "https://api-fake.linkedin.com/v2/test"
@@ -1259,7 +1242,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
             self.assertEqual(mock_request.call_count, 3)
 
     def test_get_account_linkedin_reports_the_error_of_linkedin(self):
-        """The failure used to be hidden behind an Expected singleton."""
+        """The reason LinkedIn refused reaches the user, not a singleton."""
         account = self.SocialAccountLinkedin
         account.write({"linkedin_account_id": "123456"})
         error_response = MagicMock(status_code=403)
@@ -1612,7 +1595,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         self.assertIn("Error token", str(ctx.exception))
 
     def test_create_account_linkedin_without_access_token(self):
-        """A token without an access token used to fail silently."""
+        """A token without an access token is refused, never taken silently."""
         with self.assertRaises(UserError) as ctx:
             self.SocialAccount._create_account_linkedin(
                 "fake-client-id",

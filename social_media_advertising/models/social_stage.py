@@ -14,7 +14,7 @@ class SocialStage(models.Model):
     """
 
     _name = "social.stage"
-    _description = "Social Stage"
+    _description = "Status of a Campaign, a Campaign Group or an Ad"
     _order = "sequence, id"
 
     name = fields.Char(required=True, translate=True)

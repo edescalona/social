@@ -341,10 +341,11 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         self.assertEqual(patch_sendone.call_args[0][1], self.env.user.partner_id)
 
     def test_clear_credentials_flag_takes_the_warning_down(self):
-        """A new authorization is what the flag always promised would clear it.
+        """A new authorization is what the flag promises will clear it.
 
-        Nothing in base used to do it: the flag only ever went down as a side
-        effect of the import, which is not base's any more.
+        Nothing else in base takes it down: neither a call that answered nor
+        an import that went through, because both happen just as well with
+        credentials the social media is about to refuse.
         """
         self.social_account_id.need_update = True
         Bus = self.env["bus.bus"]
@@ -459,7 +460,7 @@ class TestSocialAccountBaseCredentials(TestSocialMediaBaseCommon):
         )
 
     def test_run_check_media_updates_asks_for_the_domain(self):
-        """Which accounts are checked is not decided here any more.
+        """Which accounts are checked is the domain's decision, not the cron's.
 
         Base leaves no account out; a module that reads the social media for
         something else is the one that has a reason to, and it says so by
