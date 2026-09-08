@@ -8,6 +8,11 @@ import {DropdownItem} from "@web/core/dropdown/dropdown_item";
 import {SocialComposer} from "../social_composer/social_composer.esm";
 import {_t} from "@web/core/l10n/translation";
 
+// Drawn for a comment whose author has no picture to show. The grey
+// silhouette of `base` is the one Odoo itself uses where it knows a
+// person is missing, and it says exactly that: nobody in particular.
+const AUTHOR_AVATAR_PLACEHOLDER = "/base/static/img/avatar_grey.png";
+
 export class SocialComment extends Component {
     static template = "social_media_sync.SocialComment";
     static components = {
@@ -90,10 +95,16 @@ export class SocialComment extends Component {
     /**
      * The name to show for whoever wrote the comment.
      *
-     * What the social media puts in `actor` is not the same everywhere: X
-     * answers a name, LinkedIn a URN — and, when the comment carries no
-     * `lastModified`, a dict. Anything that is not a readable name falls back
-     * to the author of the publication, which is what was shown before.
+     * The server answers `actor` already resolved into a name to draw, and
+     * the client does not guess: a connector whose API only names the actor
+     * by reference resolves it before answering, and where it cannot it
+     * answers a neutral label of its own.
+     *
+     * What is left here is the answer that carries no name at all — an
+     * identifier, or the dict a comment with no stamp arrives with. That one
+     * is drawn as an unknown author and never as whoever published: signing
+     * a comment with the name of the account is telling the user something
+     * false about who said what.
      *
      * @returns {String} The name to draw in the header.
      */
@@ -102,17 +113,20 @@ export class SocialComment extends Component {
         if (typeof actor === "string" && actor && !actor.startsWith("urn:")) {
             return actor;
         }
-        return this.props.post.author.raw_value;
+        return _t("Unknown author");
     }
 
     /**
-     * @returns {String} The avatar of the comment, or the one of the account.
+     * The picture of whoever wrote the comment.
+     *
+     * Never the avatar of the account, for the same reason `authorName` is
+     * never its name: the logo of the page next to a comment somebody else
+     * wrote attributes it to the page.
+     *
+     * @returns {String} The picture of the author, or a generic silhouette.
      */
     get authorAvatarUrl() {
-        return (
-            this.props.socialComment.author_image ||
-            `/web/image/social.account/${this.props.post.account_id.raw_value}/image_128`
-        );
+        return this.props.socialComment.author_image || AUTHOR_AVATAR_PLACEHOLDER;
     }
 
     get isReplyTarget() {
