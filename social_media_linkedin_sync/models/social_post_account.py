@@ -535,11 +535,13 @@ class SocialPostAccount(models.Model):
             )
             if response.status_code == 200:
                 response_comments = response.json().get("elements", [])
-                comments = self._mark_liked_comments(
-                    [
-                        self._linkedin_comment_values(comment)
-                        for comment in response_comments
-                    ]
+                comments = self._resolve_comment_actors(
+                    self._mark_liked_comments(
+                        [
+                            self._linkedin_comment_values(comment)
+                            for comment in response_comments
+                        ]
+                    )
                 )
             else:
                 return_message = _(
@@ -592,11 +594,13 @@ class SocialPostAccount(models.Model):
             payload = response.json()
             return {
                 "success": True,
-                "data": self._mark_liked_comments(
-                    [
-                        self._linkedin_comment_values(element)
-                        for element in payload.get("elements", [])
-                    ]
+                "data": self._resolve_comment_actors(
+                    self._mark_liked_comments(
+                        [
+                            self._linkedin_comment_values(element)
+                            for element in payload.get("elements", [])
+                        ]
+                    )
                 ),
                 # LinkedIn answers how many replies the comment has in the same
                 # payload as the replies themselves, which is the only moment it
@@ -690,7 +694,9 @@ class SocialPostAccount(models.Model):
         comment = self._linkedin_comment_values(element)
         if not comment.get("remote_ref"):
             return {}
-        return {"comment": comment}
+        # The comment was just written by this account, so its actor resolves
+        # out of Odoo and the shortcut costs no call to LinkedIn.
+        return {"comment": self._resolve_comment_actors([comment])[0]}
 
     def create_comment(self, post_data, context=None):
         if self.account_id.media_type == "linkedin":
