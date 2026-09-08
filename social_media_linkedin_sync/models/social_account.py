@@ -30,7 +30,11 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     social_url_encode,
 )
 
-from ..social_linkedin_sync_utils import _SCOPE_SYNC_LINKEDIN
+from ..social_linkedin_sync_utils import (
+    _PROJECTION_ACTOR_LINKEDIN,
+    _SCOPE_SYNC_LINKEDIN,
+    _URN_PERSON_LINKEDIN,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -415,6 +419,106 @@ class SocialAccount(models.Model):
         if reacted is None or not entity:
             return {}
         return {"liked_by_account": entity in reacted}
+
+    def _get_linkedin_actors(self, urns):
+        """Resolve the actors of a thread into the name and picture to draw.
+
+        Only the organizations can be asked about. The Profile API answers
+        for the authenticated member and no other, and the token of the
+        connector belongs to the page, so a person is dropped before the
+        call: there is nothing to ask for. The account itself is dropped for
+        the opposite reason, its name and its avatar are already in Odoo.
+
+        One call per distinct organization, which is why the URNs of the
+        whole batch arrive together: a thread has as many comments as it has,
+        but few organizations behind them.
+
+        A name is never worth a thread. An organization LinkedIn refuses --a
+        ``403`` is what one the account does not administer answers-- is
+        logged and left out of the result, and the caller draws it with a
+        neutral label. Nothing raises out of here.
+
+        :param urns: the URNs naming the actors of the comments, repetitions
+            and actors of any other kind included.
+        :return: ``{urn: {"name": str, "image": str or False}}``, holding
+            only the organizations that answered a name.
+        :rtype: dict
+        """
+        self.ensure_one()
+        asked = [
+            urn
+            for urn in dict.fromkeys(urns or [])
+            if urn
+            and urn != self.remote_ref
+            and not urn.startswith(_URN_PERSON_LINKEDIN)
+        ]
+        if not asked:
+            return {}
+        headers = self.media_id._get_linkedin_headers(
+            access_token=self.sudo().access_token
+        )
+        actors = {}
+        for urn in asked:
+            try:
+                response = self._request_linkedin(
+                    endpoint=f"/organizations/{urn.split(':')[-1]}",
+                    linkedin_v2=True,
+                    headers=headers,
+                    params={"projection": _PROJECTION_ACTOR_LINKEDIN},
+                )
+            except UserError:
+                _logger.info("LinkedIn could not be reached for the actor %s", urn)
+                continue
+            if not isinstance(response, dict):
+                _logger.info(
+                    "The LinkedIn actor %s could not be read: %s",
+                    urn,
+                    getattr(response, "status_code", response),
+                )
+                continue
+            # The organization publishes its name in several languages: the
+            # one of the user is preferred, and any of them is taken rather
+            # than drawing the comment with no name at all.
+            localized = response.get("name", {}).get("localized", {})
+            name = (
+                localized.get(self.env.user.lang)
+                or localized.get("en_US")
+                or next(iter(localized.values()), "")
+            )
+            if not name:
+                continue
+            actors[urn] = {
+                "name": name,
+                "image": self._get_linkedin_actor_image(response),
+            }
+        return actors
+
+    def _get_linkedin_actor_image(self, organization):
+        """Return the URL of the logo of an organization, largest first.
+
+        The URL of a playable stream, not the bytes behind it: the logo of an
+        actor is only drawn while the dialog of the thread is open, so
+        nothing is downloaded and nothing is stored. That is what tells this
+        apart from ``_get_linkedin_organization_logo``, which does download
+        the logo because it becomes the avatar of the account.
+
+        :param organization: the organization as the Organizations API
+            answered it.
+        :return: the URL of the logo, ``False`` when LinkedIn reported none.
+        :rtype: str or bool
+        """
+        elements = (
+            organization.get("logoV2", {}).get("original~", {}).get("elements", [])
+        )
+        if not elements:
+            return False
+        preferred = [
+            element
+            for element in elements
+            if "logo_400_400" in element.get("artifact", "")
+        ] or elements
+        identifiers = preferred[0].get("identifiers", [])
+        return identifiers[0].get("identifier", False) if identifiers else False
 
     def _get_entity_statistics(
         self,
