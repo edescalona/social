@@ -70,13 +70,6 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
             "relinked by their user name",
         )
 
-    def test_check_can_associate_other_company(self):
-        other_company = self.env["res.company"].create({"name": "Another company"})
-        self.env.user.write({"company_ids": [(3, other_company.id)]})
-        self.social_account_id.write({"company_id": other_company.id})
-        with self.assertRaises(AccessError):
-            self.social_account_id._check_can_associate()
-
     def test_purge_account(self):
         post = self.social_post_id
         post_account = self.social_post_account_id
@@ -538,7 +531,10 @@ class TestSocialAccountBaseCredentials(TestSocialMediaBaseCommon):
 
 @tagged("post_install", "-at_install")
 class TestSocialAccountBaseUsers(TestSocialMediaBaseCommon):
-    """Users are created here, so every module has to be in the registry."""
+    """Users and companies are created here, so every module has to be in the
+    registry: a record of a model another module extends with a required
+    column is only creatable once that module is loaded.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -654,6 +650,13 @@ class TestSocialAccountBaseUsers(TestSocialMediaBaseCommon):
             self.social_account_id.with_user(social_user)._check_can_associate()
         manager = self._create_social_media_manager()
         self.social_account_id.with_user(manager)._check_can_associate()
+
+    def test_check_can_associate_other_company(self):
+        other_company = self.env["res.company"].create({"name": "Another company"})
+        self.env.user.write({"company_ids": [(3, other_company.id)]})
+        self.social_account_id.write({"company_id": other_company.id})
+        with self.assertRaises(AccessError):
+            self.social_account_id._check_can_associate()
 
     def test_can_manage_account(self):
         social_user = self._create_social_media_user()
