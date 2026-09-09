@@ -193,11 +193,12 @@ network each time.
 
 Connector hooks on `social.post.account` (empty in `social_media_sync`, filled by
 `social_media_linkedin_sync` / `social_media_x_sync`): `get_comments`,
-`get_comment_replies`, `create_comment`, `action_like_post` / `action_unlike_post`,
-`action_like_comment` / `action_unlike_comment`, `_check_remote_post_exists`. A
-connector whose API returns the whole thread nested leaves `get_comment_replies`
-unimplemented. When an action reveals the publication is gone, the answer carries
-`post_deleted` and `_register_remote_post_gone()` marks the line `deleted`.
+`get_comment_replies`, `create_comment`, `delete_comment`, `action_like_post` /
+`action_unlike_post`, `action_like_comment` / `action_unlike_comment`,
+`_check_remote_post_exists`. A connector whose API returns the whole thread nested
+leaves `get_comment_replies` unimplemented. When an action reveals the publication is
+gone, the answer carries `post_deleted` and `_register_remote_post_gone()` marks the
+line `deleted`.
 
 ## Rules that are easy to break
 
@@ -261,15 +262,14 @@ under the same globs in their own manifest `assets`.
 
 Registry names in use, with the module that registers them:
 
-| Category | Name                                                                                         | Module        |
-| -------- | -------------------------------------------------------------------------------------------- | ------------- |
-| views    | `social_kanban`                                                                              | base          |
-| views    | `social_calendar`                                                                            | calendar      |
-| views    | `social_ads_kanban`                                                                          | advertising   |
-| fields   | `social_post_preview`, `social_message`, `social_media_binary`, `social_post_account_kanban` | base          |
-| services | `social_media_notification` (session channel + the `social_form_*` bus types)                | base          |
-| services | `social_service` (sync also patches mail's `ThreadService` prototype)                        | sync          |
-| services | `social_linkedin_service`                                                                    | linkedin_sync |
+| Category | Name                                                                                         | Module      |
+| -------- | -------------------------------------------------------------------------------------------- | ----------- |
+| views    | `social_kanban`                                                                              | base        |
+| views    | `social_calendar`                                                                            | calendar    |
+| views    | `social_ads_kanban`                                                                          | advertising |
+| fields   | `social_post_preview`, `social_message`, `social_media_binary`, `social_post_account_kanban` | base        |
+| services | `social_media_notification` (session channel + the `social_form_*` bus types)                | base        |
+| services | `social_service` (sync also patches mail's `ThreadService` prototype)                        | sync        |
 
 Bus types consumed by the client, and who consumes them:
 
@@ -285,8 +285,7 @@ The mixin composes its own danger type as
 listens on a different type without any server change.
 
 SCSS order matters and is enforced by the manifest globs: `_social_mixins.scss` is
-listed before the rest, because the whole bundle is compiled as one unit. Same reason
-`social_media_linkedin_sync` lists `js/services/**` before `components/**`.
+listed before the rest, because the whole bundle is compiled as one unit.
 
 ## Tests
 

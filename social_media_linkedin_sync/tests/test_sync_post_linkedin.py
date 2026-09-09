@@ -1050,45 +1050,45 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         )
 
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
-    def test_delete_linkedin_comment_success(self, mock_request):
+    def test_delete_comment_success(self, mock_request):
         mock_response = MagicMock()
         mock_response.status_code = 204
         mock_request.return_value = mock_response
         comment_id = "123456"
-        result = self.SocialPostAccountLinkedin.delete_linkedin_comment(comment_id)
+        result = self.SocialPostAccountLinkedin.delete_comment(comment_id)
         self.assertEqual(result["success"], True)
 
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.json.return_value = {"message": "Internal Server Error"}
         mock_request.return_value = mock_response
-        result = self.SocialPostAccountLinkedin.delete_linkedin_comment(comment_id)
+        result = self.SocialPostAccountLinkedin.delete_comment(comment_id)
         self.assertEqual(result["success"], False)
 
         mock_response = MagicMock()
         mock_response.status_code = 404
         mock_response.json.return_value = {"message": "Not Found"}
         mock_request.return_value = mock_response
-        result = self.SocialPostAccountLinkedin.delete_linkedin_comment(comment_id)
+        result = self.SocialPostAccountLinkedin.delete_comment(comment_id)
         self.assertEqual(result["success"], False)
 
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
-    def test_delete_linkedin_comment_acts_as_the_account(self, mock_request):
+    def test_delete_comment_acts_as_the_account(self, mock_request):
         """The actor of the deletion is the account, never what is sent in."""
         mock_response = MagicMock()
         mock_response.status_code = 204
         mock_request.return_value = mock_response
-        self.SocialPostAccountLinkedin.delete_linkedin_comment("123456")
+        self.SocialPostAccountLinkedin.delete_comment("123456")
         call_kwargs = mock_request.call_args.kwargs
         self.assertEqual(
             call_kwargs["params_values"]["actor"],
             self.SocialAccountLinkedin.remote_ref,
         )
 
-    def test_delete_linkedin_comment_takes_no_actor_from_the_caller(self):
+    def test_delete_comment_takes_no_actor_from_the_caller(self):
         """The signature offers no way of choosing whom the deletion acts as."""
         with self.assertRaises(TypeError):
-            self.SocialPostAccountLinkedin.delete_linkedin_comment(
+            self.SocialPostAccountLinkedin.delete_comment(
                 "123456", "urn:li:person:somebody-else"
             )
 

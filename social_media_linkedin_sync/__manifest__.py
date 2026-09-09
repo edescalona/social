@@ -19,10 +19,6 @@
             "social_media_linkedin_sync/static/tests/tours/**/*.js",
         ],
         "web.assets_backend": [
-            # Services first: the patch of SocialComment asks for
-            # social_linkedin_service on setup, so it has to be registered
-            # by the time the component is defined.
-            "social_media_linkedin_sync/static/src/js/services/**/*.js",
             "social_media_linkedin_sync/static/src/components/**/*.js",
             "social_media_linkedin_sync/static/src/js/views/**/*.js",
         ],

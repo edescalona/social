@@ -236,7 +236,27 @@ def _encoded_urns_bytes(urns, param_field):
     return len(encoded.encode())
 
 
-def _batch_urns_by_url_size(urns, param_field, fixed_query_bytes=0):
+def _query_string_bytes(params_fields, params_values):
+    """Return what the given query parameters weigh once encoded.
+
+    Tells how much room is left for the URNs of a statistics call, the only
+    part of the query string that can be split.
+
+    :param params_fields: the names of the parameters already in the query.
+    :param params_values: the values of every parameter, keyed by name.
+    :rtype: int
+    """
+    return sum(
+        len(social_url_encode(param_field, params_values).encode())
+        # The "&" joining this parameter to the next one.
+        + 1
+        for param_field in params_fields
+    )
+
+
+def _batch_urns_by_url_size(
+    urns, param_field, fixed_query_bytes=0, params_fields=None, params_values=None
+):
     """Split the URNs into batches whose query string LinkedIn accepts.
 
     The statistics endpoints take every URN in the query string and none of
@@ -254,9 +274,14 @@ def _batch_urns_by_url_size(urns, param_field, fixed_query_bytes=0):
     :param urns: the URNs to split, in the order they should be asked for.
     :param param_field: the name of the query parameter carrying them.
     :param fixed_query_bytes: what the rest of the query string weighs.
+    :param params_fields: the parameters already in the query, weighed here
+        instead of by the caller. Given, they replace ``fixed_query_bytes``.
+    :param params_values: the values of those parameters, keyed by name.
     :return: the batches of URNs, empty when there is nothing to ask for.
     :rtype: list
     """
+    if params_fields:
+        fixed_query_bytes = _query_string_bytes(params_fields, params_values or {})
     budget = (
         _QUERY_STRING_MAX_BYTES_LINKEDIN
         - _QUERY_STRING_MARGIN_BYTES_LINKEDIN

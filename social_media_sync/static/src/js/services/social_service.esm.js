@@ -60,6 +60,22 @@ export const socialService = {
                     commentRef,
                 ]);
             },
+            /**
+             * Delete one comment of the thread of a publication.
+             *
+             * @param {Number} postAccountId the publication holding it.
+             * @param {String} commentRef the comment on the social media.
+             * @returns {Promise<Object>} what the connector answered.
+             */
+            async deleteComment(postAccountId, commentRef) {
+                if (!postAccountId) {
+                    return [];
+                }
+                return await orm.call("social.post.account", "delete_comment", [
+                    [postAccountId],
+                    commentRef,
+                ]);
+            },
             async likeComment(postAccountId, commentRef, actorUrn) {
                 return await this._reactComment(
                     "action_like_comment",

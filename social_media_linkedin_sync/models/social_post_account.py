@@ -109,6 +109,19 @@ class SocialPostAccount(models.Model):
             owned.sudo().unlink()
         return removed
 
+    def _linkedin_headers(self, **kwargs):
+        """Return the headers of a call about this publication.
+
+        Every call of this module travels on the token of the account the
+        publication belongs to, so the token is filled in here instead of at
+        each call site. Anything else the call needs goes through as it is.
+
+        :rtype: dict
+        """
+        return self.account_id.media_id._get_linkedin_headers(
+            self.account_id.sudo().access_token, **kwargs
+        )
+
     def _react_linkedin(self, root, author_urn):
         """Create a LIKE reaction on a LinkedIn entity.
 
@@ -125,9 +138,7 @@ class SocialPostAccount(models.Model):
         return self.account_id._request_linkedin(
             method="POST",
             endpoint="/reactions",
-            headers=self.account_id.media_id._get_linkedin_headers(
-                self.account_id.sudo().access_token, content_type="application/json"
-            ),
+            headers=self._linkedin_headers(content_type="application/json"),
             token=True,
             return_json=False,
             linkedin_v2=True,
@@ -155,9 +166,7 @@ class SocialPostAccount(models.Model):
         return self.account_id._request_linkedin(
             method="DELETE",
             endpoint=f"/reactions/{linkedin_reaction_id(author_urn, root)}",
-            headers=self.account_id.media_id._get_linkedin_headers(
-                self.account_id.sudo().access_token
-            ),
+            headers=self._linkedin_headers(),
             token=True,
             return_json=False,
             linkedin_v2=True,
@@ -503,6 +512,38 @@ class SocialPostAccount(models.Model):
             return _("LinkedIn member"), False
         return _("LinkedIn page"), False
 
+    def _read_linkedin_comments(self, target):
+        """Ask LinkedIn for the comments hanging from an entity.
+
+        One endpoint answers both threads: the comments of a publication and
+        the replies of a comment. What tells them apart is the URN it is
+        asked about, so the two callers differ in that and in nothing else.
+
+        :param target: the URN of the publication or of the comment.
+        :return: the answer, left unchecked for the caller to word its own
+            error.
+        """
+        return self.account_id._request_linkedin(
+            method="GET",
+            endpoint=f"/socialActions/{quote(target)}/comments",
+            headers=self._linkedin_headers(),
+            token=True,
+            return_json=False,
+            linkedin_v2=True,
+        )
+
+    def _shape_linkedin_comments(self, elements):
+        """Turn the comments LinkedIn answered into what the dialog draws.
+
+        :param elements: the ``elements`` of the answer.
+        :rtype: list
+        """
+        return self._resolve_comment_actors(
+            self._mark_liked_comments(
+                [self._linkedin_comment_values(element) for element in elements]
+            )
+        )
+
     def get_comments(self):
         data = super().get_comments()
         if self.account_id.media_type != "linkedin":
@@ -513,25 +554,10 @@ class SocialPostAccount(models.Model):
         self.account_id._check_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
         comments = []
         if self.remote_ref:
-            response = self.account_id._request_linkedin(
-                method="GET",
-                endpoint=f"/socialActions/{quote(self.remote_ref)}/comments",
-                headers=self.account_id.media_id._get_linkedin_headers(
-                    self.account_id.sudo().access_token
-                ),
-                token=True,
-                return_json=False,
-                linkedin_v2=True,
-            )
+            response = self._read_linkedin_comments(self.remote_ref)
             if response.status_code == 200:
-                response_comments = response.json().get("elements", [])
-                comments = self._resolve_comment_actors(
-                    self._mark_liked_comments(
-                        [
-                            self._linkedin_comment_values(comment)
-                            for comment in response_comments
-                        ]
-                    )
+                comments = self._shape_linkedin_comments(
+                    response.json().get("elements", [])
                 )
             else:
                 return_message = _(
@@ -555,16 +581,7 @@ class SocialPostAccount(models.Model):
     def get_comment_replies(self, comment_ref):
         if self.account_id.media_type == "linkedin":
             self.account_id._check_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
-            response = self.account_id._request_linkedin(
-                method="GET",
-                endpoint=f"/socialActions/{quote(comment_ref)}/comments",
-                headers=self.account_id.media_id._get_linkedin_headers(
-                    self.account_id.sudo().access_token
-                ),
-                token=True,
-                return_json=False,
-                linkedin_v2=True,
-            )
+            response = self._read_linkedin_comments(comment_ref)
             if response.status_code != 200:
                 return_message = _(
                     "The replies could not be read from LinkedIn: %(error)s",
@@ -584,14 +601,7 @@ class SocialPostAccount(models.Model):
             payload = response.json()
             return {
                 "success": True,
-                "data": self._resolve_comment_actors(
-                    self._mark_liked_comments(
-                        [
-                            self._linkedin_comment_values(element)
-                            for element in payload.get("elements", [])
-                        ]
-                    )
-                ),
+                "data": self._shape_linkedin_comments(payload.get("elements", [])),
                 # LinkedIn answers how many replies the comment has in the same
                 # payload as the replies themselves, which is the only moment it
                 # says it at all.
@@ -618,9 +628,7 @@ class SocialPostAccount(models.Model):
             response = self.account_id._request_linkedin(
                 method="POST",
                 endpoint=f"/socialActions/{quote(target)}/comments",
-                headers=self.account_id.media_id._get_linkedin_headers(
-                    self.account_id.sudo().access_token
-                ),
+                headers=self._linkedin_headers(),
                 json_data=json_data,
                 token=True,
                 return_json=False,
@@ -694,7 +702,7 @@ class SocialPostAccount(models.Model):
         else:
             return super().create_comment(post_data, context)
 
-    def delete_linkedin_comment(self, comment_id):
+    def delete_comment(self, comment_ref):
         """Delete one comment of the thread of this publication.
 
         LinkedIn honours the deletion for the author of the comment and for
@@ -704,30 +712,32 @@ class SocialPostAccount(models.Model):
         from the caller, or an RPC could choose whom the deletion is
         attributed to.
 
-        :param comment_id: id of the comment to delete, inside this thread.
+        :param comment_ref: id of the comment to delete, inside this thread.
         :rtype: dict
         """
-        if self.account_id.media_type == "linkedin":
-            response = self.account_id._request_linkedin(
-                method="DELETE",
-                endpoint=f"/socialActions/{quote(self.remote_ref)}/comments/{quote(comment_id)}",
-                headers=self.account_id.media_id._get_linkedin_headers(
-                    self.account_id.sudo().access_token
+        if self.account_id.media_type != "linkedin":
+            return super().delete_comment(comment_ref)
+        response = self.account_id._request_linkedin(
+            method="DELETE",
+            endpoint=(
+                f"/socialActions/{quote(self.remote_ref)}"
+                f"/comments/{quote(comment_ref)}"
+            ),
+            headers=self._linkedin_headers(),
+            params_fields=["actor"],
+            params_values={"actor": self.account_id.remote_ref},
+            token=True,
+            return_json=False,
+            linkedin_v2=True,
+        )
+        if response.status_code != 204:
+            return {
+                "success": False,
+                "message": _(
+                    "An error occurred while deleting the comment or it "
+                    "no longer exists, please try again later."
                 ),
-                params_fields=["actor"],
-                params_values={"actor": self.account_id.remote_ref},
-                token=True,
-                return_json=False,
-                linkedin_v2=True,
-            )
-            if response.status_code != 204:
-                return {
-                    "success": False,
-                    "message": _(
-                        "An error occurred while deleting the comment or it "
-                        "no longer exists, please try again later."
-                    ),
-                }
+            }
         return {
             "success": True,
         }
@@ -746,9 +756,7 @@ class SocialPostAccount(models.Model):
         try:
             response = self.account_id._request_linkedin(
                 endpoint=f"/posts/{quote(self.remote_ref)}",
-                headers=self.account_id.media_id._get_linkedin_headers(
-                    self.account_id.sudo().access_token
-                ),
+                headers=self._linkedin_headers(),
                 return_json=False,
             )
         except Exception:  # noqa: BLE001 - unreachable is not deleted

@@ -671,11 +671,7 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             "organizationalEntity": "urn:li:organization:123456",
         }
         with patch(
-            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_share_statistics"),
-            autospec=True,
-            return_value={},
-        ), patch(
-            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_ugc_share_statistics"),
+            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_entity_share_statistics"),
             autospec=True,
             return_value={},
         ), patch(
@@ -697,18 +693,20 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             },
         )
 
-    def test_get_share_statistics(self):
-        self.assertEqual(self.SocialAccountLinkedin._get_share_statistics(), {})
+    def test_get_entity_share_statistics_of_the_shares(self):
         params_fields = ["q"]
         params_values = {"q": "organizationalEntity"}
         self.assertEqual(
-            self.SocialAccountLinkedin._get_share_statistics(
-                posts=[{"id": "urn:li:ugcPost:1"}],
+            self.SocialAccountLinkedin._get_entity_share_statistics(
+                [],
+                "shares",
+                "share",
+                "boom",
                 params_fields=params_fields,
                 params_values=params_values,
             ),
             {},
-            msg="The share endpoint ignores the UGC posts.",
+            msg="Nothing of this kind in the feed, nothing to ask for.",
         )
         self.assertNotIn("shares", params_fields)
         response = MagicMock(status_code=200)
@@ -732,8 +730,11 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             autospec=True,
             return_value=response,
         ) as mock_request:
-            data = self.SocialAccountLinkedin._get_share_statistics(
-                posts=[{"id": "urn:li:share:1"}, {"id": "urn:li:ugcPost:2"}],
+            data = self.SocialAccountLinkedin._get_entity_share_statistics(
+                ["urn:li:share:1"],
+                "shares",
+                "share",
+                "boom",
                 params_fields=params_fields,
                 params_values=params_values,
             )
@@ -759,8 +760,11 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             return_value=error_response,
         ):
             with self.assertRaises(UserError):
-                self.SocialAccountLinkedin._get_share_statistics(
-                    posts=[{"id": "urn:li:share:1"}],
+                self.SocialAccountLinkedin._get_entity_share_statistics(
+                    ["urn:li:share:1"],
+                    "shares",
+                    "share",
+                    "boom",
                     params_fields=["q"],
                     params_values={"q": "organizationalEntity"},
                 )
@@ -827,7 +831,7 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
                     params_values={"q": "organizationalEntity"},
                 )
 
-    def test_get_share_statistics_splits_the_urns(self):
+    def test_get_entity_share_statistics_splits_the_urns(self):
         """A feed of more than a page fits in no single query string."""
         urns = self._fake_urns("urn:li:share:", 250)
         response = MagicMock(status_code=200)
@@ -837,8 +841,11 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             autospec=True,
             return_value=response,
         ) as mock_request:
-            self.SocialAccountLinkedin._get_share_statistics(
-                posts=[{"id": urn} for urn in urns],
+            self.SocialAccountLinkedin._get_entity_share_statistics(
+                urns,
+                "shares",
+                "share",
+                "boom",
                 params_fields=["q", "organizationalEntity"],
                 params_values={
                     "q": "organizationalEntity",
@@ -879,9 +886,8 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             asked.extend(call.kwargs["params_values"]["ids"][0].split(","))
         self.assertEqual(asked, urns)
 
-    def test_get_ugc_share_statistics(self):
+    def test_get_entity_share_statistics_of_the_ugc_posts(self):
         """The UGC posts answer the same block of figures as the shares."""
-        self.assertEqual(self.SocialAccountLinkedin._get_ugc_share_statistics(), {})
         response = MagicMock(status_code=200)
         response.json.return_value = {
             "elements": [
@@ -904,8 +910,11 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             autospec=True,
             return_value=response,
         ) as mock_request:
-            data = self.SocialAccountLinkedin._get_ugc_share_statistics(
-                posts=[{"id": "urn:li:ugcPost:1"}, {"id": "urn:li:share:2"}],
+            data = self.SocialAccountLinkedin._get_entity_share_statistics(
+                ["urn:li:ugcPost:1"],
+                "ugcPosts",
+                "ugcPost",
+                "boom",
                 params_fields=["q"],
                 params_values={"q": "organizationalEntity"},
             )
@@ -930,22 +939,27 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             return_value=error_response,
         ):
             with self.assertRaises(UserError):
-                self.SocialAccountLinkedin._get_ugc_share_statistics(
-                    posts=[{"id": "urn:li:ugcPost:1"}],
+                self.SocialAccountLinkedin._get_entity_share_statistics(
+                    ["urn:li:ugcPost:1"],
+                    "ugcPosts",
+                    "ugcPost",
+                    "boom",
                     params_fields=["q"],
                     params_values={"q": "organizationalEntity"},
                 )
 
     def test_get_entity_statistics_merges_the_two_ugc_sources(self):
         """A UGC post keeps its figures and takes its likes from the feed."""
+        entity_answers = {
+            "shares": {"urn:li:share:1": (1, 2, 3, 4, 0.5, 6)},
+            "ugcPosts": {"urn:li:ugcPost:1": (9, 0, 0, 3, 0.25, 40)},
+        }
         with patch(
-            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_share_statistics"),
+            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_entity_share_statistics"),
             autospec=True,
-            return_value={"urn:li:share:1": (1, 2, 3, 4, 0.5, 6)},
-        ), patch(
-            PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_ugc_share_statistics"),
-            autospec=True,
-            return_value={"urn:li:ugcPost:1": (9, 0, 0, 3, 0.25, 40)},
+            side_effect=lambda account, urns, param_field, *args, **kwargs: (
+                entity_answers[param_field]
+            ),
         ), patch(
             PATCH_SYNC_ACCOUNT_LINKEDIN.format("_get_ugc_posts_statistics"),
             autospec=True,

@@ -1,7 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import json
 import logging
 from datetime import timedelta
 
@@ -17,16 +16,15 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
     _URN_ORGANIZATION_LINKEDIN,
-    _URN_SHARE_LINKEDIN,
     _URN_UGC_POST_LINKEDIN,
     _URN_VIDEO_LINKEDIN,
     _batch_urns_by_url_size,
     datetime_from_epoch_milliseconds,
     linkedin_reaction_id,
-    social_url_encode,
 )
 
 from ..social_linkedin_sync_utils import (
+    _ENTITY_STATISTICS_LINKEDIN,
     _PROJECTION_ACTOR_LINKEDIN,
     _SCOPE_SYNC_LINKEDIN,
     _URN_PERSON_LINKEDIN,
@@ -62,7 +60,7 @@ class SocialAccount(models.Model):
         "pass.",
     )
 
-    linkedin_statistics_checkpoint = fields.Char(
+    linkedin_statistics_checkpoint = fields.Json(
         string="Statistics Checkpoint",
         copy=False,
         groups="base.group_system",
@@ -123,21 +121,6 @@ class SocialAccount(models.Model):
             _POSTS_MAX_PAGES_LINKEDIN,
         )
         return posts, False
-
-    def _query_string_bytes(self, params_fields, params_values):
-        """Return what the given query parameters weigh once encoded.
-
-        Tells how much room is left for the URNs of a statistics call, the
-        only part of the query string that can be split.
-
-        :rtype: int
-        """
-        return sum(
-            len(social_url_encode(param_field, params_values).encode())
-            # The "&" joining this parameter to the next one.
-            + 1
-            for param_field in params_fields
-        )
 
     def _filter_urns(self, posts, urn_prefix):
         """Return the URNs of the posts of one kind, in the order given.
@@ -204,10 +187,12 @@ class SocialAccount(models.Model):
         :rtype: dict
         """
         data = {}
-        params_fields = list(params_fields or [])
-        params_values = dict(params_values or {})
-        fixed_bytes = self._query_string_bytes(params_fields, params_values)
-        for batch in _batch_urns_by_url_size(urns, param_field, fixed_bytes):
+        for batch in _batch_urns_by_url_size(
+            urns,
+            param_field,
+            params_fields=params_fields,
+            params_values=params_values,
+        ):
             response = self._request_linkedin(
                 endpoint="/organizationalEntityShareStatistics",
                 headers=self.media_id._get_linkedin_headers(
@@ -229,55 +214,6 @@ class SocialAccount(models.Model):
             data.update(self._parse_share_statistics(response.json(), urn_key))
         return data
 
-    def _get_share_statistics(
-        self,
-        posts=None,
-        params_fields=None,
-        params_values=None,
-    ):
-        """Read the statistics of the share posts among the given ones.
-
-        :return: Statistics tuple by share URN.
-        :rtype: dict
-        """
-        if not posts:
-            return {}
-        return self._get_entity_share_statistics(
-            self._filter_urns(posts, _URN_SHARE_LINKEDIN),
-            "shares",
-            "share",
-            _("The statistics of the shared publications could not be read"),
-            params_fields=params_fields,
-            params_values=params_values,
-        )
-
-    def _get_ugc_share_statistics(
-        self,
-        posts=None,
-        params_fields=None,
-        params_values=None,
-    ):
-        """Read the statistics of the UGC posts among the given ones.
-
-        Same endpoint as the shares, asked with the ``ugcPosts`` parameter.
-        It is what brings the clicks, the shares, the engagement and the
-        impressions of a UGC post: ``socialActions`` only knows its likes and
-        its comments.
-
-        :return: Statistics tuple by UGC post URN.
-        :rtype: dict
-        """
-        if not posts:
-            return {}
-        return self._get_entity_share_statistics(
-            self._filter_urns(posts, _URN_UGC_POST_LINKEDIN),
-            "ugcPosts",
-            "ugcPost",
-            _("The statistics of the publications could not be read"),
-            params_fields=params_fields,
-            params_values=params_values,
-        )
-
     def _get_ugc_posts_statistics(
         self,
         posts=None,
@@ -297,11 +233,13 @@ class SocialAccount(models.Model):
         data = {}
         if not posts:
             return data
-        params_fields = list(params_fields or [])
-        params_values = dict(params_values or {})
-        fixed_bytes = self._query_string_bytes(params_fields, params_values)
         urns = self._filter_urns(posts, _URN_UGC_POST_LINKEDIN)
-        for batch in _batch_urns_by_url_size(urns, "ids", fixed_bytes):
+        for batch in _batch_urns_by_url_size(
+            urns,
+            "ids",
+            params_fields=params_fields,
+            params_values=params_values,
+        ):
             response = self._request_linkedin(
                 endpoint="/socialActions",
                 headers=self.media_id._get_linkedin_headers(
@@ -552,8 +490,25 @@ class SocialAccount(models.Model):
             "params_fields": list(params_fields),
             "params_values": dict(params_values),
         }
-        data = self._get_share_statistics(posts=posts, **entity_params)
-        data.update(self._get_ugc_share_statistics(posts=posts, **entity_params))
+        # The same endpoint asked once per kind of publication. Both bring the
+        # clicks, the shares, the engagement and the impressions; the likes and
+        # the comments come from ``socialActions`` below, which is the source
+        # LinkedIn documents as the up-to-date one.
+        errors_by_field = {
+            "shares": _("The statistics of the shared publications could not be read"),
+            "ugcPosts": _("The statistics of the publications could not be read"),
+        }
+        data = {}
+        for urn_prefix, param_field, urn_key in _ENTITY_STATISTICS_LINKEDIN:
+            data.update(
+                self._get_entity_share_statistics(
+                    self._filter_urns(posts, urn_prefix),
+                    param_field,
+                    urn_key,
+                    errors_by_field[param_field],
+                    **entity_params,
+                )
+            )
         # ``socialActions`` takes neither the criteria of the share finder
         # nor the organization it is about.
         social_actions = self._get_ugc_posts_statistics(
@@ -865,22 +820,22 @@ class SocialAccount(models.Model):
     def _linkedin_statistics_checkpoint(self, statistics):
         """Return the stored form of the daily buckets of a page.
 
-        Kept as sorted JSON so the value is stable whatever order LinkedIn
-        answered the buckets in.
+        The figures are turned into lists, which is the shape the column
+        answers with: left as the tuples ``_linkedin_watched_figures`` builds,
+        they would read as unusable on the very transaction that wrote them,
+        before the value has made the round trip.
 
         :param statistics: the buckets as ``_linkedin_watched_figures`` returns
-            them, keyed by the ISO day. A string and never a ``date``: this very
-            dictionary travels through ``json.dumps``, so changing the key
-            invalidates every checkpoint already stored.
-        :return: the value to store, empty when there is nothing to compare.
-        :rtype: str
+            them, keyed by the ISO day. A string and never a ``date``: the keys
+            are stored as they are, so changing them invalidates every
+            checkpoint already stored.
+        :return: the value to store, ``False`` when there is nothing to
+            compare.
+        :rtype: dict
         """
         if not statistics:
-            return ""
-        return json.dumps(
-            {period: list(figures) for period, figures in statistics.items()},
-            sort_keys=True,
-        )
+            return False
+        return {period: list(figures) for period, figures in statistics.items()}
 
     @api.model
     def _linkedin_statistics_snapshot(self, checkpoint):
@@ -894,17 +849,11 @@ class SocialAccount(models.Model):
         :return: the buckets by day, empty when there is nothing usable.
         :rtype: dict
         """
-        if not checkpoint:
-            return {}
-        try:
-            snapshot = json.loads(checkpoint)
-        except ValueError:
-            return {}
-        if not isinstance(snapshot, dict):
+        if not isinstance(checkpoint, dict):
             return {}
         return {
             period: figures
-            for period, figures in snapshot.items()
+            for period, figures in checkpoint.items()
             if is_list_of(figures, (int, float))
         }
 

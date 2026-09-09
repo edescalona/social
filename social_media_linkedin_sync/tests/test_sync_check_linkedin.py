@@ -109,11 +109,11 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         """
         account = self.SocialAccountLinkedin
         for label, stored in (
-            ("empty", ""),
-            ("not JSON at all", "{not json"),
-            ("a JSON list", "[1, 2]"),
-            ("a JSON string", '"2025-01-01"'),
-            ("a JSON number", "17"),
+            ("empty", False),
+            ("a bare string", "{not json"),
+            ("a list", [1, 2]),
+            ("a day", "2025-01-01"),
+            ("a number", 17),
         ):
             with self.subTest(case=label):
                 self.assertEqual(account._linkedin_statistics_snapshot(stored), {})
@@ -121,9 +121,14 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
         # is dropped on its own: the rest of the mark is still usable.
         self.assertEqual(
             account._linkedin_statistics_snapshot(
-                '{"2025-01-01": [1, 2.5], "2025-01-02": 12, '
-                '"2025-01-03": "12", "2025-01-04": ["12"], '
-                '"2025-01-05": {"clicks": 1}, "2025-01-06": null}'
+                {
+                    "2025-01-01": [1, 2.5],
+                    "2025-01-02": 12,
+                    "2025-01-03": "12",
+                    "2025-01-04": ["12"],
+                    "2025-01-05": {"clicks": 1},
+                    "2025-01-06": None,
+                }
             ),
             {"2025-01-01": [1, 2.5]},
         )
@@ -148,20 +153,18 @@ class TestSocialSyncCheckLinkedin(TestSocialSyncCommonLinkedin):
     def test_run_check_media_updates_reads_a_mark_written_before_the_move(self):
         """A checkpoint already stored keeps reading as a baseline.
 
-        The three helpers moved out of ``social_linkedin_utils`` into the
-        model without touching the stored form, so a value written by the
-        previous version has to compare as it did and not reseed, which
-        would flag every active account on the first pass after deploying.
+        A value in the shape the column holds has to compare and not reseed,
+        which would flag every active account on the first pass after
+        deploying.
         """
         self._isolate_linkedin_account()
-        # Built by hand, in the very form ``json.dumps(sort_keys=True)`` left
-        # in the column: the days sorted, keyed by their ISO string, each one
-        # carrying its figures as a list of numbers.
-        buckets = ", ".join(
-            f'"{day}": {list(figures)}'
+        # Built by hand, in the very form the column holds: the days keyed by
+        # their ISO string, each one carrying its figures as a list of
+        # numbers.
+        stored = {
+            day: list(figures)
             for day, figures in sorted(RECENT_STATISTICS_LINKEDIN.items())
-        )
-        stored = f"{{{buckets}}}"
+        }
         self.assertEqual(
             stored,
             self.SocialAccountLinkedin._linkedin_statistics_checkpoint(

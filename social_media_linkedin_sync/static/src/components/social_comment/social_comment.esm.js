@@ -2,14 +2,8 @@
 
 import {SocialComment} from "@social_media_sync/components/social_comment/social_comment.esm";
 import {patch} from "@web/core/utils/patch";
-import {useService} from "@web/core/utils/hooks";
 
 patch(SocialComment.prototype, {
-    /** @override */
-    setup() {
-        super.setup();
-        this.socialLinkedinService = useService("social_linkedin_service");
-    },
     /**
      * The patch is applied to the prototype, so it answers for every media.
      * Both entry points check the media before acting, or a comment of
@@ -34,7 +28,7 @@ patch(SocialComment.prototype, {
         if (!this._isLinkedinComment()) {
             return super._onDeleteComment();
         }
-        return this.socialLinkedinService.deleteLinkedinComment(
+        return this.socialService.deleteComment(
             this.props.post.id.raw_value,
             this.props.socialComment.id
         );

@@ -246,6 +246,21 @@ class SocialPostAccount(models.Model):
         """
         return {"success": False, "data": [], "count": 0}
 
+    def delete_comment(self, comment_ref):
+        """Delete one comment of the thread, implemented by each connector.
+
+        Only the connectors whose social media lets the owner of a
+        publication moderate its thread need it. The client only offers the
+        entry where ``canDeleteComment`` says so, so this answer is the one a
+        call that should never have been made gets.
+
+        :param comment_ref: reference of the comment on the social media, as
+            ``get_comments`` answered it.
+        :return: ``success`` and, on a failure, the ``message`` to show.
+        :rtype: dict
+        """
+        return {"success": False}
+
     def create_comment(self, post_data, context=None):
         """Create a comment on the social media.
 
