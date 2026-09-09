@@ -81,6 +81,31 @@ class TestSocialPostAccountX(TestSocialCommonX):
                 self.SocialPostAccountX._delete_post_account()
             self.assertIn("Error Delete Post", str(ctx.exception))
 
+    def test_delete_post_account_reports_what_x_answered(self):
+        """A deletion X refused says why, in the words X used.
+
+        tweepy answers the errors as dicts, so joining them as strings raised
+        a ``TypeError`` of ours that hid the reason X gave.
+        """
+        fake_client = MagicMock()
+        fake_client.delete_tweet.return_value = MagicMock(
+            errors=[
+                {"detail": "You are not allowed to delete this Tweet."},
+                {"title": "Unsupported Authentication"},
+            ]
+        )
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            with self.assertRaises(UserError) as ctx:
+                self.SocialPostAccountX._delete_post_account()
+        message = str(ctx.exception)
+        self.assertIn("You are not allowed to delete this Tweet.", message)
+        self.assertIn("Unsupported Authentication", message)
+        self.assertNotIn("expected str instance", message)
+
     def test_delete_post_account_exception_manyrequests(self):
         """A deletion X refused for quota stops the whole deletion.
 

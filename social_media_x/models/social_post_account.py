@@ -83,7 +83,15 @@ class SocialPostAccount(models.Model):
                         )
                         response = client_api.delete_tweet(self.remote_ref)
                         if response.errors:
-                            message_error = ", ".join(response.errors)
+                            # tweepy answers the errors as dicts, so what X
+                            # said is under its message key; the dict itself
+                            # is the fallback for a shape without one.
+                            message_error = ", ".join(
+                                str(
+                                    error.get("detail") or error.get("message") or error
+                                )
+                                for error in response.errors
+                            )
             except TooManyRequests as exManyRequest:
                 self.account_id._get_message_many_requests(
                     exManyRequest, endpoint="delete_post"
