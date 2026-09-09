@@ -138,10 +138,10 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
     def test_unarchiving_the_account_resets_the_overdue_schedule(self):
         """The account keeps restoring its posts through the same path."""
         post = self._create_scheduled_post(minutes=30)
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         self.assertFalse(post.active)
         with freeze_time(fields.Datetime.now() + timedelta(hours=1)):
-            self.social_account_id.action_unarchive_account()
+            self.social_account_id.action_unarchive()
         self.assertTrue(post.active)
         self.assertEqual(post.state, "draft")
 
@@ -153,7 +153,7 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
                 "account_ids": [Command.set([self.social_account_id.id])],
             }
         )
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         post.action_unarchive()
         self.assertFalse(post.account_ids)
         with self.assertRaises(UserError):
@@ -1688,15 +1688,24 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             autospec=True,
             return_value=self.social_post_account_id,
         ) as mock_search:
-            result = self.social_post_id._filter_by_media_types(
-                [], [("message", "ilike", "Test")]
-            )
+            result = self.social_post_id._filter_by_media_types([])
             self.assertEqual(len(result), 1)
             mock_search.assert_called_once()
 
     def test_filter_by_media_types_needs_a_single_post(self):
         with self.assertRaises(ValueError):
             self.SocialPost._filter_by_media_types([])
+
+    def test_get_media_types_domain(self):
+        """The domain a connector overrides to reach other publications."""
+        self.assertEqual(
+            self.social_post_id._get_media_types_domain(["linkedin"]),
+            [
+                ("media_type", "in", ["linkedin"]),
+                ("post_id", "=", self.social_post_id.id),
+                ("state", "in", ("ready", "failed")),
+            ],
+        )
 
     def test_action_cancel(self):
         self.social_post_id.action_cancel()

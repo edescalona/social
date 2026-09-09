@@ -336,13 +336,15 @@ class SocialPostAccount(models.Model):
         a command the identifier would only exist once the write it belongs to
         had run, and the reference would be lost.
 
+        The ``url`` the media is downloaded from is required: the bridges
+        skip a media the social media reported without one instead of asking
+        for it here.
+
         :return: the attachment created, or an empty recordset on failure.
         :rtype: odoo.models.Model
         """
         Attachment = self.env["ir.attachment"]
         attach_values = values or {}
-        if not values.get("url", False):
-            return Attachment.create(attach_values)
         try:
             media_content = requests.get(values["url"], timeout=10)
         except requests.exceptions.RequestException:

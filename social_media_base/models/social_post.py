@@ -533,25 +533,35 @@ class SocialPost(models.Model):
                 counts.get(post_account.id, 0) for post_account in post.post_account_ids
             )
 
-    def _filter_by_media_types(self, media_types, add_domain=None):
+    def _get_media_types_domain(self, media_types):
+        """Return the domain of the publications a connector has to send.
+
+        Its own method so a connector can add a leaf or take one away, which
+        overriding :meth:`~._filter_by_media_types` does not allow: that one
+        answers a recordset, and a leaf cannot be taken back from it.
+
+        :param list media_types: the ``media_type`` values to keep.
+        :rtype: list
+        """
+        self.ensure_one()
+        return [
+            ("media_type", "in", media_types),
+            ("post_id", "=", self.id),
+            ("state", "in", ("ready", "failed")),
+        ]
+
+    def _filter_by_media_types(self, media_types):
         """Return the publications of this post that a connector has to send.
 
         Connectors call it to narrow the publications down to their own media
         and to the states that are still pending.
 
         :param list media_types: the ``media_type`` values to keep.
-        :param list add_domain: extra leaves appended to the domain.
         :rtype: recordset of ``social.post.account``
         """
-        self.ensure_one()
-        domain = [
-            ("media_type", "in", media_types),
-            ("post_id", "=", self.id),
-            ("state", "in", ("ready", "failed")),
-        ]
-        if add_domain:
-            domain += add_domain
-        return self.env["social.post.account"].search(domain)
+        return self.env["social.post.account"].search(
+            self._get_media_types_domain(media_types)
+        )
 
     def action_draft(self):
         for post in self:

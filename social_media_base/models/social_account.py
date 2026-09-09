@@ -246,33 +246,6 @@ class SocialAccount(models.Model):
                 account_name=self.name,
             )
 
-    def action_archive_account(self):
-        """Archive the accounts and their whole footprint.
-
-        Nothing is removed from the social media: relinking the account
-        reactivates everything.
-        """
-        self.write(
-            {
-                "active": False,
-            }
-        )
-
-    def action_unarchive_account(self):
-        """Restore the accounts and everything archived with them.
-
-        The scheduled posts whose date passed while the account was archived
-        are sent back to draft instead of being published on the spot: that is
-        handled by ``social.post.write`` for every way of reactivating a post,
-        see :meth:`~odoo.addons.social_media_base.models.social_post.SocialPost.
-        _reset_overdue_schedule`.
-        """
-        self.write(
-            {
-                "active": True,
-            }
-        )
-
     @api.model
     def _find_account_to_associate(self, media_type, remote_ref, username=None):
         """Return the account already linked to ``remote_ref`` on this media.
@@ -407,6 +380,13 @@ class SocialAccount(models.Model):
 
     @api.model
     def _get_removal_domain(self, media_type):
+        """Return the domain of the accounts an uninstalled module touches.
+
+        Its own method so a connector can narrow it or widen it without
+        rewriting :meth:`~._remove_social_media`.
+
+        :rtype: list
+        """
         return [("media_type", "=", media_type)]
 
     @api.model
@@ -454,6 +434,14 @@ class SocialAccount(models.Model):
 
         Dashboard posts and the posts left without any active account. Other
         modules extend it with their own related records.
+
+        Nothing is removed from the social media: relinking the account
+        reactivates everything. The scheduled posts whose date passed while
+        the account was archived are sent back to draft instead of being
+        published on the spot, which ``social.post.write`` does for every way
+        of reactivating a post, see
+        :meth:`~odoo.addons.social_media_base.models.social_post.SocialPost.
+        _reset_overdue_schedule`.
         """
         SocialPostAccount = self.env["social.post.account"].with_context(
             active_test=False

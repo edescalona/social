@@ -229,8 +229,8 @@ class SocialAdvertisingCampaign(models.Model):
 
         :param account: The social.account used to call the LinkedIn API.
         :param advertising_account_urn: The advertising account URN.
-        :return: The campaign group LinkedIn URN or False.
-        :rtype: str | bool
+        :return: The campaign group LinkedIn URN.
+        :rtype: str
         """
         self.ensure_one()
         if not self.campaign_group_id:
@@ -241,35 +241,33 @@ class SocialAdvertisingCampaign(models.Model):
                 )
             )
         group_campaign = False
-        if advertising_account_urn:
-            if self.campaign_group_id.remote_ref:
-                ad_account_id = advertising_account_urn.split(":")[-1]
-                group_campaign = account._request_linkedin(
-                    endpoint=(
-                        f"{_ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN % ad_account_id}/"
-                        f"{self.campaign_group_id.remote_ref.split(':')[-1]}"
+        if self.campaign_group_id.remote_ref:
+            ad_account_id = advertising_account_urn.split(":")[-1]
+            group_campaign = account._request_linkedin(
+                endpoint=(
+                    f"{_ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN % ad_account_id}/"
+                    f"{self.campaign_group_id.remote_ref.split(':')[-1]}"
+                ),
+                headers=account.media_id._get_linkedin_headers(
+                    account.sudo().access_token
+                ),
+                return_json=False,
+            )
+        if group_campaign and group_campaign.status_code == 200:
+            return self.campaign_group_id.remote_ref
+        elif not group_campaign or group_campaign.status_code == 404:
+            group_campaign = self.campaign_group_id._linkedin_create_group(
+                account, advertising_account_urn
+            )
+        else:
+            raise UserError(
+                _(
+                    "The campaign group could not be checked on LinkedIn: " "%(error)s",
+                    error=self.env["social.account"]._linkedin_error_message(
+                        group_campaign
                     ),
-                    headers=account.media_id._get_linkedin_headers(
-                        account.sudo().access_token
-                    ),
-                    return_json=False,
                 )
-            if group_campaign and group_campaign.status_code == 200:
-                return self.campaign_group_id.remote_ref
-            elif not group_campaign or group_campaign.status_code == 404:
-                group_campaign = self.campaign_group_id._linkedin_create_group(
-                    account, advertising_account_urn
-                )
-            else:
-                raise UserError(
-                    _(
-                        "The campaign group could not be checked on LinkedIn: "
-                        "%(error)s",
-                        error=self.env["social.account"]._linkedin_error_message(
-                            group_campaign
-                        ),
-                    )
-                )
+            )
         return group_campaign
 
     def _linkedin_verify_campaign(self, account):
@@ -313,84 +311,75 @@ class SocialAdvertisingCampaign(models.Model):
         :param account: The social.account used to call the LinkedIn API.
         :param advertising_account_urn: The advertising account URN.
         :param campaign_group_linkedin_urn: The campaign group URN.
-        :return: The campaign LinkedIn URN or False.
-        :rtype: str | bool
+        :return: The campaign LinkedIn URN.
+        :rtype: str
         """
         self.ensure_one()
-        campaign = False
-        if campaign_group_linkedin_urn:
-            stage = self.env["social.stage"]._require_linkedin_stage(
-                "campaign", "DRAFT"
-            )
-            start, end = run_schedule_window_linkedin()
-            response = account._request_linkedin(
-                method="POST",
-                endpoint=(
-                    _ENDPOINT_AD_CAMPAIGNS_LINKEDIN
-                    % advertising_account_urn.split(":")[-1]
+        stage = self.env["social.stage"]._require_linkedin_stage("campaign", "DRAFT")
+        start, end = run_schedule_window_linkedin()
+        response = account._request_linkedin(
+            method="POST",
+            endpoint=(
+                _ENDPOINT_AD_CAMPAIGNS_LINKEDIN % advertising_account_urn.split(":")[-1]
+            ),
+            headers=account.media_id._get_linkedin_headers(account.sudo().access_token),
+            json_data={
+                "account": advertising_account_urn,
+                "campaignGroup": campaign_group_linkedin_urn,
+                "name": f"{self.name}",
+                "type": "SPONSORED_UPDATES",
+                "format": self.linkedin_format or "STANDARD_UPDATE",
+                **(
+                    {"objectiveType": self.linkedin_objective}
+                    if self.linkedin_objective
+                    else {}
                 ),
-                headers=account.media_id._get_linkedin_headers(
-                    account.sudo().access_token
-                ),
-                json_data={
-                    "account": advertising_account_urn,
-                    "campaignGroup": campaign_group_linkedin_urn,
-                    "name": f"{self.name}",
-                    "type": "SPONSORED_UPDATES",
-                    "format": self.linkedin_format or "STANDARD_UPDATE",
-                    **(
-                        {"objectiveType": self.linkedin_objective}
-                        if self.linkedin_objective
-                        else {}
-                    ),
-                    "politicalIntent": self.linkedin_political_intent,
-                    "offsiteDeliveryEnabled": False,
-                    "runSchedule": {
-                        "start": start,
-                        "end": end,
-                    },
-                    "locale": {
-                        "country": self.env.user.country_id.code or "US",
-                        # A user whose language was deactivated has none, and
-                        # LinkedIn fixes the locale when the campaign is
-                        # created, so it never travels empty.
-                        "language": (self.env.user.lang or "en_US").split("_")[0],
-                    },
-                    "unitCost": {
-                        "amount": f"{self.unit_cost}",
-                        "currencyCode": self.currency_id.name,
-                    },
-                    "dailyBudget": {
-                        "amount": f"{self.daily_budget}",
-                        "currencyCode": self.currency_id.name,
-                    },
-                    "status": "DRAFT",
+                "politicalIntent": self.linkedin_political_intent,
+                "offsiteDeliveryEnabled": False,
+                "runSchedule": {
+                    "start": start,
+                    "end": end,
                 },
-                return_json=False,
+                "locale": {
+                    "country": self.env.user.country_id.code or "US",
+                    # A user whose language was deactivated has none, and
+                    # LinkedIn fixes the locale when the campaign is
+                    # created, so it never travels empty.
+                    "language": (self.env.user.lang or "en_US").split("_")[0],
+                },
+                "unitCost": {
+                    "amount": f"{self.unit_cost}",
+                    "currencyCode": self.currency_id.name,
+                },
+                "dailyBudget": {
+                    "amount": f"{self.daily_budget}",
+                    "currencyCode": self.currency_id.name,
+                },
+                "status": "DRAFT",
+            },
+            return_json=False,
+        )
+        if response.status_code == 201:
+            campaign = (
+                "urn:li:sponsoredCampaign:"
+                f"{response.headers.get('Location').split('/')[-1]}"
             )
-            if response.status_code == 201:
-                campaign = (
-                    "urn:li:sponsoredCampaign:"
-                    f"{response.headers.get('Location').split('/')[-1]}"
+            self.write(
+                {
+                    "remote_ref": campaign,
+                    "stage_id": stage.id,
+                    "advertising_account_id": account._get_advertising_account(
+                        advertising_account_urn
+                    ).id,
+                }
+            )
+        else:
+            raise UserError(
+                _(
+                    "The campaign could not be created on LinkedIn: %(error)s",
+                    error=self.env["social.account"]._linkedin_error_message(response),
                 )
-                self.write(
-                    {
-                        "remote_ref": campaign,
-                        "stage_id": stage.id,
-                        "advertising_account_id": account._get_advertising_account(
-                            advertising_account_urn
-                        ).id,
-                    }
-                )
-            else:
-                raise UserError(
-                    _(
-                        "The campaign could not be created on LinkedIn: %(error)s",
-                        error=self.env["social.account"]._linkedin_error_message(
-                            response
-                        ),
-                    )
-                )
+            )
         return campaign
 
     def _linkedin_publish_campaign(

@@ -13,12 +13,11 @@ from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
-from odoo.addons.social_media_base.hooks import remove_social_media
 from odoo.addons.social_media_base.tests.test_social_common import (
     TestSocialMediaBaseCommon,
 )
 
-from .test_social_common import PATCH_ACCOUNT, PATCH_WIZARD_ACCOUNT
+from .test_social_common import PATCH_WIZARD_ACCOUNT
 
 LOGGER_ACCOUNT = "odoo.addons.social_media_base.models.social_account"
 
@@ -29,7 +28,7 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         self.assertEqual(self.social_account_id.display_name, "Linkedin")
 
     def test_archive_account(self):
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         self.assertFalse(self.social_post_id.active)
         self.assertFalse(self.social_post_account_id.active)
         self.assertFalse(self.social_account_id.active)
@@ -73,7 +72,7 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
     def test_purge_account(self):
         post = self.social_post_id
         post_account = self.social_post_account_id
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         action = self.social_account_id.action_purge_account()
         self.assertEqual(action.get("res_model"), "social.account")
         self.assertEqual(action.get("target"), "main")
@@ -107,7 +106,7 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         )
         post_account.write({"image_ids": [Command.link(downloaded.id)]})
         self.assertEqual(shared.res_model, "social.post")
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         self.social_account_id.action_purge_account()
         self.assertFalse(post.exists())
         self.assertFalse(post_account.exists())
@@ -124,7 +123,7 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
                 "account_ids": [(6, 0, [self.social_account_id.id, other_account.id])],
             }
         )
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         self.social_account_id.action_purge_account()
         self.assertTrue(shared_post.exists())
         self.assertEqual(shared_post.account_ids, other_account)
@@ -239,9 +238,9 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         self.assertFalse(other_line.active)
 
     def test_action_unarchive_account(self):
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         self.assertFalse(self.social_account_id.active)
-        self.social_account_id.action_unarchive_account()
+        self.social_account_id.action_unarchive()
         self.assertTrue(self.social_account_id.active)
         self.assertTrue(self.social_post_id.active)
         self.assertTrue(self.social_post_account_id.active)
@@ -367,12 +366,6 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         menu = self.env.ref("social_media_base.social_dashboard_menu")
         menu.action = False
         self.assertEqual(self.SocialAccount._get_social_dashboard_url(), "/web")
-
-    def test_remove_social_media_uninstall_hook(self):
-        with patch(PATCH_ACCOUNT.format("_remove_social_media"), autospec=True) as mock:
-            remove_social_media(self.env, "other_social")
-        mock.assert_called_once()
-        self.assertEqual(mock.call_args[0][1], "other_social")
 
     def test_the_wizard_hooks_do_nothing_in_the_base_module(self):
         """Every connector fills them in; the base module answers nothing."""

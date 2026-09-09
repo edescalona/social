@@ -171,7 +171,7 @@ class SocialAccount(models.Model):
             account_name=account.name,
         )
 
-    def _get_timeline_account_values(self, response, since_id, post_accounts):
+    def _get_timeline_account_values(self, response, post_accounts):
         """Return the values to write on the account after reading its timeline.
 
         The publications of the page and the checkpoint of the timeline, and
@@ -180,7 +180,6 @@ class SocialAccount(models.Model):
         from those rows by ``social_media_base``.
 
         :param response: answer of the timeline endpoint.
-        :param since_id: publication the timeline was read from, if any.
         :param post_accounts: commands building the publications of the page.
         :rtype: dict
         """
@@ -317,7 +316,6 @@ class SocialAccount(models.Model):
                     account.write(
                         account._get_timeline_account_values(
                             response,
-                            since_id,
                             post_accounts,
                         )
                     )

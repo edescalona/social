@@ -31,13 +31,13 @@
                 <field name="media_type" invisible="1" />
                 <field
                     name="x_api_key"
-                    required="media_type == 'x' or (update_keys and context.get('social_update_account', False))"
+                    required="media_type == 'x'"
                     invisible="media_type != 'x' or (not update_keys and context.get('social_update_account', False))"
                 />
                 <field
                     name="x_api_secret"
                     password="True"
-                    required="media_type == 'x' or (update_keys and context.get('social_update_account', False))"
+                    required="media_type == 'x'"
                     invisible="media_type != 'x' or (not update_keys and context.get('social_update_account', False))"
                 />
             </xpath>

@@ -248,13 +248,12 @@ class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
                 )
             )
 
-    def test_map_medias_account_without_url_creates_the_attachment(self):
-        attachment = self.social_post_account_id._map_medias_account(
-            **{"name": "urn:li:image:local", "datas": self.image_base64}
-        )
-        self.assertEqual(attachment._name, "ir.attachment")
-        self.assertTrue(attachment.id)
-        self.assertEqual(attachment.name, "urn:li:image:local")
+    def test_map_medias_account_needs_a_url(self):
+        """The bridges skip a media reported without a download URL."""
+        with self.assertRaises(KeyError):
+            self.social_post_account_id._map_medias_account(
+                **{"name": "urn:li:image:local", "datas": self.image_base64}
+            )
 
     def test_get_medias_account_of_an_empty_recordset(self):
         """The import asks before the publication exists."""

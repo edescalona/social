@@ -276,7 +276,7 @@ class TestSocialAccountAdvertising(TestSocialAdvertisingCommon):
 
     def test_purge_account_keeps_the_campaigns(self):
         """What was written here and never published is work, not a mirror."""
-        self.social_account_id.action_archive_account()
+        self.social_account_id.action_archive()
         self.social_account_id.action_purge_account()
         self.campaign_id.invalidate_recordset()
         self.assertTrue(self.campaign_id.exists())

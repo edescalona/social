@@ -313,15 +313,32 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         with self.assertRaises(UserError):
             campaign.write({"name": "Renamed"})
 
-    def test_publish_campaign_group_without_advertising_account(self):
-        """Without an advertising account nothing is sent to LinkedIn."""
-        with self.get_patch_exceptions_linkedin() as mock_request:
-            self.assertFalse(
-                self.SocialAdvertisingCampaignLinkedin._linkedin_publish_campaign_group(
-                    self.SocialAccountLinkedin, False
-                )
-            )
-            mock_request.assert_not_called()
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    @patch(
+        PATCH_ADVERTISING_ACCOUNT_LINKEDIN.format("_get_linkedin_advertising_account")
+    )
+    def test_action_publish_linkedin_without_advertising_account(
+        self, mock_advertising_account, mock_request_linkedin
+    ):
+        """Without an advertising account in use nothing is sent to LinkedIn."""
+        currency = self.env.ref("base.USD")
+        group = self.SocialAdvertisingCampaignGroup.create(
+            {"name": "Test Group", "total_budget": 100, "currency_id": currency.id}
+        )
+        campaign = self.SocialAdvertisingCampaign.create(
+            {
+                "name": "Test Campaign",
+                "campaign_group_id": group.id,
+                "media_id": self.media_linkedin_data_id.id,
+                "account_ids": [Command.link(self.SocialAccountLinkedin.id)],
+                "unit_cost": 1,
+                "daily_budget": 10,
+            }
+        )
+        mock_advertising_account.return_value = False
+        with self.assertRaises(UserError):
+            campaign.action_publish_linkedin()
+        mock_request_linkedin.assert_not_called()
 
     def test_publish_campaign_group_already_created(self):
         """An existing group is only verified, never created again."""

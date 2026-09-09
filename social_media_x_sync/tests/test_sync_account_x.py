@@ -210,7 +210,7 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         response = MagicMock()
         response.meta = {"newest_id": "tweet_1"}
         values = self.SocialAccountX._get_timeline_account_values(
-            response, None, [Command.create({"message": "Imported"})]
+            response, [Command.create({"message": "Imported"})]
         )
         self.assertEqual(sorted(values), ["last_post_ref", "post_account_ids"])
 
