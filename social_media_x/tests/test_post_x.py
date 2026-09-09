@@ -37,6 +37,28 @@ class TestSocialPostX(TestSocialCommonX):
                 }
             )
 
+    def test_check_account_ids_fires_when_the_accounts_change(self):
+        """Adding the duplicate to a saved post is rejected too.
+
+        The selection of accounts is what the check reads, so writing it is
+        the moment the duplicate can appear.
+        """
+        post = self.SocialPost.create(
+            {
+                "message": "Test Message",
+                "account_ids": [Command.set(self.SocialAccountCredentialX.ids)],
+            }
+        )
+        account_repeat_username = self.SocialAccountCredentialX.copy()
+        with self.assertRaises(UserError):
+            post.write(
+                {
+                    "account_ids": [
+                        Command.link(account_repeat_username.id),
+                    ]
+                }
+            )
+
     def test_check_account_ids_leaves_the_other_media_alone(self):
         """The X spam rule used to reject accounts of any other media."""
         accounts = self.SocialAccount.create(
