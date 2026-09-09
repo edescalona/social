@@ -73,9 +73,12 @@ class SocialPostAccount(models.Model):
                 "and try again later."
             )
             try:
-                result = self.account_id._valid_time_request(endpoint="delete_post")
                 if self.remote_ref:
-                    if not result:
+                    # Asking about the quota is not a mute question: with the
+                    # window still open it tells the user when to retry. On a
+                    # line that never reached X there is nothing to delete, so
+                    # there is nothing to warn about either.
+                    if not self.account_id._valid_time_request(endpoint="delete_post"):
                         message_error = quota_error
                     else:
                         client_api = self.account_id.get_client_api(
