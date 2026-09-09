@@ -193,15 +193,17 @@ class TestSocialPostAccountLinkTracker(TestSocialMediaBaseCommon):
     def test_the_statistics_dialog_names_the_clicks_it_counts(self):
         """The counter of the link tracker is never called just Clicks.
 
-        The figure the social media reports is written by an import and drawn
-        by the module bringing it, so what belongs here is the other one.
+        The dialog draws the two clicks side by side --the ones Odoo registered
+        on its own trackers and the ones the social media reports-- so each one
+        has to say which it is.
         """
         arch = self.env.ref(
             "social_media_base.social_post_account_view_form_statistics"
         ).arch
         self.assertIn('name="link_click_count"', arch)
         self.assertIn("Tracked Clicks", arch)
-        self.assertNotIn('name="click_count"', arch)
+        self.assertIn('name="click_count"', arch)
+        self.assertIn("Social Media Clicks", arch)
 
     def test_publishing_a_post_shortens_the_links_of_its_publications(self):
         post = self.SocialPost.create(

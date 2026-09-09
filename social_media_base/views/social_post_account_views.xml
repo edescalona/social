@@ -258,10 +258,12 @@
                             </kanban>
                         </field>
                     </group>
-                    <!-- Only the clicks of the link tracker are counted
-                         here: the figures of the social media reach Odoo
-                         through the synchronization, which adds them to both
-                         columns with an xpath. -->
+                    <!-- The clicks of the link tracker are the ones Odoo
+                         counts by itself. The figures the social media reports
+                         are read back for the recent publications, and this
+                         form spans the whole history, so the cells drawing
+                         them are added by the synchronization module with an
+                         xpath. -->
                     <group string="Statistics" name="statistics">
                         <group name="statistics_left">
                             <field name="link_click_count" />
@@ -277,22 +279,72 @@
         <field name="name">social.post.account.form.statistics</field>
         <field name="model">social.post.account</field>
         <field name="arch" type="xml">
-            <!-- Opened as a dialog from the card of the dashboard. It
-                 shows what is stored in Odoo: the social media is only asked
-                 again by Update. The clicks of the link tracker are the only
-                 figure this module counts on its own, so it is the only one
-                 drawn here; the synchronization adds the figures it imports.
-                 Every figure sits in a cell of its own named after its field,
-                 so a module adds its own with an xpath and no guessing of
-                 positions. -->
+            <!-- Opened as a dialog from the card of the dashboard. It shows
+                 what is stored in Odoo: the social media is only asked again
+                 by Update, which reads back the publications of the last days.
+                 The date says which reading these figures are, so a figure
+                 frozen out of that window is not read as today's. Every figure
+                 sits in a cell of its own named after its field, so a module
+                 adds its own with an xpath and no guessing of positions. -->
             <form create="0" edit="0" delete="0">
                 <div class="o_social_statistics row text-center justify-content-center">
+                    <div class="col-4 py-3" name="impression_count">
+                        <!-- Declared as a float while the same figure is an
+                             integer on the account, so the decimals are
+                             dropped here instead of showing 537.00. -->
+                        <field
+                            name="impression_count"
+                            widget="statinfo"
+                            string="Impressions"
+                            digits="[16,0]"
+                        />
+                    </div>
                     <div class="col-4 py-3" name="link_click_count">
                         <field
                             name="link_click_count"
                             widget="statinfo"
                             string="Tracked Clicks"
                         />
+                    </div>
+                    <div class="col-4 py-3" name="click_count">
+                        <field
+                            name="click_count"
+                            widget="statinfo"
+                            string="Social Media Clicks"
+                        />
+                    </div>
+                    <div class="col-4 py-3" name="share_count">
+                        <field name="share_count" widget="statinfo" string="Shares" />
+                    </div>
+                    <div class="col-4 py-3" name="like_count">
+                        <field name="like_count" widget="statinfo" string="Likes" />
+                    </div>
+                    <div class="col-4 py-3" name="comment_count">
+                        <field
+                            name="comment_count"
+                            widget="statinfo"
+                            string="Comments"
+                        />
+                    </div>
+                    <div class="col-4 py-3" name="interactions_count">
+                        <field
+                            name="interactions_count"
+                            widget="statinfo"
+                            string="Interactions"
+                        />
+                    </div>
+                    <div class="col-4 py-3" name="engagement">
+                        <field
+                            name="engagement"
+                            widget="statinfo"
+                            string="Engagement"
+                        />
+                    </div>
+                </div>
+                <div class="row text-center justify-content-center">
+                    <div class="col-12 text-muted small" name="statistics_date">
+                        <label for="statistics_date" class="me-1" />
+                        <field name="statistics_date" />
                     </div>
                 </div>
                 <footer>

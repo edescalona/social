@@ -3,10 +3,11 @@
      License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
 <odoo>
 
-    <!-- The figures a social media reports are counted by the import of this
-         module, so they are drawn where the user reads a publication only
-         once this module is installed: without it the cells would be there
-         showing a zero nobody can turn into a number. -->
+    <!-- The dialog of the statistics is drawn by ``social_media_base``, which
+         reads the figures of the recent publications on its own. What this
+         module adds are the views that go through the whole history —the list,
+         the search, the ordinary form— where a publication older than that
+         window only carries figures once its import has run. -->
 
     <!-- The counters the footer of the card draws, and the reaction of the
          account on its own publication that its *Recommend* entry toggles:
@@ -122,60 +123,6 @@
                 <field name="comment_count" />
                 <field name="interactions_count" />
                 <field name="engagement" />
-            </xpath>
-        </field>
-    </record>
-
-    <record id="social_post_account_view_form_statistics_inherit" model="ir.ui.view">
-        <field
-            name="name"
-        >social.post.account.view.form.statistics.inherit.social.media.sync</field>
-        <field name="model">social.post.account</field>
-        <field
-            name="inherit_id"
-            ref="social_media_base.social_post_account_view_form_statistics"
-        />
-        <field name="arch" type="xml">
-            <xpath expr="//div[@name='link_click_count']" position="before">
-                <div class="col-4 py-3" name="impression_count">
-                    <!-- Declared as a float while the same figure is an
-                         integer on the account, so the decimals are dropped
-                         here instead of showing 537.00. -->
-                    <field
-                        name="impression_count"
-                        widget="statinfo"
-                        string="Impressions"
-                        digits="[16,0]"
-                    />
-                </div>
-            </xpath>
-            <xpath expr="//div[@name='link_click_count']" position="after">
-                <div class="col-4 py-3" name="click_count">
-                    <field
-                        name="click_count"
-                        widget="statinfo"
-                        string="Social Media Clicks"
-                    />
-                </div>
-                <div class="col-4 py-3" name="share_count">
-                    <field name="share_count" widget="statinfo" string="Shares" />
-                </div>
-                <div class="col-4 py-3" name="like_count">
-                    <field name="like_count" widget="statinfo" string="Likes" />
-                </div>
-                <div class="col-4 py-3" name="comment_count">
-                    <field name="comment_count" widget="statinfo" string="Comments" />
-                </div>
-                <div class="col-4 py-3" name="interactions_count">
-                    <field
-                        name="interactions_count"
-                        widget="statinfo"
-                        string="Interactions"
-                    />
-                </div>
-                <div class="col-4 py-3" name="engagement">
-                    <field name="engagement" widget="statinfo" string="Engagement" />
-                </div>
             </xpath>
         </field>
     </record>

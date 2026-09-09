@@ -455,19 +455,19 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             post_accounts.action_open_statistics()
 
     def test_statistics_view_shows_the_figures_this_module_counts(self):
-        """The dialog draws what can be read, not a column of zeros.
+        """The dialog draws every figure of a publication, and when it was read.
 
-        The clicks of the link tracker are counted here; the figures a social
-        media reports are written by the synchronization, which is the module
-        adding them to the dialog.
+        They are all this module's now: the connectors read them back for the
+        recent publications, so none of them waits for a synchronization module
+        to become a number.
         """
         # The arch of the record, not the one of get_view: what another
         # module adds with an xpath is that module's to test.
         arch = self.env.ref(
             "social_media_base.social_post_account_view_form_statistics"
         ).arch
-        self.assertIn('name="link_click_count"', arch)
         for field_name in (
+            "link_click_count",
             "impression_count",
             "click_count",
             "share_count",
@@ -475,8 +475,9 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             "comment_count",
             "interactions_count",
             "engagement",
+            "statistics_date",
         ):
-            self.assertNotIn(f'name="{field_name}"', arch)
+            self.assertIn(f'name="{field_name}"', arch)
 
     def test_delete_post_account_deletes_post_when_last_link(self):
         post = self.SocialPost.create(
