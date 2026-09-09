@@ -420,11 +420,106 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
         ) = self._generate_update_posts_statistics_patches(ugc_posts)
         with patch_validate, patch_get_posts, patch_all_posts, patch_entity, (
             patch_assets
-        ), patch_page, patch_reactions:
+        ), patch_page, patch_reactions, self._patch_posts_gone(
+            [remote_ref]
+        ) as mock_gone:
             self.SocialAccountLinkedin._full_resync()
         self.assertFalse(self.SocialPostAccountLinkedin.post_account_url)
         self.assertEqual(self.SocialPostAccountLinkedin.state, "deleted")
         self.assertEqual(self.SocialPostAccountLinkedin.remote_ref, remote_ref)
+        self.assertEqual(list(mock_gone.call_args.args[1]), [remote_ref])
+
+    def test_full_resync_keeps_what_linkedin_still_serves(self):
+        """A publication absent from the feed but served by LinkedIn stays.
+
+        The finder takes time to index what was just published, so a feed read
+        whole can leave out a live publication. Only what LinkedIn answers
+        about the URN decides.
+        """
+        post_account = self.SocialPostAccountLinkedin
+        post_account.write({"post_account_url": "https://example.test/post/1"})
+        remote_ref = post_account.remote_ref
+        ugc_posts = [
+            {
+                "id": "urn:li:share:other",
+                "commentary": "Other post",
+                "content": {},
+                "publishedAt": 1735689600000,
+                "author": "urn:li:organization:123456",
+            }
+        ]
+        (
+            patch_validate,
+            patch_get_posts,
+            patch_all_posts,
+            patch_entity,
+            patch_assets,
+            patch_page,
+            patch_reactions,
+        ) = self._generate_update_posts_statistics_patches(ugc_posts)
+        with patch_validate, patch_get_posts, patch_all_posts, patch_entity, (
+            patch_assets
+        ), patch_page, patch_reactions, self._patch_posts_gone() as mock_gone:
+            self.SocialAccountLinkedin._full_resync()
+        self.assertEqual(list(mock_gone.call_args.args[1]), [remote_ref])
+        self.assertEqual(post_account.state, "posted")
+        self.assertEqual(post_account.post_account_url, "https://example.test/post/1")
+
+    def test_full_resync_asks_nothing_about_a_partial_feed(self):
+        """A feed read partially is not worth a confirmation call."""
+        ugc_posts = [
+            {
+                "id": "urn:li:share:other",
+                "commentary": "Other post",
+                "content": {},
+                "publishedAt": 1735689600000,
+                "author": "urn:li:organization:123456",
+            }
+        ]
+        (
+            patch_validate,
+            patch_get_posts,
+            patch_all_posts,
+            patch_entity,
+            patch_assets,
+            patch_page,
+            patch_reactions,
+        ) = self._generate_update_posts_statistics_patches(
+            ugc_posts, feed_is_complete=False
+        )
+        with patch_validate, patch_get_posts, patch_all_posts, patch_entity, (
+            patch_assets
+        ), patch_page, patch_reactions, self._patch_posts_gone() as mock_gone:
+            self.SocialAccountLinkedin._update_posts_statistics(False, None)
+        mock_gone.assert_not_called()
+        self.assertEqual(self.SocialPostAccountLinkedin.state, "posted")
+
+    def test_full_resync_asks_nothing_without_a_suspect(self):
+        """A feed that brought everything Odoo knows costs no extra call."""
+        ugc_posts = [
+            {
+                "id": self.SocialPostAccountLinkedin.remote_ref,
+                "commentary": "Test Message",
+                "content": {},
+                "publishedAt": 1735689600000,
+                "author": "urn:li:organization:123456",
+            }
+        ]
+        (
+            patch_validate,
+            patch_get_posts,
+            patch_all_posts,
+            patch_entity,
+            patch_assets,
+            patch_page,
+            patch_reactions,
+        ) = self._generate_update_posts_statistics_patches(ugc_posts)
+        with patch_validate, patch_get_posts, patch_all_posts, patch_entity, (
+            patch_assets
+        ), patch_page, patch_reactions, self._patch_posts_gone() as mock_gone:
+            self.SocialAccountLinkedin._full_resync()
+        mock_gone.assert_not_called()
+        self.assertEqual(self.SocialPostAccountLinkedin.state, "posted")
 
     def test_full_resync_reads_each_account_once(self):
         """The accounts left to the base must not come back as every account.
@@ -710,6 +805,20 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
                 lambda line: line.remote_ref == "urn:li:share:other"
             ),
             msg="The account that did not fail was refreshed all the same.",
+        )
+
+    def _patch_posts_gone(self, gone=()):
+        """Answer the confirmation call without reaching LinkedIn.
+
+        The sweep asks the account which of the suspects LinkedIn no longer
+        serves, so what this answers is what decides the marking. Anything it
+        is not told about is a publication LinkedIn still serves.
+        """
+        confirmed = set(gone)
+        return patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_posts_gone"),
+            autospec=True,
+            side_effect=lambda account, urns: {urn for urn in urns if urn in confirmed},
         )
 
     def _generate_update_posts_statistics_patches(
