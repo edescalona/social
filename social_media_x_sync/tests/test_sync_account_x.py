@@ -66,6 +66,9 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertIn(("media_type", "=", "x"), mock_search_read.call_args.args[1])
 
     def test_update_posts_statistics(self):
+        # The user reading the import is not in UTC, so a date stored in his
+        # zone instead of UTC would differ from the one asserted below.
+        self.env.user.tz = "Europe/Madrid"
         patch_super = patch(PATCH_SYNC_ACCOUNT.format("_update_posts_statistics"))
         patch_get_statistics = patch.object(
             type(self.SocialAccount),
@@ -84,7 +87,10 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
             ],
             "users": [MagicMock(id="author_12345", username="username-idx")],
         }
-        tweet_created_at = datetime(2026, 1, 15, 10, 30, tzinfo=pytz.utc)
+        # X answers the date with the offset of the tweet, not in UTC.
+        tweet_created_at = pytz.timezone("Australia/Sydney").localize(
+            datetime(2026, 1, 15, 21, 30)
+        )
         fake_tweet = MagicMock(
             referenced_tweets=[MagicMock(type="fake_quoted")],
             in_reply_to_user_id=None,
@@ -198,10 +204,11 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertEqual(post_account.author, self.SocialAccountX.name)
         self.assertEqual(post_account.actor_urn, "author_12345")
         self.assertEqual(post_account.state, "posted")
-        user_timezone = pytz.timezone(self.env.user.tz or "UTC")
         self.assertEqual(
             post_account.published_date,
-            tweet_created_at.astimezone(user_timezone).replace(tzinfo=None),
+            datetime(2026, 1, 15, 10, 30),
+            msg="A Datetime is stored in UTC: the client is what converts it "
+            "to the zone of whoever reads it.",
         )
         self.assertEqual(post_account.image_ids.mapped("name"), ["media_key_tests"])
 
