@@ -253,6 +253,9 @@ line `deleted`.
 a manager sees all. `can_manage_account` / `is_property_account` are computed with
 `@api.depends_context("uid")`.
 
+Files: one `security/<model>_security.xml` per model for the record rules, one
+`ir.model.access.csv` per module. The manifest lists them groups → csv → rules.
+
 ## Frontend
 
 `static/src/` in every module: OWL components under `components/`, services under
@@ -335,6 +338,19 @@ not the Python side.
   what starts moving `x.y.z`.
 - Commits for these modules belong on this repository's branch, not on the deployment
   repository, which only tracks orchestration files.
+
+### Translations
+
+Every module ships `i18n/` with its `<module>.pot` and the `es.po` / `es_ES.po`
+catalogues, all tracked. A new user-facing string means regenerating them, not leaving
+them behind. The `*.po~` backups Poedit leaves are ignored (`.gitignore`).
+
+### Manifest facts that bite
+
+- `social_media_base` declares `"excludes": ["social"]`: these modules cannot coexist
+  with Odoo's Social Marketing. Only base declares it; the rest inherit the block
+  through the dependency.
+- All nine are `development_status: "Beta"`, matching the frozen `17.0.1.0.0`.
 
 ## Spec branches
 
