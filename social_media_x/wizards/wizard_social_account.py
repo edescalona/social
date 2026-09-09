@@ -8,7 +8,6 @@ import requests
 from requests_oauthlib import OAuth1
 
 from odoo import _, fields, models
-from odoo.exceptions import UserError
 
 from ..social_x_utils import (
     _URL_OAUTH_X,
@@ -83,21 +82,14 @@ class WizardSocialAccount(models.TransientModel):
     def _action_valid_add_account(self):
         result = super()._action_valid_add_account()
         if self.media_type == "x":
-            if (
-                self.env["social.account"]
-                .sudo()
-                .with_context(active_test=False)
-                .search_count(
-                    [
-                        ("media_type", "=", "x"),
-                        ("x_api_key", "=", self.x_api_key),
-                        ("x_api_secret", "=", self.x_api_secret),
-                    ],
-                    limit=1,
-                )
-                > 0
-            ):
-                raise UserError(_("An account with that information already exists."))
+            self.env["social.account"]._check_unique_credentials(
+                [
+                    ("media_type", "=", "x"),
+                    ("x_api_key", "=", self.x_api_key),
+                    ("x_api_secret", "=", self.x_api_secret),
+                ],
+                _("An account with that information already exists."),
+            )
         return result
 
     def _update_account(self):

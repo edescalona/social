@@ -56,16 +56,6 @@ class SocialMediaLinkedin(http.Controller):
             return request.redirect("/web")
         except Exception:  # noqa: BLE001 - the provider may fail in any way
             SocialAccount._consume_linkedin_oauth_wizard(kwargs.get("state", ""))
-            # The exception may carry the raw provider response, so the user
-            # only gets a generic message and the detail stays in the log.
-            SocialAccount._notify_user_session(
-                SocialAccount._format_user_notification(
-                    _(
-                        "The account could not be associated. "
-                        "Check the server log for details."
-                    ),
-                    media="linkedin",
-                )
-            )
+            SocialAccount._notify_association_failure("linkedin")
             _logger.exception("Error in the LinkedIn OAuth callback")
             return request.redirect("/web")

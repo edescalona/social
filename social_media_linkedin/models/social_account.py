@@ -102,9 +102,8 @@ class SocialAccount(models.Model):
         of the association flow nothing is excluded.
         """
         account_sudo = self.sudo()
-        account_count = account_sudo.with_context(active_test=False).search_count(
+        self._check_unique_credentials(
             [
-                ("id", "not in", account_sudo.ids),
                 (
                     "linkedin_client_id",
                     "=",
@@ -116,16 +115,12 @@ class SocialAccount(models.Model):
                     linkedin_secret or account_sudo.linkedin_secret,
                 ),
             ],
-            limit=1,
+            _(
+                "An account with this information "
+                "already exists; please also check "
+                "archived accounts."
+            ),
         )
-        if account_count > 0:
-            raise UserError(
-                _(
-                    "An account with this information "
-                    "already exists; please also check "
-                    "archived accounts."
-                )
-            )
 
     @api.model
     def _request_linkedin(
@@ -871,13 +866,6 @@ class SocialAccount(models.Model):
         accounts = self.browse()
         for organization in organizations:
             remote_ref = f"{_URN_ORGANIZATION_LINKEDIN}{organization.get('id')}"
-            social_account = self._find_account_to_associate(
-                "linkedin",
-                remote_ref,
-                username=organization.get("vanityName", False),
-            )
-            if social_account:
-                social_account._check_can_associate()
             values_data = {
                 "name": organization.get("localizedName", False),
                 "username": organization.get("vanityName", False),
@@ -894,22 +882,17 @@ class SocialAccount(models.Model):
                     token.get("scope")
                 ),
             }
-            if not social_account:
-                values_data.update(
-                    {
-                        "media_id": self.env.ref(
-                            "social_media_linkedin.social_media_linkedin"
-                        ).id,
-                    }
-                )
-                accounts |= self.sudo().create(
-                    dict(values_data, user_id=self.env.user.id)
-                )
-            else:
-                if not social_account.active:
-                    values_data["active"] = True
-                social_account.sudo().write(values_data)
-                accounts |= social_account
+            accounts |= self._associate_account(
+                "linkedin",
+                remote_ref,
+                values_data,
+                username=organization.get("vanityName", False),
+                create_values={
+                    "media_id": self.env.ref(
+                        "social_media_linkedin.social_media_linkedin"
+                    ).id,
+                },
+            )
         wizards.unlink()
         accounts._on_account_associated()
 

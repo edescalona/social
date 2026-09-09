@@ -485,6 +485,49 @@ class SocialPostAccount(models.Model):
             )
         return publish(**kwargs)
 
+    def _register_publish_success(self, remote_ref, url, media_refs, has_video):
+        """Store what the social media answered for a publication of its own.
+
+        Every connector writes the same line once its social media took the
+        post; what differs is the reference, the URL it builds from it and
+        what it made of the medias.
+
+        :param remote_ref: identifier of the publication on the social media.
+        :param url: address of that publication.
+        :param media_refs: what the social media made of each media.
+        :param bool has_video: whether a video was published.
+        """
+        self.ensure_one()
+        self.write(
+            {
+                "remote_ref": remote_ref,
+                "post_account_url": url,
+                "media_refs": media_refs,
+                "has_video": has_video,
+                "state": "posted",
+                "published_date": fields.Datetime.now(),
+                "failed_description": False,
+            }
+        )
+
+    def _register_publish_refused(self, message):
+        """Mark the publication failed with what the connector has to say.
+
+        The counterpart of :meth:`~._register_publish_success` for the answer
+        that brought no reference back. It is not
+        :meth:`~._register_publish_failure`: nothing was raised, the social
+        media simply did not take the post.
+
+        :param message: the reason shown on the line, as plain text.
+        """
+        self.ensure_one()
+        self.write(
+            {
+                "state": "failed",
+                "failed_description": plaintext2html(message),
+            }
+        )
+
     def _register_publish_failure(self, error):
         """Mark this publication as failed and keep the reason on the line.
 

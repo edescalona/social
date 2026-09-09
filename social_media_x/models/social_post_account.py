@@ -5,9 +5,8 @@ import logging
 
 from tweepy.errors import TooManyRequests
 
-from odoo import _, fields, models
+from odoo import _, models
 from odoo.exceptions import UserError
-from odoo.tools import plaintext2html
 
 from ..social_x_utils import _URL_X
 
@@ -39,33 +38,20 @@ class SocialPostAccount(models.Model):
                         post_account_id=post_account,
                     )
                     if post_account_id:
-                        post_account.write(
-                            {
-                                "remote_ref": post_account_id,
-                                "post_account_url": (
-                                    f"{_URL_X}{post_account.account_id.username}"
-                                    f"/status/{post_account_id}"
-                                ),
-                                "media_refs": media_refs,
-                                "has_video": bool(videos),
-                                "state": "posted",
-                                "published_date": fields.Datetime.now(),
-                                "failed_description": False,
-                            }
+                        post_account._register_publish_success(
+                            post_account_id,
+                            f"{_URL_X}{post_account.account_id.username}"
+                            f"/status/{post_account_id}",
+                            media_refs,
+                            bool(videos),
                         )
                     else:
-                        post_account.write(
-                            {
-                                "state": "failed",
-                                "failed_description": plaintext2html(
-                                    _(
-                                        "X did not accept the post. The "
-                                        "account may have reached the limit "
-                                        "of requests of its plan: check the "
-                                        "account and try again later."
-                                    )
-                                ),
-                            }
+                        post_account._register_publish_refused(
+                            _(
+                                "X did not accept the post. The account may "
+                                "have reached the limit of requests of its "
+                                "plan: check the account and try again later."
+                            )
                         )
         return res
 

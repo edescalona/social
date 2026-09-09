@@ -21,23 +21,11 @@ class SocialPost(models.Model):
     _inherit = "social.post"
 
     def _default_account_ids(self):
-        """Preselect the LinkedIn accounts of the active company.
-
-        The company is filtered in the domain on purpose: the record rule of
-        ``social.account`` matches ``company_ids``, the companies the user is
-        allowed to see, so without this an account of another activated
-        company would be preselected as well.
-        """
-        res = super()._default_account_ids()
-        account_ids = self.env["social.account"].search(
-            [
-                ("media_type", "=", "linkedin"),
-                "|",
-                ("company_id", "=", False),
-                ("company_id", "=", self.env.company.id),
-            ]
+        """Preselect the LinkedIn accounts of the active company."""
+        return (
+            self._default_account_ids_for_media("linkedin")
+            + super()._default_account_ids()
         )
-        return account_ids.ids + res
 
     def _render_values_preview(self, media):
         """Drop the images LinkedIn will not publish from its preview.

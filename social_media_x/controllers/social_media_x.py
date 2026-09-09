@@ -3,7 +3,7 @@
 
 import logging
 
-from odoo import _, http
+from odoo import http
 from odoo.http import request, route
 
 _logger = logging.getLogger(__name__)
@@ -36,16 +36,6 @@ class SocialMediaX(http.Controller):
                     access_token, access_token_secret, kwargs
                 )
         except Exception:  # noqa: BLE001 - the provider may fail in any way
-            # The exception may carry the raw provider response, so the user
-            # only gets a generic message and the detail stays in the log.
-            SocialAccount._notify_user_session(
-                SocialAccount._format_user_notification(
-                    _(
-                        "The account could not be associated. "
-                        "Check the server log for details."
-                    ),
-                    media="X",
-                )
-            )
+            SocialAccount._notify_association_failure("X")
             _logger.exception("Error creating the X account")
         return request.redirect(SocialAccount._get_social_dashboard_url())

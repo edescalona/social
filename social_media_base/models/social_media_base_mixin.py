@@ -114,6 +114,26 @@ class SocialMediaBaseMixin(models.AbstractModel):
         if message:
             self._notify_user_session(message, message_type=message_type)
 
+    def _notify_association_failure(self, media):
+        """Tell the user their account could not be linked.
+
+        The generic answer of an OAuth callback that failed: the exception
+        may carry the raw answer of the social media, so the user only gets
+        this and the detail stays in the log. The session is the channel
+        because a callback redirects, and the redirect would outrun the bus.
+
+        :param media: media type the association was attempted on.
+        """
+        self._notify_user_session(
+            self._format_user_notification(
+                _(
+                    "The account could not be associated. "
+                    "Check the server log for details."
+                ),
+                media=media,
+            )
+        )
+
     def _prepare_user_notification(
         self,
         notif_type,

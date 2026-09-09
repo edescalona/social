@@ -334,6 +334,17 @@ class SocialAccount(models.Model):
         )
         return tweepy.API(auth)
 
+    def _x_download_profile_image(self, url):
+        """Return the profile picture of an X account, encoded for the field.
+
+        :param url: address X answered for the picture.
+        :return: the image in base64, or ``None`` when X did not serve it.
+        """
+        media_content = requests.get(url, timeout=10)
+        if media_content.status_code != 200:
+            return None
+        return base64.b64encode(media_content.content)
+
     def _update_account_data(self):
         client = self.get_client_api(bearer_token=self.sudo().x_access_token_oauth2)
         data = client.get_me(
@@ -343,11 +354,11 @@ class SocialAccount(models.Model):
             "name": data.name,
             "username": data.username,
         }
-        media_content = requests.get(data.profile_image_url, timeout=10)
-        if media_content.status_code == 200:
+        account_image = self._x_download_profile_image(data.profile_image_url)
+        if account_image:
             values.update(
                 {
-                    "image_1920": base64.b64encode(media_content.content),
+                    "image_1920": account_image,
                 }
             )
         self.write(values)
@@ -375,10 +386,7 @@ class SocialAccount(models.Model):
             ).data
             if data.username:
                 wizard_social_account = self._get_x_oauth_wizard(kwargs)
-                media_content = requests.get(data.profile_image_url, timeout=10)
-                account_image = None
-                if media_content.status_code == 200:
-                    account_image = base64.b64encode(media_content.content)
+                account_image = self._x_download_profile_image(data.profile_image_url)
                 values = {
                     "remote_ref": data.id,
                     "name": data.name,
@@ -395,20 +403,9 @@ class SocialAccount(models.Model):
                 )
                 if access_token_oauth2:
                     values.update({"x_access_token_oauth2": access_token_oauth2})
-                    acc_count = self._find_account_to_associate(
-                        "x", str(data.id), username=data.username
+                    account = self._associate_account(
+                        "x", str(data.id), values, username=data.username
                     )
-                    if acc_count:
-                        acc_count._check_can_associate()
-                    if not acc_count:
-                        account = self.sudo().create(
-                            dict(values, user_id=self.env.user.id)
-                        )
-                    else:
-                        if not acc_count.active:
-                            values["active"] = True
-                        acc_count.sudo().write(values)
-                        account = acc_count
                     account._on_account_associated()
                 else:
                     message_error = _(

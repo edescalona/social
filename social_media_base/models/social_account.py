@@ -8,7 +8,7 @@ from collections import defaultdict
 import psycopg2
 
 from odoo import Command, _, api, fields, models
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
 from odoo.tools import file_open
 
@@ -263,6 +263,60 @@ class SocialAccount(models.Model):
                 media=media,
                 account_name=self.name,
             )
+
+    def _check_unique_credentials(self, domain, message):
+        """Refuse credentials another account already holds.
+
+        Archived accounts are checked too, as they keep their credentials,
+        and the accounts of ``self`` are excluded, so updating the keys of an
+        account is not rejected by its own. Called on the empty recordset
+        nothing is excluded, which is the association flow.
+
+        :param domain: the leaves identifying the credentials.
+        :param message: what the user is told when they are taken.
+        """
+        accounts = self.sudo()
+        taken = accounts.with_context(active_test=False).search_count(
+            [("id", "not in", accounts.ids)] + domain,
+            limit=1,
+        )
+        if taken:
+            raise UserError(message)
+
+    def _associate_account(
+        self, media_type, remote_ref, values, username=None, create_values=None
+    ):
+        """Link an account of a social media, creating it when it is new.
+
+        What every OAuth callback does with what its social media answered:
+        the account already linked is updated and reactivated, and one that
+        was never linked is created for the current user. Whether the linked
+        account may be taken over is decided by
+        :meth:`~._check_can_associate`, which raises when it may not.
+
+        It does not call :meth:`~._on_account_associated`: a connector
+        answering several accounts announces them once, when it has them all.
+
+        :param media_type: the social media the account belongs to.
+        :param remote_ref: identifier of the account on the social media.
+        :param values: what the social media answered about the account.
+        :param username: name of the account, for the accounts linked before
+            ``remote_ref`` was stored.
+        :param create_values: values written only when the account is new.
+        :rtype: recordset of ``social.account``
+        """
+        account = self._find_account_to_associate(
+            media_type, remote_ref, username=username
+        )
+        if not account:
+            return self.sudo().create(
+                dict(values, **(create_values or {}), user_id=self.env.user.id)
+            )
+        account._check_can_associate()
+        if not account.active:
+            values = dict(values, active=True)
+        account.sudo().write(values)
+        return account
 
     @api.model
     def _find_account_to_associate(self, media_type, remote_ref, username=None):

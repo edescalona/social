@@ -23,23 +23,8 @@ class SocialPost(models.Model):
     _inherit = "social.post"
 
     def _default_account_ids(self):
-        """Preselect the X accounts of the active company.
-
-        The company is filtered in the domain on purpose: the record rule of
-        ``social.account`` matches ``company_ids``, the companies the user is
-        allowed to see, so without this an account of another activated
-        company would be preselected as well.
-        """
-        res = super()._default_account_ids()
-        account_ids = self.env["social.account"].search(
-            [
-                ("media_type", "=", "x"),
-                "|",
-                ("company_id", "=", False),
-                ("company_id", "=", self.env.company.id),
-            ]
-        )
-        return account_ids.ids + res
+        """Preselect the X accounts of the active company."""
+        return self._default_account_ids_for_media("x") + super()._default_account_ids()
 
     @api.constrains("account_ids", "message", "image_ids", "video_ids")
     def _check_account_ids(self):

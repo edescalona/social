@@ -639,6 +639,31 @@ class SocialPost(models.Model):
         """
         return []
 
+    def _default_account_ids_for_media(self, media_type):
+        """Return the accounts of a social media in the active company.
+
+        What every connector preselects, and the company is filtered in the
+        domain on purpose: the record rule of ``social.account`` matches
+        ``company_ids``, the companies the user is allowed to see, so without
+        this an account of another activated company would be preselected as
+        well.
+
+        :param media_type: the ``media_type`` the connector preselects.
+        :rtype: list
+        """
+        return (
+            self.env["social.account"]
+            .search(
+                [
+                    ("media_type", "=", media_type),
+                    "|",
+                    ("company_id", "=", False),
+                    ("company_id", "=", self.env.company.id),
+                ]
+            )
+            .ids
+        )
+
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)

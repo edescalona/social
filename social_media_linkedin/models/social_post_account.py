@@ -6,10 +6,9 @@ from urllib.parse import quote
 
 import psycopg2
 
-from odoo import _, fields, models
+from odoo import _, models
 from odoo.exceptions import UserError
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
-from odoo.tools import plaintext2html
 
 from ..social_linkedin_utils import (
     _URL_FEED_UPDATE_LINKEDIN,
@@ -74,32 +73,19 @@ class SocialPostAccount(models.Model):
                         video_ids=videos,
                     )
                     if post_entity:
-                        post_account.write(
-                            {
-                                "remote_ref": post_entity,
-                                "post_account_url": (
-                                    f"{_URL_FEED_UPDATE_LINKEDIN}{post_entity}"
-                                ),
-                                "media_refs": media_refs,
-                                "has_video": bool(videos),
-                                "state": "posted",
-                                "published_date": fields.Datetime.now(),
-                                "failed_description": False,
-                            }
+                        post_account._register_publish_success(
+                            post_entity,
+                            f"{_URL_FEED_UPDATE_LINKEDIN}{post_entity}",
+                            media_refs,
+                            bool(videos),
                         )
                         post_account._linkedin_enrich_published_post(post_entity)
                     else:
-                        post_account.write(
-                            {
-                                "state": "failed",
-                                "failed_description": plaintext2html(
-                                    _(
-                                        "The account has no LinkedIn access "
-                                        "token. Update the account to "
-                                        "authorize it again."
-                                    )
-                                ),
-                            }
+                        post_account._register_publish_refused(
+                            _(
+                                "The account has no LinkedIn access token. "
+                                "Update the account to authorize it again."
+                            )
                         )
                         post_account.account_id._flag_credentials_expired(
                             _("the account has no access token")
