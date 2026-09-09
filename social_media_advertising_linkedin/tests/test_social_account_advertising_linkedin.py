@@ -936,7 +936,7 @@ class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
         )
         self.assertEqual(ad_values["statistics_date_from"], self.start_datetime)
         self.assertEqual(ad_values["statistics_date_to"], self.end_datetime)
-        self.assertIn("creativeIds", ad_values["url"])
+        self.assertNotIn("url", ad_values)
 
     def test_fetch_linkedin_ads_created_date_is_stored_in_utc(self):
         """The moment is stored in UTC so every user reads it in his own zone."""

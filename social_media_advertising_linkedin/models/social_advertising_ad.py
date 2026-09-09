@@ -9,6 +9,7 @@ from odoo.exceptions import UserError
 
 from ..social_advertising_linkedin_utils import (
     _ENDPOINT_AD_CREATIVES_LINKEDIN,
+    campaign_manager_url_linkedin,
     linkedin_urn_id,
 )
 from .social_advertising_campaign import LINKEDIN_LOCKED_CODES
@@ -24,6 +25,19 @@ class SocialAdvertisingAd(models.Model):
     """Deletion of an ad on LinkedIn."""
 
     _inherit = "social.advertising.ad"
+
+    def _get_web_url(self):
+        self.ensure_one()
+        if self.media_type != "linkedin" or not (
+            self.remote_ref and self.advertising_account_id.remote_ref
+        ):
+            return super()._get_web_url()
+        return campaign_manager_url_linkedin(
+            self.advertising_account_id.remote_ref,
+            "creatives",
+            "creativeIds",
+            self.remote_ref,
+        )
 
     @api.depends("media_type", "remote_ref", "stage_id.code")
     def _compute_can_delete_remote_ad(self):

@@ -56,8 +56,8 @@
                             t-esc="social_account.name"
                         />
                         <a
-                            t-if="social_account.account_url"
-                            t-att-href="social_account.account_url"
+                            t-if="social_account.web_url"
+                            t-att-href="social_account.web_url"
                             target="_blank"
                         >
                         Go to account

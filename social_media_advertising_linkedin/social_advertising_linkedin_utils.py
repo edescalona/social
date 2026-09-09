@@ -1,6 +1,8 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from urllib.parse import quote
+
 from odoo import fields
 from odoo.tools import date_utils
 
@@ -21,6 +23,27 @@ def linkedin_urn_id(urn):
     :rtype: str
     """
     return (urn or "").split(":")[-1]
+
+
+def campaign_manager_url_linkedin(ad_account_ref, section, parameter, remote_ref):
+    """Return the Campaign Manager address of one entity.
+
+    Campaign Manager has no page of its own per entity: every section is a
+    list under the advertising account, and one entity is reached by
+    filtering that list on its identifier, which travels the way the
+    interface writes it, as a JSON array of a single element.
+
+    :param ad_account_ref: URN or bare identifier of the advertising account.
+    :param section: path of the section listing this kind of entity.
+    :param parameter: query parameter that section filters on.
+    :param remote_ref: URN or bare identifier of the entity.
+    :rtype: str
+    """
+    identifier = linkedin_urn_id(remote_ref)
+    return (
+        f"{_URL_CAMPAIGN_MANAGER_LINKEDIN}{linkedin_urn_id(ad_account_ref)}/"
+        f"{section}?{parameter}={quote(str([identifier]))}"
+    )
 
 
 _ENDPOINT_AD_ACCOUNTS_LINKEDIN = "/adAccounts"

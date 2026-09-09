@@ -448,20 +448,25 @@ class TestSocialAdvertisingAd(TestSocialAdvertisingAdCommon):
 
     def test_action_open_url(self):
         ad = self.SocialAdvertisingAd.create(
-            dict(
-                self._ad_values(),
-                account_id=self.social_account_id.id,
-                url="https://example.test/ad",
-            )
+            dict(self._ad_values(), account_id=self.social_account_id.id)
         )
-        action = ad.action_open_url()
+        with patch.object(
+            type(ad),
+            "_get_web_url",
+            autospec=True,
+            return_value="https://example.test/ad",
+        ):
+            action = ad.action_open_url()
         self.assertEqual(action["type"], "ir.actions.act_url")
         self.assertEqual(action["url"], "https://example.test/ad")
+        self.assertEqual(action["target"], "new")
 
     def test_action_open_url_without_url(self):
+        """Without a connector answering an address, nothing is opened."""
         ad = self.SocialAdvertisingAd.create(
             dict(self._ad_values(), account_id=self.social_account_id.id)
         )
+        self.assertFalse(ad.web_url)
         self.assertFalse(ad.action_open_url())
 
     def test_action_open_post_account(self):

@@ -69,6 +69,15 @@
                                 string="Marketing Campaigns"
                             />
                         </button>
+                        <button
+                            type="object"
+                            name="action_open_url"
+                            class="oe_stat_button"
+                            icon="fa-external-link"
+                            string="Open account"
+                            invisible="not web_url"
+                            title="Open this account on the social media, in a new tab."
+                        />
                     </div>
                     <field
                         name="image_1920"
@@ -86,7 +95,7 @@
                         <group>
                             <field name="username" readonly="1" />
                             <field name="media_id" readonly="1" />
-                            <field name="account_url" widget="url" />
+                            <field name="web_url" invisible="1" />
                             <field name="media_type" invisible="1" />
                         </group>
                         <group>

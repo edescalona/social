@@ -205,3 +205,15 @@ class TestSocialAdvertisingAdLinkedin(TestSocialCommonAdvertisingLinkedin):
         with self._patch_request(deleted) as mock_request:
             self.ad_linkedin.action_delete_remote_ad()
         self.assertIn("/adAccounts/111/", mock_request.call_args.kwargs["endpoint"])
+
+    def test_web_url_points_to_the_creative_in_the_campaign_manager(self):
+        self.assertEqual(
+            self.ad_linkedin.web_url,
+            "https://www.linkedin.com/campaignmanager/accounts/999/"
+            "creatives?creativeIds=%5B%271%27%5D",
+        )
+
+    def test_web_url_is_empty_without_an_advertising_account(self):
+        """Nothing to build the address from means no button at all."""
+        self.ad_linkedin.advertising_account_id = False
+        self.assertFalse(self.ad_linkedin.web_url)

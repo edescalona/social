@@ -22,6 +22,7 @@ class SocialAdvertisingAccount(models.Model):
 
     _name = "social.advertising.account"
     _description = "Advertising Account Mirrored from a Social Media"
+    _inherit = ["social.web.url.mixin"]
     _order = "is_current desc, name, id"
 
     account_id = fields.Many2one(
@@ -59,11 +60,6 @@ class SocialAdvertisingAccount(models.Model):
         copy=False,
         help="Advertising account the campaigns and the ads of this social "
         "media account work with. Only one at a time.",
-    )
-    web_url = fields.Char(
-        string="Campaign Manager URL",
-        compute="_compute_web_url",
-        help="Address of this advertising account on the social media.",
     )
     last_sync_date = fields.Datetime(string="Last Fetch", readonly=True)
     campaign_ids = fields.One2many(
@@ -133,9 +129,8 @@ class SocialAdvertisingAccount(models.Model):
 
     @api.depends("remote_ref", "media_id.media_type")
     def _compute_web_url(self):
-        """Leave the address empty: each connector builds its own."""
-        for advertising_account in self:
-            advertising_account.web_url = False
+        """Only declares what the address of an advertising account is built from."""
+        return super()._compute_web_url()
 
     def _get_display_reference(self):
         """Return the reference shown next to the name.

@@ -2,7 +2,6 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import logging
-from urllib.parse import quote
 
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
@@ -24,7 +23,6 @@ from ..social_advertising_linkedin_utils import (
     _FIELDS_STATISTIC_LINKEDIN,
     _PAGE_SIZE_LINKEDIN,
     _SCOPE_ADS_LINKEDIN,
-    _URL_CAMPAIGN_MANAGER_LINKEDIN,
     linkedin_date_struct,
     linkedin_urn_id,
 )
@@ -938,7 +936,6 @@ class SocialAccount(models.Model):
             ]
         ).grouped("code")
         advertising_account = self.advertising_account_ids.filtered("is_current")[:1]
-        ad_account_id = linkedin_urn_id(advertising_account.remote_ref)
         # LinkedIn answers `costInUsd`, whatever the currency the advertising
         # account is billed in, so the cost is stored in dollars.
         currency = self.env.ref("base.USD", raise_if_not_found=False)
@@ -973,9 +970,6 @@ class SocialAccount(models.Model):
                     "currency_id": currency.id if currency else False,
                     "statistics_date_from": start_date,
                     "statistics_date_to": end_date,
-                    "url": f"{_URL_CAMPAIGN_MANAGER_LINKEDIN}{ad_account_id}/"
-                    f"creatives?creativeIds="
-                    f"{quote(str([linkedin_urn_id(remote_ref)]))}",
                 }
             )
         return res

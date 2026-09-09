@@ -26,6 +26,7 @@ class SocialAdvertisingAd(models.Model):
     """
 
     _name = "social.advertising.ad"
+    _inherit = ["social.web.url.mixin"]
     _description = "Ad Served on a Social Media and its Statistics"
     _order = "created_date desc, id desc"
 
@@ -143,11 +144,6 @@ class SocialAdvertisingAd(models.Model):
         help="Last day of the window the statistics of this ad cover.",
     )
     last_sync_date = fields.Datetime(string="Last Fetch", readonly=True)
-    url = fields.Char(
-        string="Ad URL",
-        help="Address of this ad on the social media. It opens the ad "
-        "itself, not the campaign it belongs to.",
-    )
     can_delete_remote_ad = fields.Boolean(
         compute="_compute_can_delete_remote_ad",
         help="Whether the connector module of this social media deletes an "
@@ -280,16 +276,12 @@ class SocialAdvertisingAd(models.Model):
             else {"type": "ir.actions.client", "tag": "soft_reload"},
         )
 
-    def action_open_url(self):
-        """Open this ad on the social media."""
-        self.ensure_one()
-        if not self.url:
-            return False
-        return {
-            "type": "ir.actions.act_url",
-            "url": self.url,
-            "target": "new",
-        }
+    @api.depends(
+        "remote_ref", "advertising_account_id.remote_ref", "media_id.media_type"
+    )
+    def _compute_web_url(self):
+        """Only declares what the address of an ad is built from."""
+        return super()._compute_web_url()
 
     def action_open_post_account(self):
         """Open the publication this ad promotes."""

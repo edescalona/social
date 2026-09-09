@@ -21,7 +21,7 @@ export class SocialKanbanModel extends RelationalModel {
             "name",
             "company_id",
             "media_id",
-            "account_url",
+            "web_url",
             "impression_count",
             "interactions_count",
             "engagement",

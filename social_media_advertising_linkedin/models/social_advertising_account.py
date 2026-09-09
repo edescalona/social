@@ -75,17 +75,9 @@ class SocialAdvertisingAccount(models.Model):
         """Only declares the LinkedIn dependency of the computation."""
         return super()._compute_display_name()
 
-    @api.depends("remote_ref", "media_id.media_type")
-    def _compute_web_url(self):
-        res = super()._compute_web_url()
-        for advertising_account in self.filtered(
-            lambda advertising_account: (
-                advertising_account.media_id.media_type == "linkedin"
-                and advertising_account.remote_ref
-            )
-        ):
-            identifier = linkedin_urn_id(advertising_account.remote_ref)
-            advertising_account.web_url = (
-                f"{_URL_CAMPAIGN_MANAGER_LINKEDIN}{identifier}/"
-            )
-        return res
+    def _get_web_url(self):
+        self.ensure_one()
+        if self.media_id.media_type != "linkedin" or not self.remote_ref:
+            return super()._get_web_url()
+        identifier = linkedin_urn_id(self.remote_ref)
+        return f"{_URL_CAMPAIGN_MANAGER_LINKEDIN}{identifier}/"

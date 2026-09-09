@@ -728,7 +728,7 @@ class SocialAccount(models.Model):
 
     def _get_account_statistics(self, statistics=None):
         return self._media_statistics_payload(
-            "linkedin", statistics, extra_fields=("account_url",)
+            "linkedin", statistics, extra_fields=("web_url",)
         )
 
     def _linkedin_read_watched_figures(self):

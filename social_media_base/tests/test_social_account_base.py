@@ -245,7 +245,7 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         self.assertTrue(self.social_post_id.active)
         self.assertTrue(self.social_post_account_id.active)
 
-    def test_compute_account_url(self):
+    def test_compute_web_url(self):
         fake_fields = {
             "other_social": "https://www.failed.com/company/id1234account/admin"
         }
@@ -262,11 +262,11 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         ):
             self.social_media_id.write({"media_type": "other_social"})
             self.assertEqual(
-                self.social_account_id.account_url,
+                self.social_account_id.web_url,
                 "https://www.failed.com/company/id1234account/admin",
             )
 
-    def test_compute_account_url_failed(self):
+    def test_compute_web_url_failed(self):
         fake_failed_fields = {
             "other_social": "https://www.failed.com/company/2333/admin"
         }
@@ -276,7 +276,23 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
             autospec=True,
             return_value=fake_failed_fields,
         ):
-            self.assertFalse(self.social_account_id.account_url)
+            self.assertFalse(self.social_account_id.web_url)
+
+    def test_action_open_url(self):
+        with patch.object(
+            type(self.social_account_id),
+            "_get_web_url",
+            autospec=True,
+            return_value="https://example.test/account",
+        ):
+            action = self.social_account_id.action_open_url()
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertEqual(action["url"], "https://example.test/account")
+        self.assertEqual(action["target"], "new")
+
+    def test_action_open_url_without_url(self):
+        """Without a connector answering an address, nothing is opened."""
+        self.assertFalse(self.social_account_id.action_open_url())
 
     def test_need_update(self):
         Bus = self.env["bus.bus"]

@@ -28,6 +28,7 @@ class SocialAccount(models.Model):
         "avatar.mixin",
         "social.media.base.mixin",
         "social.statistics.mixin",
+        "social.web.url.mixin",
     ]
     _description = "Account Linked to a Social Media"
 
@@ -81,7 +82,6 @@ class SocialAccount(models.Model):
         help="Interactions of the account over its impressions, as a ratio.",
     )
 
-    account_url = fields.Char(compute="_compute_account_url")
     need_update = fields.Boolean(
         default=False,
         help="The credentials of the account expired and it has to be "
@@ -551,11 +551,13 @@ class SocialAccount(models.Model):
         return {}
 
     @api.depends("media_type", "remote_ref", "username")
-    def _compute_account_url(self):
-        for account in self:
-            account.account_url = account._fields_account_url().get(
-                account.media_type, ""
-            )
+    def _compute_web_url(self):
+        """Only declares what the address of an account is built from."""
+        return super()._compute_web_url()
+
+    def _get_web_url(self):
+        self.ensure_one()
+        return self._fields_account_url().get(self.media_type, "")
 
     def compute_dashboard_statistics(self):
         """Recompute the figures the dashboard shows, without asking anybody.
