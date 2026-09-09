@@ -11,7 +11,7 @@
             ref="social_media_advertising.social_account_view_form_inherit"
         />
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='account_advertising']/group" position="before">
+            <xpath expr="//sheet" position="before">
                 <div
                     class="alert alert-warning"
                     role="alert"
