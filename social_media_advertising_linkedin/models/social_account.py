@@ -434,21 +434,17 @@ class SocialAccount(models.Model):
             for element in groups
             if element.get("totalBudget", {}).get("currencyCode")
         ]
+        # Every index answers a recordset, and the loops that read them keep
+        # the first record: the reference is unique per social media, which
+        # these domains do not narrow.
         return (
-            {
-                group.remote_ref: group
-                for group in SocialGroup.search([("remote_ref", "in", group_urns)])
-            },
-            {
-                campaign.remote_ref: campaign
-                for campaign in SocialAdvertisingCampaign.search(
-                    [("remote_ref", "in", campaign_urns)]
-                )
-            },
-            {
-                currency.name: currency
-                for currency in Currency.search([("name", "in", currency_codes)])
-            },
+            SocialGroup.search([("remote_ref", "in", group_urns)]).grouped(
+                "remote_ref"
+            ),
+            SocialAdvertisingCampaign.search(
+                [("remote_ref", "in", campaign_urns)]
+            ).grouped("remote_ref"),
+            Currency.search([("name", "in", currency_codes)]).grouped("name"),
         )
 
     def _upsert_linkedin_campaign_groups(
@@ -481,10 +477,12 @@ class SocialAccount(models.Model):
                 "stage_id": stage_by_scope.get(("group", status), False),
                 "advertising_account_id": advertising_account.id,
             }
-            currency = currency_by_name.get(total_budget.get("currencyCode"))
+            currency = currency_by_name.get(
+                total_budget.get("currencyCode"), self.env["res.currency"]
+            )[:1]
             if currency:
                 vals["currency_id"] = currency.id
-            group = group_by_urn.get(urn)
+            group = group_by_urn.get(urn, SocialGroup)[:1]
             if not group:
                 new_groups.append(vals)
                 new_group_urns.append(urn)
@@ -587,7 +585,9 @@ class SocialAccount(models.Model):
         for element in campaigns:
             urn = f"urn:li:sponsoredCampaign:{element['id']}"
             group_urn = element.get("campaignGroup", "")
-            group = groups_by_urn.get(group_urn) or group_by_urn.get(group_urn)
+            group = (
+                groups_by_urn.get(group_urn) or group_by_urn.get(group_urn, SocialGroup)
+            )[:1]
             status = element.get("status") or ""
             vals = {
                 "name": element.get("name", ""),
@@ -613,7 +613,7 @@ class SocialAccount(models.Model):
             )
             if group:
                 vals["campaign_group_id"] = group.id
-            campaign = campaign_by_urn.get(urn)
+            campaign = campaign_by_urn.get(urn, SocialAdvertisingCampaign)[:1]
             if campaign:
                 if campaign.name == vals["name"]:
                     vals.pop("name")
