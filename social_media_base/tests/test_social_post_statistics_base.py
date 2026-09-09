@@ -141,6 +141,82 @@ class TestSocialPostStatisticsBase(TestSocialMediaBaseCommon):
             accounts._refresh_window_statistics()
         self.assertEqual(hook.call_count, 1)
 
+    def test_the_cron_runs_once_a_day(self):
+        """Daily and active out of the box.
+
+        The figures move slowly and the quotas are counted per day, and a
+        deactivated cron would leave the feature looking broken on a fresh
+        install, which is what it exists to fix.
+        """
+        cron = self.env.ref("social_media_base.refresh_post_statistics_job")
+        self.assertEqual(cron.interval_number, 1)
+        self.assertEqual(cron.interval_type, "days")
+        self.assertEqual(cron.numbercall, -1)
+        self.assertTrue(cron.active)
+        self.assertEqual(cron.model_id.model, "social.account")
+
+    def test_the_cron_reads_the_window(self):
+        """The daily pass asks about the publications inside the window."""
+        inside = self._publication(days_ago=1)
+        outside = self._publication(days_ago=STATISTICS_WINDOW_DAYS + 1)
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=lambda account, lines: lines,
+        ) as hook:
+            self.SocialAccount._run_refresh_post_statistics()
+        handed = self.SocialPostAccount.union(
+            *[call.args[1] for call in hook.call_args_list]
+        )
+        self.assertIn(inside, handed)
+        self.assertNotIn(outside, handed)
+
+    def test_the_cron_leaves_out_the_expired_credentials(self):
+        """An account waiting for a new authorization spends no call.
+
+        It could only answer a refusal, so asking it would spend a call to
+        learn what the flag already says.
+        """
+        self._publication(account=self.other_account_id)
+        self.other_account_id.need_update = True
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=lambda account, lines: lines,
+        ) as hook:
+            self.SocialAccount._run_refresh_post_statistics()
+        asked = [call.args[0] for call in hook.call_args_list]
+        self.assertNotIn(self.other_account_id, asked)
+
+    def test_the_button_reads_the_same_set_as_the_cron(self):
+        """*Update* on the dashboard asks for the window and nothing else.
+
+        A single set to explain and a single ceiling of cost, wherever the
+        user presses.
+        """
+        inside = self._publication(days_ago=1)
+        outside = self._publication(days_ago=STATISTICS_WINDOW_DAYS + 1)
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=lambda account, lines: lines,
+        ) as hook:
+            self.social_account_id.refresh_dashboard_statistics()
+        handed = hook.call_args.args[1]
+        self.assertIn(inside, handed)
+        self.assertNotIn(outside, handed)
+
+    def test_the_account_form_button_reads_the_window_too(self):
+        """*Refresh statistics* of the form reads the same window."""
+        publication = self._publication(days_ago=1)
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=lambda account, lines: lines,
+        ) as hook:
+            self.social_account_id.action_refresh_statistics()
+        self.assertIn(publication, hook.call_args.args[1])
+
     @mute_logger(LOG_PATH)
     def test_an_account_that_fails_does_not_stop_the_next(self):
         """Each account is read inside its own savepoint.

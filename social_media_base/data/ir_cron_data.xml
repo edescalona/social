@@ -27,4 +27,21 @@
         <field name="numbercall">-1</field>
         <field name="priority">1</field>
     </record>
+
+    <record id="refresh_post_statistics_job" model="ir.cron">
+        <field
+            name="name"
+        >Social: Refresh the statistics of the recent publications</field>
+        <field name="model_id" ref="model_social_account" />
+        <field name="state">code</field>
+        <field name="code">model._run_refresh_post_statistics()</field>
+        <!-- Daily and not every two hours: the figures of a publication move
+             slowly and the quotas are counted per day. The window is what
+             bounds what a run spends; the interval is what bounds how many
+             runs there are. -->
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="priority">1</field>
+    </record>
 </odoo>

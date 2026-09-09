@@ -246,6 +246,12 @@ class SocialAccount(models.Model):
         presses when he does not want to wait for the next pass. A social
         media that reports no figures by day answers nothing, and saying so
         is more useful than announcing an update that did not happen.
+
+        The figures of the recent publications are read back in the same
+        press, over the same window the daily cron reads: one set to explain
+        and one ceiling of cost, wherever the user presses. The notification
+        keeps speaking of the daily series, which is the only part of this a
+        social media can be unable to answer.
         """
         self.ensure_one()
         # ``media`` is what the notification is built around: without it
@@ -253,7 +259,9 @@ class SocialAccount(models.Model):
         # reaches the user at all. It already prefixes the social media, so
         # the name goes in raw: ``display_name`` would repeat it.
         media = self.media_type or self.media_id.name
-        if self._refresh_statistics():
+        refreshed_series = self._refresh_statistics()
+        self._refresh_window_statistics()
+        if refreshed_series:
             self._notify_user_client(
                 notif_type="social_form_success",
                 notif_message=_("The statistics of the account were updated."),
@@ -589,9 +597,15 @@ class SocialAccount(models.Model):
         :meth:`action_refresh_statistics` already does from the account form,
         over every account instead of one.
 
-        Refreshing the series first and aggregating afterwards is not
-        optional: the figures come from those rows, so the other order would
-        recompute the card from what was already on screen.
+        The figures of the recent publications are read back too, over the
+        same window the daily cron reads: the button asks for the same set the
+        cron does, so there is a single ceiling of cost and a single thing to
+        explain.
+
+        Refreshing what the social media reports first and aggregating
+        afterwards is not optional: the figures of the card come from those
+        rows and from the publications, so the other order would recompute it
+        from what was already on screen.
 
         There is no throttle. Opening the dashboard costs no call at all, so
         the only calls there are to spare are the ones the user asked for by
@@ -603,6 +617,7 @@ class SocialAccount(models.Model):
         """
         accounts = self or self.sudo().search([])
         refreshed = accounts._refresh_statistics()
+        accounts._refresh_window_statistics()
         accounts._refresh_account_statistics()
         return refreshed
 
@@ -1040,6 +1055,31 @@ class SocialAccount(models.Model):
                     "Error checking the credentials of the account %s", account.id
                 )
         return False
+
+    @api.model
+    def _run_refresh_post_statistics(self):
+        """Read back the figures of the publications of the last days.
+
+        The daily pass of the cron, and the reason the figures of a
+        publication move at all without a synchronization module installed.
+        What it spends is bounded by the window and not by the history of the
+        account, which is what lets it live here.
+
+        The cron record sets no user, so the search needs ``sudo()`` to reach
+        the accounts of every responsible.
+
+        Which accounts are walked is asked to
+        :meth:`~._get_check_media_updates_domain`, the same one that already
+        decides which accounts are worth reading, plus the ones whose
+        credentials are still valid: an account waiting for a new
+        authorization can only answer a refusal, so asking it spends a call to
+        learn what the flag already says.
+
+        :return: the lines the social media answered for.
+        :rtype: recordset
+        """
+        domain = self._get_check_media_updates_domain() + [("need_update", "=", False)]
+        return self.sudo().search(domain)._refresh_window_statistics()
 
     def _notify_accounts_by_partner(
         self, bus_type, need_update=True, payload_accounts=True
