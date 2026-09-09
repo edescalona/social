@@ -635,6 +635,39 @@ class SocialPostAccount(models.Model):
         """
         return bool(self.remote_ref)
 
+    def _check_remote_posts_exist(self):
+        """Which of these publications the social media reports as gone.
+
+        The plural of :meth:`_check_remote_post_exists`, and it keeps its
+        contract: a line is only answered when the social media positively
+        reported the publication as gone. Anything else --a lost permission, a
+        rate limit, a connection error-- leaves the line out of the answer,
+        because a publication is not deleted just because Odoo could not read
+        it. A check that raises resolves nothing about its own line and stops
+        nothing about the others, which is why the loop asks for each of them
+        on its own.
+
+        It exists as a method of its own so a connector whose API answers a
+        whole batch in one call --LinkedIn does, by ``ids``-- pays one call per
+        hundred suspects instead of one per suspect. The default is the honest
+        one: ask for each of them.
+
+        :return: the lines the social media confirms are gone.
+        :rtype: recordset
+        """
+        gone = self.browse()
+        for line in self:
+            try:
+                if not line._check_remote_post_exists():
+                    gone |= line
+            except Exception:  # noqa: BLE001 - a failed check is not a deletion
+                _logger.exception(
+                    "Error checking whether the post %s still exists, it is "
+                    "left untouched",
+                    line.remote_ref,
+                )
+        return gone
+
     def _register_remote_post_gone(self):
         """Record that the publication no longer exists on the social media.
 
@@ -643,6 +676,23 @@ class SocialPostAccount(models.Model):
         can be recognised and restored by the next full refresh.
         """
         self.write({"state": "deleted", "post_account_url": False})
+
+    def _register_remote_posts_gone(self):
+        """Mark as gone the publications the social media confirms are gone.
+
+        The entry point for anything that marks in bulk. Missing from a listing
+        is not proof: a feed read short, an index that has not caught up with
+        what was published minutes ago, a kind of publication the finder does
+        not answer --any of them makes a live publication look absent-- and
+        marking it would take it out of every later pass, which read the live
+        ones only.
+
+        :return: the lines that were marked.
+        :rtype: recordset
+        """
+        gone = self._check_remote_posts_exist()
+        gone._register_remote_post_gone()
+        return gone
 
     def _remote_post_gone_on_action(self):
         """Whether an action failed because the publication no longer exists.
