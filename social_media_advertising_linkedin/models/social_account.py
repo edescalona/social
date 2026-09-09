@@ -674,54 +674,51 @@ class SocialAccount(models.Model):
         :rtype: int
         """
         PostAccount = self.env["social.post.account"].sudo()
-        post_account_by_ref = {
-            post_account.remote_ref: post_account
-            for post_account in PostAccount.search(
-                [
-                    (
-                        "remote_ref",
-                        "in",
-                        [
-                            element.get("content", {}).get("reference")
-                            for element in creatives
-                            if element.get("content", {}).get("reference")
-                        ],
-                    ),
-                    ("account_id", "=", self.id),
-                ]
-            )
-        }
-        campaigns_by_urn = {
-            campaign.remote_ref: campaign
-            for campaign in self.env["social.advertising.campaign"]
-            .sudo()
-            .search(
-                [
-                    (
-                        "remote_ref",
-                        "in",
-                        [
-                            element["campaign"]
-                            for element in creatives
-                            if element.get("campaign")
-                        ],
-                    )
-                ]
-            )
-        }
+        Campaign = self.env["social.advertising.campaign"].sudo()
+        # ``grouped`` answers a recordset per key, and neither index is unique
+        # by constraint: the publication has none on its remote reference, and
+        # the campaign is unique per social media, which this domain does not
+        # narrow. The first one wins, as it did.
+        post_account_by_ref = PostAccount.search(
+            [
+                (
+                    "remote_ref",
+                    "in",
+                    [
+                        element.get("content", {}).get("reference")
+                        for element in creatives
+                        if element.get("content", {}).get("reference")
+                    ],
+                ),
+                ("account_id", "=", self.id),
+            ]
+        ).grouped("remote_ref")
+        campaigns_by_urn = Campaign.search(
+            [
+                (
+                    "remote_ref",
+                    "in",
+                    [
+                        element["campaign"]
+                        for element in creatives
+                        if element.get("campaign")
+                    ],
+                )
+            ]
+        ).grouped("remote_ref")
         linked = 0
         for element in creatives:
             reference = element.get("content", {}).get("reference")
             if not reference:
                 continue
-            post_account = post_account_by_ref.get(reference)
+            post_account = post_account_by_ref.get(reference, PostAccount)[:1]
             if not post_account:
                 continue
             values = {}
             creative_urn = str(element["id"])
             if post_account.creative_urn != creative_urn:
                 values["creative_urn"] = creative_urn
-            campaign = campaigns_by_urn.get(element.get("campaign"))
+            campaign = campaigns_by_urn.get(element.get("campaign"), Campaign)[:1]
             if (
                 campaign
                 and not post_account.post_id
@@ -901,53 +898,45 @@ class SocialAccount(models.Model):
         ):
             for pivot in statistic.get("pivotValues", []):
                 statistic_by_ref[pivot] = statistic
-        campaign_by_ref = {
-            campaign.remote_ref: campaign
-            for campaign in self.env["social.advertising.campaign"]
-            .sudo()
-            .search(
-                [
-                    (
-                        "remote_ref",
-                        "in",
-                        [
-                            creative["campaign"]
-                            for creative in creatives
-                            if creative.get("campaign")
-                        ],
-                    ),
-                    ("media_id.media_type", "=", "linkedin"),
-                ]
-            )
-        }
-        post_account_by_ref = {
-            post_account.remote_ref: post_account
-            for post_account in self.env["social.post.account"]
-            .sudo()
-            .search(
-                [
-                    (
-                        "remote_ref",
-                        "in",
-                        [
-                            creative.get("content", {}).get("reference")
-                            for creative in creatives
-                            if creative.get("content", {}).get("reference")
-                        ],
-                    ),
-                    ("account_id", "=", self.id),
-                ]
-            )
-        }
-        stage_by_code = {
-            stage.code: stage
-            for stage in self.env["social.stage"].search(
-                [
-                    ("media_id.media_type", "=", "linkedin"),
-                    ("applies_to", "=", "ad"),
-                ]
-            )
-        }
+        Campaign = self.env["social.advertising.campaign"].sudo()
+        PostAccount = self.env["social.post.account"].sudo()
+        Stage = self.env["social.stage"]
+        # ``grouped`` answers a recordset per key, and the three indexes are
+        # read as one record: the first one wins, as it did with the dicts.
+        campaign_by_ref = Campaign.search(
+            [
+                (
+                    "remote_ref",
+                    "in",
+                    [
+                        creative["campaign"]
+                        for creative in creatives
+                        if creative.get("campaign")
+                    ],
+                ),
+                ("media_id.media_type", "=", "linkedin"),
+            ]
+        ).grouped("remote_ref")
+        post_account_by_ref = PostAccount.search(
+            [
+                (
+                    "remote_ref",
+                    "in",
+                    [
+                        creative.get("content", {}).get("reference")
+                        for creative in creatives
+                        if creative.get("content", {}).get("reference")
+                    ],
+                ),
+                ("account_id", "=", self.id),
+            ]
+        ).grouped("remote_ref")
+        stage_by_code = Stage.search(
+            [
+                ("media_id.media_type", "=", "linkedin"),
+                ("applies_to", "=", "ad"),
+            ]
+        ).grouped("code")
         advertising_account = self.advertising_account_ids.filtered("is_current")[:1]
         ad_account_id = linkedin_urn_id(advertising_account.remote_ref)
         # LinkedIn answers `costInUsd`, whatever the currency the advertising
@@ -956,18 +945,18 @@ class SocialAccount(models.Model):
         for creative in creatives:
             remote_ref = str(creative["id"])
             statistic = statistic_by_ref.get(remote_ref, {})
-            campaign = campaign_by_ref.get(creative.get("campaign"))
+            campaign = campaign_by_ref.get(creative.get("campaign"), Campaign)[:1]
             post_account = post_account_by_ref.get(
-                creative.get("content", {}).get("reference")
-            )
-            stage = stage_by_code.get(creative.get("intendedStatus", ""))
+                creative.get("content", {}).get("reference"), PostAccount
+            )[:1]
+            stage = stage_by_code.get(creative.get("intendedStatus", ""), Stage)[:1]
             res.append(
                 {
                     "remote_ref": remote_ref,
                     "advertising_account_id": advertising_account.id,
-                    "campaign_id": campaign.id if campaign else False,
-                    "post_account_id": post_account.id if post_account else False,
-                    "stage_id": stage.id if stage else False,
+                    "campaign_id": campaign.id,
+                    "post_account_id": post_account.id,
+                    "stage_id": stage.id,
                     "status_detail": ", ".join(creative.get("servingHoldReasons", [])),
                     # The creation moment is stored in UTC, so every user
                     # reads it in his own time zone instead of the one of
