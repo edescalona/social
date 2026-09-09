@@ -50,6 +50,11 @@ export class SocialCommentDialog extends Component {
         this.state = useState({
             thread: undefined,
             comments: [],
+            // What the dialog draws, derived from the list every time it is
+            // set: the branches the social media answered, computed once
+            // instead of once per comment drawn.
+            roots: [],
+            repliesByRoot: {},
             account_id: this.props.account.raw_value,
             // A publication in flight holds the aim still: the composer that
             // is sending must not be destroyed by a comment taking the aim,
@@ -66,7 +71,7 @@ export class SocialCommentDialog extends Component {
                 this.props.post.id.raw_value
             );
             if (result && result.success) {
-                this.state.comments = result.data || [];
+                this.setComments(result.data || []);
             } else {
                 this.notificationService.add(
                     (result && result.message) || _t("Error retrieving comments"),
@@ -149,10 +154,34 @@ export class SocialCommentDialog extends Component {
         });
     }
 
-    get commentsByRef() {
-        return new Map(
-            this.state.comments.map((comment) => [comment.remote_ref, comment])
-        );
+    /**
+     * Keep the comments and the branches they draw, in one traversal.
+     *
+     * The list is what the social media answered and the dialog draws it in
+     * that order, so the branches are built by walking it once instead of
+     * grouping it: the roots come out in the order they were answered, and so
+     * do the replies of each of them.
+     *
+     * @param {Object[]} comments The comments the social media answered.
+     */
+    setComments(comments) {
+        const byRef = new Map(comments.map((comment) => [comment.remote_ref, comment]));
+        const rootByRef = new Map();
+        const roots = [];
+        const repliesByRoot = {};
+        for (const comment of comments) {
+            const rootRef = this.rootRefOf(comment, byRef, rootByRef);
+            if (rootRef === comment.remote_ref) {
+                roots.push(comment);
+                repliesByRoot[rootRef] = repliesByRoot[rootRef] || [];
+            } else {
+                repliesByRoot[rootRef] = repliesByRoot[rootRef] || [];
+                repliesByRoot[rootRef].push(comment);
+            }
+        }
+        this.state.comments = comments;
+        this.state.roots = roots;
+        this.state.repliesByRoot = repliesByRoot;
     }
 
     /**
@@ -166,35 +195,42 @@ export class SocialCommentDialog extends Component {
      * is the publication — is a first-level one and answers for itself.
      *
      * @param {Object} comment The comment being placed.
+     * @param {Map} byRef The comments of the list by remote reference.
+     * @param {Map} rootByRef The roots already resolved, filled as the list
+     *     is walked. A chain that closes on itself is left out of it: a
+     *     ``parent_ref`` pointing backwards answers a different root
+     *     depending on where the walk started, so caching one of them would
+     *     answer for the others.
      * @returns {String} The reference of the comment that starts its branch.
      */
-    rootRefOf(comment) {
-        const byRef = this.commentsByRef;
+    rootRefOf(comment, byRef, rootByRef) {
+        const walked = [];
         const seen = new Set();
         let current = comment;
         while (current.parent_ref && byRef.has(current.parent_ref)) {
+            if (rootByRef.has(current.remote_ref)) {
+                const known = rootByRef.get(current.remote_ref);
+                walked.forEach((ref) => rootByRef.set(ref, known));
+                return known;
+            }
             if (seen.has(current.remote_ref)) {
-                break;
+                return current.remote_ref;
             }
             seen.add(current.remote_ref);
+            walked.push(current.remote_ref);
             current = byRef.get(current.parent_ref);
         }
+        walked.forEach((ref) => rootByRef.set(ref, current.remote_ref));
         return current.remote_ref;
     }
 
     /** The comments hanging from the publication. */
     get comments() {
-        return this.state.comments.filter(
-            (comment) => this.rootRefOf(comment) === comment.remote_ref
-        );
+        return this.state.roots;
     }
 
     repliesOf(comment) {
-        return this.state.comments.filter(
-            (reply) =>
-                reply.remote_ref !== comment.remote_ref &&
-                this.rootRefOf(reply) === comment.remote_ref
-        );
+        return this.state.repliesByRoot[comment.remote_ref] || [];
     }
 
     onShowAllImages(ev) {
@@ -215,7 +251,7 @@ export class SocialCommentDialog extends Component {
         if (!result?.success) {
             return;
         }
-        this.state.comments = result.data || [];
+        this.setComments(result.data || []);
     }
 
     onPostingChange(posting) {
@@ -279,7 +315,7 @@ export class SocialCommentDialog extends Component {
         ) {
             return true;
         }
-        this.state.comments = [...this.state.comments, comment];
+        this.setComments([...this.state.comments, comment]);
         if (comment.parent_ref) {
             // A folded branch would hide the reply that was just published,
             // which is the one thing the user is looking for.

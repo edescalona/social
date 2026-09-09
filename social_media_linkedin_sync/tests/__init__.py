@@ -9,3 +9,4 @@ from . import test_sync_post_linkedin
 from . import test_sync_actors_linkedin
 from . import test_card_footer_linkedin
 from . import test_post_reaction_linkedin
+from . import test_comment_dialog_linkedin
