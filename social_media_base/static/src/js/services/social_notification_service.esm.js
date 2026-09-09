@@ -12,6 +12,10 @@ import {session} from "@web/session";
  * callback would outrun a bus message, and what the server pushes through
  * the bus from an action of a form. Listening from the service and not from
  * a renderer keeps a view type from having to exist only to reach the bus.
+ *
+ * A failure of a form travels through the session, which is where the OAuth
+ * callbacks leave it, so the types subscribed to are the two the server
+ * pushes: the success and the information of an action of the client.
  */
 export const socialNotificationService = {
     dependencies: ["bus_service", "notification"],
@@ -26,7 +30,6 @@ export const socialNotificationService = {
                 sticky: false,
             });
         };
-        busService.subscribe("social_form_danger", showFormNotification);
         busService.subscribe("social_form_info", showFormNotification);
         busService.subscribe("social_form_success", showFormNotification);
         const pending = session.social_media_notification;
