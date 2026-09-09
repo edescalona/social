@@ -41,6 +41,11 @@ msgid "Are you sure you want to delete this comment?"
 msgstr "¿Seguro que desea eliminar este comentario?"
 
 #. module: social_media_sync
+#: model:ir.model.fields,field_description:social_media_sync.field_social_post_account__actor_urn
+msgid "Author Reference"
+msgstr "Referencia del autor"
+
+#. module: social_media_sync
 #. odoo-javascript
 #: code:addons/social_media_sync/static/src/components/social_comment/social_comment.esm.js:0
 #, python-format
@@ -179,6 +184,11 @@ msgid "Post deleted [%(account)s]"
 msgstr "Publicación eliminada [%(account)s]"
 
 #. module: social_media_sync
+#: model:ir.model.fields,field_description:social_media_sync.field_social_account__posts_need_import
+msgid "Posts Need Import"
+msgstr "Publicaciones pendientes de importar"
+
+#. module: social_media_sync
 #: model:ir.model,name:social_media_sync.model_social_post_account
 msgid "Publication of a Post on a Social Account"
 msgstr "Publicación de una entrada en una cuenta social"
@@ -194,11 +204,29 @@ msgstr "Recomendar"
 #. module: social_media_sync
 #. odoo-javascript
 #: code:addons/social_media_sync/static/src/components/social_comment/social_comment.xml:0
+#, python-format
+msgid ""
+"Recommend this comment on the social media, as the account that owns the "
+"publication. Pressing it again withdraws the reaction."
+msgstr "Recomienda este comentario en la red social, como la cuenta propietaria de la publicación. Al pulsarlo otra vez se retira la reacción."
+
+#. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_comment/social_comment.xml:0
 #: code:addons/social_media_sync/static/src/xml/app/common_templates.xml:0
 #: model:ir.model.fields,field_description:social_media_sync.field_social_post_account__liked_by_account
 #, python-format
 msgid "Recommended"
 msgstr "Recomendado"
+
+#. module: social_media_sync
+#: model:ir.model.fields,help:social_media_sync.field_social_post_account__actor_urn
+msgid ""
+"Reference of the author of the publication on the social media, as the "
+"import read it. It is what the social media answers about whoever published, "
+"which is not always the account that imported it: a page publishes as the "
+"page and a person as the person."
+msgstr "Referencia del autor de la publicación en la red social, tal como la leyó la importación. Es lo que la red social responde sobre quien publicó, que no siempre es la cuenta que la importó: una página publica como la página y una persona como la persona."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -221,6 +249,15 @@ msgid "Shares"
 msgstr "Comparticiones"
 
 #. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_comment/social_comment.xml:0
+#, python-format
+msgid ""
+"Show or hide the replies to this comment, asking the social media for them "
+"the first time."
+msgstr "Muestra u oculta las respuestas a este comentario, pidiéndoselas a la red social la primera vez."
+
+#. module: social_media_sync
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
@@ -238,13 +275,39 @@ msgid "Social: Initial sync of the new accounts"
 msgstr "Social: sincronización inicial de las cuentas nuevas"
 
 #. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_account/social_account.xml:0
+#, python-format
+msgid "The account"
+msgstr "La cuenta"
+
+#. module: social_media_sync
 #: model:ir.model.fields,help:social_media_sync.field_social_account__pending_initial_sync
 msgid ""
-"Technical field: the account was just associated and its posts still have to "
-"be imported by the initial sync cron."
-msgstr ""
-"Campo técnico: la cuenta acaba de asociarse y sus publicaciones todavía "
-"tienen que importarse mediante el cron de sincronización inicial."
+"The account was just associated and its posts still have to be imported by "
+"the initial sync cron."
+msgstr "La cuenta se acaba de asociar y sus publicaciones todavía las tiene que importar el cron de sincronización inicial."
+
+#. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_account/social_account.xml:0
+#, python-format
+msgid "The accounts"
+msgstr "Las cuentas"
+
+#. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/js/views/kanban/social_kanban_controller.esm.js:0
+#, python-format
+msgid "The data was updated. No new publications."
+msgstr "Se han actualizado los datos. No hay publicaciones nuevas."
+
+#. module: social_media_sync
+#: model:ir.model.fields,help:social_media_sync.field_social_account__posts_need_import
+msgid ""
+"The periodic check found publications on the social media that Odoo has not "
+"imported yet."
+msgstr "La comprobación periódica ha encontrado en la red social publicaciones que Odoo todavía no ha importado."
 
 #. module: social_media_sync
 #. odoo-python
@@ -300,6 +363,13 @@ msgstr "Todavía no hay comentarios."
 
 #. module: social_media_sync
 #. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_comment/social_comment.esm.js:0
+#, python-format
+msgid "Unknown author"
+msgstr "Autor desconocido"
+
+#. module: social_media_sync
+#. odoo-javascript
 #: code:addons/social_media_sync/static/src/components/social_comment/social_comment.xml:0
 #, python-format
 msgid "View replies"
@@ -340,6 +410,15 @@ msgstr "Con me gusta"
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_search_inherit
 msgid "With Shares"
 msgstr "Con comparticiones"
+
+#. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_comment/social_comment.xml:0
+#, python-format
+msgid ""
+"Write a reply to this comment. It is published on the social media as the "
+"account that owns the publication."
+msgstr "Escribe una respuesta a este comentario. Se publica en la red social como la cuenta propietaria de la publicación."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -384,3 +463,24 @@ msgstr "comentario"
 #, python-format
 msgid "comments"
 msgstr "comentarios"
+
+#. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_account/social_account.xml:0
+#, python-format
+msgid "has new publications. Press Update to import them."
+msgstr "tiene publicaciones nuevas. Pulsa Actualizar para importarlas."
+
+#. module: social_media_sync
+#. odoo-javascript
+#: code:addons/social_media_sync/static/src/components/social_account/social_account.xml:0
+#, python-format
+msgid "have new publications. Press Update to import them."
+msgstr "tienen publicaciones nuevas. Pulsa Actualizar para importarlas."
+
+#~ msgid ""
+#~ "Technical field: the account was just associated and its posts still have "
+#~ "to be imported by the initial sync cron."
+#~ msgstr ""
+#~ "Campo técnico: la cuenta acaba de asociarse y sus publicaciones todavía "
+#~ "tienen que importarse mediante el cron de sincronización inicial."

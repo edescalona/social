@@ -45,6 +45,14 @@ msgstr ""
 #. module: social_media_linkedin
 #: model_terms:ir.ui.view,arch_db:social_media_linkedin.social_account_view_form_inherit
 msgid ""
+"Ask LinkedIn whether the token still works. The automatic check answers from"
+" the stored dates, this one calls LinkedIn, so it also notices a token "
+"revoked there and renews it when it can."
+msgstr ""
+
+#. module: social_media_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_linkedin.social_account_view_form_inherit
+msgid ""
 "Ask the social media again for the daily figures of the page, as far back as"
 " it reports them, and rewrite the time series with them. It imports no "
 "publication: what it rebuilds is the graph of the account."
@@ -314,13 +322,6 @@ msgstr ""
 msgid ""
 "The access token of LinkedIn was revoked. Update the account to authorize it"
 " again."
-msgstr ""
-
-#. module: social_media_linkedin
-#. odoo-python
-#: code:addons/social_media_linkedin/controllers/social_media_linkedin.py:0
-#, python-format
-msgid "The account could not be associated. Check the server log for details."
 msgstr ""
 
 #. module: social_media_linkedin

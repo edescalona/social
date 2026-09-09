@@ -175,15 +175,6 @@ msgstr ""
 
 #. module: social_media_x
 #. odoo-python
-#: code:addons/social_media_x/controllers/social_media_x.py:0
-#, python-format
-msgid "The account could not be associated. Check the server log for details."
-msgstr ""
-"No se ha podido asociar la cuenta. Consulte el registro del servidor para "
-"más detalles."
-
-#. module: social_media_x
-#. odoo-python
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
 msgid ""
@@ -387,3 +378,10 @@ msgstr ""
 "petición:</b> %(next_request)s<br>Inténtelo de nuevo después de esa hora "
 "(Siguiente petición).<br>Para más información, consulte los <a "
 "href='%(rate_limit_url)s' target='_blank'>límites de peticiones</a>."
+
+#, python-format
+#~ msgid ""
+#~ "The account could not be associated. Check the server log for details."
+#~ msgstr ""
+#~ "No se ha podido asociar la cuenta. Consulte el registro del servidor para "
+#~ "más detalles."

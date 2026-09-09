@@ -58,6 +58,20 @@ msgstr ""
 
 #. module: social_media_linkedin_sync
 #. odoo-python
+#: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
+#, python-format
+msgid "LinkedIn member"
+msgstr ""
+
+#. module: social_media_linkedin_sync
+#. odoo-python
+#: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
+#, python-format
+msgid "LinkedIn page"
+msgstr ""
+
+#. module: social_media_linkedin_sync
+#. odoo-python
 #: code:addons/social_media_linkedin_sync/tests/test_sync_account_linkedin.py:0
 #, python-format
 msgid "LinkedIn refused the feed"
@@ -112,32 +126,6 @@ msgid "Statistics Checkpoint"
 msgstr ""
 
 #. module: social_media_linkedin_sync
-#: model:ir.model.fields,help:social_media_linkedin_sync.field_social_account__linkedin_statistics_checkpoint
-msgid ""
-"Technical field: the daily figures LinkedIn reported for the whole page over"
-" the last days, as of the last time the publications were imported. The "
-"check for updates compares the page against it instead of reading the "
-"statistics of every publication."
-msgstr ""
-
-#. module: social_media_linkedin_sync
-#: model:ir.model.fields,help:social_media_linkedin_sync.field_social_account__linkedin_missing_sync_scopes
-msgid ""
-"Technical field: the scopes the token of this account was not granted and "
-"the import of its history needs. A token keeps the scopes it was issued "
-"with, so an account associated before this module was installed has to be "
-"authorized again."
-msgstr ""
-
-#. module: social_media_linkedin_sync
-#: model:ir.model.fields,help:social_media_linkedin_sync.field_social_account__linkedin_sync_scopes_notified
-msgid ""
-"Technical field: whether the responsible user was already told that this "
-"account has to be authorized again before its history can be imported. Kept "
-"so the check that runs every two hours warns once and not on every pass."
-msgstr ""
-
-#. module: social_media_linkedin_sync
 #. odoo-python
 #: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
 #: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
@@ -164,6 +152,15 @@ msgstr ""
 #: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
 #, python-format
 msgid "The comments could not be read from LinkedIn: %(error)s"
+msgstr ""
+
+#. module: social_media_linkedin_sync
+#: model:ir.model.fields,help:social_media_linkedin_sync.field_social_account__linkedin_statistics_checkpoint
+msgid ""
+"The daily figures LinkedIn reported for the whole page over the last days, "
+"as of the last time the publications were imported. The check for updates "
+"compares the page against it instead of reading the statistics of every "
+"publication."
 msgstr ""
 
 #. module: social_media_linkedin_sync
@@ -205,6 +202,14 @@ msgid "The replies could not be read from LinkedIn: %(error)s"
 msgstr ""
 
 #. module: social_media_linkedin_sync
+#: model:ir.model.fields,help:social_media_linkedin_sync.field_social_account__linkedin_missing_sync_scopes
+msgid ""
+"The scopes the token of this account was not granted and the import of its "
+"history needs. A token keeps the scopes it was issued with, so an account "
+"associated before this module was installed has to be authorized again."
+msgstr ""
+
+#. module: social_media_linkedin_sync
 #. odoo-python
 #: code:addons/social_media_linkedin_sync/models/social_account.py:0
 #, python-format
@@ -235,6 +240,14 @@ msgstr ""
 msgid ""
 "The whole feed of the page will be read again, which costs one call per "
 "hundred publications against the daily quota of LinkedIn. Continue?"
+msgstr ""
+
+#. module: social_media_linkedin_sync
+#: model:ir.model.fields,help:social_media_linkedin_sync.field_social_account__linkedin_sync_scopes_notified
+msgid ""
+"Whether the responsible user was already told that this account has to be "
+"authorized again before its history can be imported. Kept so the check that "
+"runs every two hours warns once and not on every pass."
 msgstr ""
 
 #. module: social_media_linkedin_sync
