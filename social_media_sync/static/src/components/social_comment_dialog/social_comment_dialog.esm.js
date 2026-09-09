@@ -1,13 +1,6 @@
 /** @odoo-module **/
 
-import {
-    Component,
-    onMounted,
-    onWillStart,
-    onWillUnmount,
-    useEffect,
-    useState,
-} from "@odoo/owl";
+import {Component, onMounted, onWillStart, onWillUnmount, useState} from "@odoo/owl";
 import {useBus, useService} from "@web/core/utils/hooks";
 import {Dialog} from "@web/core/dialog/dialog";
 import {SocialComment} from "../social_comment/social_comment.esm";
@@ -101,7 +94,7 @@ export class SocialCommentDialog extends Component {
             this.socialService.clearReplyTarget();
         });
 
-        const handleNotification = ({detail: notifications}) => {
+        useBus(this.busService, "notification", ({detail: notifications}) => {
             if (notifications && notifications.length > 0) {
                 notifications.forEach((notif) => {
                     const {payload, type} = notif;
@@ -153,21 +146,7 @@ export class SocialCommentDialog extends Component {
                     }
                 });
             }
-        };
-        // The dependencies are empty on purpose: without them the listener
-        // is torn down and registered again on every render.
-        useEffect(
-            () => {
-                this.busService.addEventListener("notification", handleNotification);
-                return () => {
-                    this.busService.removeEventListener(
-                        "notification",
-                        handleNotification
-                    );
-                };
-            },
-            () => []
-        );
+        });
     }
 
     get commentsByRef() {

@@ -1,7 +1,8 @@
 /** @odoo-module */
 
-import {markup, useEffect} from "@odoo/owl";
+import {markup} from "@odoo/owl";
 import {session} from "@web/session";
+import {useBus} from "@web/core/utils/hooks";
 
 export const SocialMediaMixin = (T) =>
     class extends T {
@@ -25,53 +26,36 @@ export const SocialMediaMixin = (T) =>
 
         enableSocialNotifications() {
             session.social_error = false;
-            const handleNotification = ({detail: notifications}) => {
-                if (notifications && notifications.length > 0) {
-                    notifications.forEach((notif) => {
-                        const {payload, type} = notif;
-                        let message = null;
-                        const sticky = false;
-                        if (
-                            type === `social_${this.notifView ?? "kanban"}_danger` &&
-                            payload
-                        ) {
-                            message = markup(payload.message);
-                            session.social_error = true;
-                        }
+            // Composed from `notifView` so a view listening on types of its
+            // own only has to set it, without a change on the server side.
+            const view = this.notifView ?? "kanban";
+            const dangerType = `social_${view}_danger`;
+            // The success type is not emitted today; it stays listed because
+            // the three of them are the same contract with the server.
+            const toastTypes = [
+                dangerType,
+                `social_${view}_success`,
+                `social_${view}_info`,
+            ];
+            useBus(this.busService, "notification", ({detail: notifications}) => {
+                for (const {payload, type} of notifications || []) {
+                    const message =
+                        payload && toastTypes.includes(type)
+                            ? markup(payload.message)
+                            : null;
+                    if (message !== null && type === dangerType) {
+                        session.social_error = true;
+                    }
 
-                        if (
-                            type === `social_${this.notifView ?? "kanban"}_success` &&
-                            payload
-                        ) {
-                            message = markup(payload.message);
-                        }
+                    this.handleSocialViewNotification(type, payload);
 
-                        if (
-                            type === `social_${this.notifView ?? "kanban"}_info` &&
-                            payload
-                        ) {
-                            message = markup(payload.message);
-                        }
-
-                        this.handleSocialViewNotification(type, payload);
-
-                        if (type && message !== null) {
-                            this.notificationService.add(message, {
-                                type: payload.message_type,
-                                sticky: sticky,
-                            });
-                        }
-                    });
+                    if (type && message !== null) {
+                        this.notificationService.add(message, {
+                            type: payload.message_type,
+                            sticky: false,
+                        });
+                    }
                 }
-            };
-            useEffect(() => {
-                this.busService.addEventListener("notification", handleNotification);
-                return () => {
-                    this.busService.removeEventListener(
-                        "notification",
-                        handleNotification
-                    );
-                };
             });
         }
     };

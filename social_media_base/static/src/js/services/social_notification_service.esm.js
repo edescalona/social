@@ -4,13 +4,6 @@ import {markup} from "@odoo/owl";
 import {registry} from "@web/core/registry";
 import {session} from "@web/session";
 
-/** Bus notification types the server sends from an action of a form. */
-const FORM_NOTIFICATION_TYPES = [
-    "social_form_danger",
-    "social_form_info",
-    "social_form_success",
-];
-
 /**
  * Displays the notifications of the social media modules.
  *
@@ -23,17 +16,19 @@ const FORM_NOTIFICATION_TYPES = [
 export const socialNotificationService = {
     dependencies: ["bus_service", "notification"],
     start(env, {bus_service: busService, notification}) {
-        busService.addEventListener("notification", ({detail: notifications}) => {
-            for (const {payload, type} of notifications || []) {
-                if (!FORM_NOTIFICATION_TYPES.includes(type) || !payload?.message) {
-                    continue;
-                }
-                notification.add(markup(payload.message), {
-                    type: payload.message_type,
-                    sticky: false,
-                });
+        // A permanent service, so the subscription needs no cleanup.
+        const showFormNotification = (payload) => {
+            if (!payload?.message) {
+                return;
             }
-        });
+            notification.add(markup(payload.message), {
+                type: payload.message_type,
+                sticky: false,
+            });
+        };
+        busService.subscribe("social_form_danger", showFormNotification);
+        busService.subscribe("social_form_info", showFormNotification);
+        busService.subscribe("social_form_success", showFormNotification);
         const pending = session.social_media_notification;
         if (!pending || !pending.length) {
             return;

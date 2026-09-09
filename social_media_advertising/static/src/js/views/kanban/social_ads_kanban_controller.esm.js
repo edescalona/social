@@ -1,8 +1,8 @@
 /** @odoo-module **/
 
-import {onWillStart, useEffect, useState} from "@odoo/owl";
+import {onWillStart, useState} from "@odoo/owl";
+import {useBus, useService} from "@web/core/utils/hooks";
 import {KanbanController} from "@web/views/kanban/kanban_controller";
-import {useService} from "@web/core/utils/hooks";
 
 export class SocialAdsKanbanController extends KanbanController {
     /** @override */
@@ -14,21 +14,12 @@ export class SocialAdsKanbanController extends KanbanController {
         // makes `useService` fail on it.
         this.busService = this.env.services.bus_service;
         this.adsState = useState({syncing: false, needUpdate: false});
-        // `bus_service.subscribe` has no counterpart in Odoo 17, and this is
-        // a view controller, destroyed on every action change: the listener
-        // is added and removed by hand instead.
-        const handleNotification = ({detail: notifications}) => {
+        useBus(this.busService, "notification", ({detail: notifications}) => {
             (notifications || []).forEach(({payload, type}) => {
                 if (type === "social_ads_need_update") {
                     this.adsState.needUpdate = Boolean(payload?.need_update);
                 }
             });
-        };
-        useEffect(() => {
-            this.busService.addEventListener("notification", handleNotification);
-            return () => {
-                this.busService.removeEventListener("notification", handleNotification);
-            };
         });
         // The bus only carries the notification of a running cron: the flag
         // it stored has to be read back, or the badge is lost on every reload.
