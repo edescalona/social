@@ -2,11 +2,9 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import secrets
-import string
 from urllib.parse import urlencode, urljoin
 
 from odoo import _, fields, models
-from odoo.tools import hmac
 
 from ..social_linkedin_utils import _URL_AUTH_V2_LINKEDIN
 
@@ -25,17 +23,15 @@ class WizardSocialAccount(models.TransientModel):
         else:
             return super()._get_url_redirect()
 
-    def _generate_code(self, length=10):
-        charset = string.ascii_letters + string.digits
-        return "".join(secrets.choice(charset) for _ in range(length))
-
     def _get_csrf_state_token(self):
+        """Return the anti-CSRF state token LinkedIn echoes back.
+
+        The token is opaque and only ever compared for equality against the
+        one stored on the wizard, so what it has to be is unguessable, not
+        derivable: a random string covers it without a secret to keep.
+        """
         if self.media_type == "linkedin":
-            return hmac(
-                self.env(su=True),
-                f"{self.media_type}-account-{self._generate_code()}-csrf-token",
-                self.media_id.id,
-            )
+            return secrets.token_urlsafe(32)
         else:
             return super()._get_csrf_state_token()
 

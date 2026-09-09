@@ -86,9 +86,7 @@ class SocialAccount(models.Model):
                 account.linkedin_missing_sync_scopes = ""
                 continue
             account.linkedin_missing_sync_scopes = ", ".join(
-                scope
-                for scope in _SCOPE_SYNC_LINKEDIN
-                if not account._has_linkedin_scope(scope)
+                account._missing_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
             )
 
     def _get_all_posts(self):

@@ -297,19 +297,38 @@ class SocialAccount(models.Model):
         """
         self.ensure_one()
         token = self._refresh_token()
-        values = {
-            "access_token": token.get("access_token", False),
-            "refresh_access_token": token.get("refresh_token", False),
-            "expire_access_token_date": fields.Date.today()
-            + timedelta(seconds=token.get("expires_in", 0)),
-            "refresh_token_expires_in": fields.Date.today()
-            + timedelta(seconds=token.get("refresh_token_expires_in", 0)),
-        }
-        scopes = self._linkedin_normalize_scopes(token.get("scope"))
-        if scopes:
-            values["linkedin_granted_scopes"] = scopes
+        values = self._linkedin_token_values(token)
+        if not values["linkedin_granted_scopes"]:
+            # LinkedIn does not always answer the scopes of a renewal, and an
+            # empty answer is not a revocation: what the account was granted
+            # is left as it is instead of being erased.
+            del values["linkedin_granted_scopes"]
         self.sudo().write(values)
         return token
+
+    def _linkedin_token_values(self, token):
+        """Return the credential fields of a token LinkedIn answered.
+
+        The expiry dates are counted from today, which is what LinkedIn
+        measures its ``expires_in`` against, and both are written whatever the
+        flow that read the token: a renewal and a fresh authorization leave
+        the account in the same shape.
+
+        :param token: the answer of the token endpoint.
+        :rtype: dict
+        """
+        today = fields.Date.today()
+        return {
+            "access_token": token.get("access_token", False),
+            "refresh_access_token": token.get("refresh_token", False),
+            "expire_access_token_date": today
+            + timedelta(seconds=token.get("expires_in", 0)),
+            "refresh_token_expires_in": today
+            + timedelta(seconds=token.get("refresh_token_expires_in", 0)),
+            "linkedin_granted_scopes": self._linkedin_normalize_scopes(
+                token.get("scope")
+            ),
+        }
 
     def _refresh_credentials(self):
         """Renew the access token of this LinkedIn account.
@@ -857,12 +876,7 @@ class SocialAccount(models.Model):
             if wizards
             else self._get_account_linkedin(access_token)
         )
-        expire_token = fields.Date.today() + timedelta(
-            seconds=token.get("expires_in", 0)
-        )
-        expire_refresh_token = fields.Date.today() + timedelta(
-            seconds=token.get("refresh_token_expires_in", 0)
-        )
+        token_values = self._linkedin_token_values(token)
         accounts = self.browse()
         for organization in organizations:
             remote_ref = f"{_URN_ORGANIZATION_LINKEDIN}{organization.get('id')}"
@@ -872,15 +886,9 @@ class SocialAccount(models.Model):
                 "image_1920": organization.get("logo", False),
                 "linkedin_client_id": client_id,
                 "linkedin_secret": client_secret,
-                "access_token": access_token,
-                "refresh_access_token": token.get("refresh_token", False),
-                "expire_access_token_date": expire_token,
-                "refresh_token_expires_in": expire_refresh_token,
+                **token_values,
                 "remote_ref": remote_ref,
                 "last_update_account": fields.Datetime.now(),
-                "linkedin_granted_scopes": self._linkedin_normalize_scopes(
-                    token.get("scope")
-                ),
             }
             accounts |= self._associate_account(
                 "linkedin",
@@ -926,12 +934,23 @@ class SocialAccount(models.Model):
         """
         self.ensure_one()
         scopes = self.media_id._get_linkedin_scopes()
-        granted = self.sudo().linkedin_granted_scopes or ""
         return scopes + [
             scope
-            for scope in (raw.strip() for raw in granted.split(","))
-            if scope and scope not in scopes
+            for scope in self._linkedin_granted_scopes_list()
+            if scope not in scopes
         ]
+
+    def _linkedin_granted_scopes_list(self):
+        """Return the scopes LinkedIn granted this account, as a list.
+
+        They are stored as a comma separated string, so this is the one place
+        that knows how to read them back.
+
+        :rtype: list
+        """
+        self.ensure_one()
+        granted = self.sudo().linkedin_granted_scopes or ""
+        return [scope.strip() for scope in granted.split(",") if scope.strip()]
 
     def _has_linkedin_scope(self, scope):
         """Whether the token of this account was granted ``scope``.
@@ -944,10 +963,24 @@ class SocialAccount(models.Model):
         :rtype: bool
         """
         self.ensure_one()
-        granted = self.sudo().linkedin_granted_scopes
-        if not granted:
+        # The field is the gate, not the parsed list: an account LinkedIn
+        # never reported the scopes of has to keep working.
+        if not self.sudo().linkedin_granted_scopes:
             return True
-        return scope in [granted_scope.strip() for granted_scope in granted.split(",")]
+        return scope in self._linkedin_granted_scopes_list()
+
+    def _missing_linkedin_scopes(self, scopes):
+        """Return the scopes of ``scopes`` this account was not granted.
+
+        What a feature needs is declared as a list and answered as a list, so
+        the modules that only report what is missing and the one that refuses
+        to call read it the same way.
+
+        :param scopes: the scopes the feature needs.
+        :rtype: list
+        """
+        self.ensure_one()
+        return [scope for scope in scopes if not self._has_linkedin_scope(scope)]
 
     def _check_linkedin_scopes(self, scopes):
         """Raise a readable error when a scope needed by a feature is missing.
@@ -959,7 +992,7 @@ class SocialAccount(models.Model):
         :param scopes: the scopes the feature about to be called needs.
         """
         self.ensure_one()
-        missing = [scope for scope in scopes if not self._has_linkedin_scope(scope)]
+        missing = self._missing_linkedin_scopes(scopes)
         if missing:
             raise UserError(
                 _(
@@ -1246,7 +1279,21 @@ class SocialAccount(models.Model):
         :return: the buckets read, keyed by account id.
         :rtype: dict
         """
-        date_from, date_to = self._linkedin_refresh_window()
+        return self._linkedin_snapshot_accounts(*self._linkedin_refresh_window())
+
+    def _linkedin_snapshot_accounts(self, date_from, date_to):
+        """Ask the finder for the daily buckets of these accounts and write them.
+
+        Each account goes in its own savepoint. A ``403`` on one of them is
+        told to the user and the sweep carries on, so the rows already written
+        for the other accounts stay written, and the account that failed is
+        simply absent from the answer.
+
+        :param date_from: first day to ask for, included.
+        :param date_to: last day to ask for, included.
+        :return: the buckets read, keyed by account id.
+        :rtype: dict
+        """
         buckets_by_account = {}
         for account in self.filtered(lambda account: account.media_type == "linkedin"):
             if not account.linkedin_account_id:
@@ -1284,14 +1331,7 @@ class SocialAccount(models.Model):
         :return: whatever the other connectors answer for their own accounts.
         """
         linkedin = self.filtered(lambda account: account.media_type == "linkedin")
-        for account in linkedin:
-            if not account.linkedin_account_id:
-                # The finder is asked for an organization, so an account
-                # without one cannot even be asked: the same guard the import
-                # makes before walking the feed.
-                continue
-            with account._statistics_guard():
-                account._snapshot_linkedin_statistics(date_from, date_to)
+        linkedin._linkedin_snapshot_accounts(date_from, date_to)
         return super(SocialAccount, self - linkedin)._snapshot_statistics(
             date_from, date_to
         )

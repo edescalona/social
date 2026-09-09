@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 from odoo import fields
 from odoo.fields import Command
-from odoo.tools import hmac
 
 from odoo.addons.social_media_base.tests.test_social_common import (
     TestSocialMediaBaseCommon,
@@ -163,13 +162,6 @@ class TestSocialCommonLinkedin(LinkedinMockMixin, TestSocialMediaBaseCommon):
                 "res_model": "social.post.account",
                 "res_id": self.SocialPostAccountLinkedin.id,
             }
-        )
-
-    def generate_code(self, code_generated="fake-code-token"):
-        return hmac(
-            self.env(su=True),
-            f"{self.media_linkedin_id.media_type}-account-{code_generated}-csrf-token",
-            self.media_linkedin_id.id,
         )
 
     def get_patch_exceptions_linkedin(self, fake_client=False, side_effect=False):

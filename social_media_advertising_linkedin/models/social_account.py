@@ -59,9 +59,7 @@ class SocialAccount(models.Model):
                 account.linkedin_missing_ads_scopes = ""
                 continue
             account.linkedin_missing_ads_scopes = ", ".join(
-                scope
-                for scope in _SCOPE_ADS_LINKEDIN
-                if not account._has_linkedin_scope(scope)
+                account._missing_linkedin_scopes(_SCOPE_ADS_LINKEDIN)
             )
 
     def _advertising_media_types(self):

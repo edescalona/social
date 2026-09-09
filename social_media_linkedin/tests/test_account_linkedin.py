@@ -1378,19 +1378,22 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
             self.WizardAccount._get_url_redirect()
             redirect_super.assert_called_once()
 
-    def test_generate_code(self):
-        result = self.wizard_account_id._generate_code()
-        self.assertEqual(len(result), 10)
+    def test_csrf_state_token_is_unguessable(self):
+        """A random string, never the same twice.
+
+        The callback resolves the state by equality against the one stored on
+        the wizard, so nothing has to be derivable from it.
+        """
+        token = self.wizard_account_id._get_csrf_state_token()
+        self.assertIsInstance(token, str)
+        self.assertGreaterEqual(len(token), 32)
+        self.assertNotEqual(token, self.wizard_account_id._get_csrf_state_token())
 
     def test_action_add_account(self):
         with patch.object(
             type(self.wizard_account_id),
             "_get_url_redirect",
             return_value=self.url_callback,
-        ), patch.object(
-            type(self.wizard_account_id),
-            "_generate_code",
-            return_value="fake-code-token",
         ):
             result = self.wizard_account_id._action_add_account()
             self.assertIn("fake-client-id", result["url"])
@@ -1538,18 +1541,15 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         mock_linkedin.assert_called_once()
 
     def test_get_csrf_state_token(self):
-        fake_code_hmac = "fake-hmac-code"
-        with patch.object(
-            type(self.wizard_account_id), "_generate_code", autospec=True
-        ) as mock_fake_code, patch(
-            PATCH_WIZARD_ACCOUNT_LINKEDIN.format("hmac"),
+        fake_token = "fake-state-token"
+        with patch(
+            PATCH_WIZARD_ACCOUNT_LINKEDIN.format("secrets.token_urlsafe"),
             autospec=True,
-            return_value=fake_code_hmac,
-        ) as mock_hmac:
+            return_value=fake_token,
+        ) as mock_token:
             result = self.wizard_account_id._get_csrf_state_token()
-            self.assertEqual(result, fake_code_hmac)
-            mock_hmac.assert_called_once()
-            mock_fake_code.assert_called_once()
+            self.assertEqual(result, fake_token)
+            mock_token.assert_called_once()
 
         with patch(
             PATCH_WIZARD_ACCOUNT.format("_get_csrf_state_token"), autospec=True
