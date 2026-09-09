@@ -655,7 +655,7 @@ class SocialAccount(models.Model):
         own_reactions = self._get_reactions(refreshed_urns)
         post_accounts = []
         post_accounts_by_urn = PostAccount._by_remote_ref(
-            discovered, sudo=True, active_test=False
+            discovered, self, sudo=True, active_test=False
         )
         for ugc_post in ugc_posts:
             post_account = post_accounts_by_urn.get(ugc_post.get("id"), PostAccount)

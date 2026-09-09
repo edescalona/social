@@ -340,18 +340,22 @@ class SocialPostAccount(models.Model):
         return [media for media in medias if media in stored]
 
     @api.model
-    def _by_remote_ref(self, refs, sudo=False, active_test=True):
-        """Index the publications of these remote references by reference.
+    def _by_remote_ref(self, refs, account, sudo=False, active_test=True):
+        """Index the publications of an account by their remote reference.
 
         Both bridges read the page the social media answered and have to tell
-        which of its entries are already in Odoo. The two flags are what
-        differs between them: LinkedIn reconciles the archived publications
-        too and reads them past the record rules, X only the visible ones.
+        which of its entries are already in Odoo. The reference alone does not
+        tell: two accounts seeing the same publication — a company and a
+        profile sharing it, or the same account associated twice — hold a line
+        each for it, so the account is what says which of them the import is
+        reconciling. It is a required parameter for that reason: a caller
+        cannot forget what it does not choose to pass.
 
-        A reference the constraint of the model already keeps unique answers
-        one publication; the first one wins if a database ever holds two.
+        A reference answers one publication of the account; the first one wins
+        if a database ever holds two.
 
         :param refs: the remote references the social media answered.
+        :param account: the ``social.account`` the page was read from.
         :param bool sudo: whether to read past the record rules.
         :param bool active_test: whether to leave the archived ones out.
         :rtype: dict
@@ -360,7 +364,7 @@ class SocialPostAccount(models.Model):
             return {}
         records = self.sudo() if sudo else self
         lines = records.with_context(active_test=active_test).search(
-            [("remote_ref", "in", list(refs))]
+            [("remote_ref", "in", list(refs)), ("account_id", "=", account.id)]
         )
         return {ref: found[:1] for ref, found in lines.grouped("remote_ref").items()}
 
