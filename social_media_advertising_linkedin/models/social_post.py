@@ -100,14 +100,7 @@ class SocialPost(models.Model):
             )
         errors += self._get_linkedin_campaign_format_errors()
         if account and not account._get_linkedin_ad_account_id():
-            errors.append(
-                _(
-                    "No LinkedIn advertising account is in use for the account "
-                    "%(account)s. Open its Advertising tab, fetch the "
-                    "advertising accounts and choose one.",
-                    account=account.display_name,
-                )
-            )
+            errors.append(account._linkedin_no_advertising_account_message())
         return errors
 
     def _get_linkedin_campaign_format_errors(self):

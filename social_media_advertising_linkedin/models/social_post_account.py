@@ -67,17 +67,7 @@ class SocialPostAccount(models.Model):
                         "please try again later."
                     )
                 )
-            ad_account_id = self.account_id._get_linkedin_ad_account_id()
-            if not ad_account_id:
-                raise UserError(
-                    _(
-                        "No LinkedIn advertising account is in use for "
-                        "the account %(account)s. Open its "
-                        "Advertising tab, fetch the advertising "
-                        "accounts and choose one.",
-                        account=self.account_id.display_name,
-                    )
-                )
+            ad_account_id = self.account_id._require_linkedin_ad_account_id()
             response = self.account_id._request_linkedin(
                 method="POST",
                 endpoint=_ENDPOINT_AD_CREATIVES_LINKEDIN % ad_account_id,

@@ -7,6 +7,7 @@ from odoo.exceptions import UserError, ValidationError
 from ..social_advertising_linkedin_utils import (
     _ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN,
     _ENDPOINT_AD_CAMPAIGNS_LINKEDIN,
+    linkedin_urn_id,
     run_schedule_window_linkedin,
 )
 
@@ -242,11 +243,11 @@ class SocialAdvertisingCampaign(models.Model):
             )
         group_campaign = False
         if self.campaign_group_id.remote_ref:
-            ad_account_id = advertising_account_urn.split(":")[-1]
+            ad_account_id = linkedin_urn_id(advertising_account_urn)
             group_campaign = account._request_linkedin(
                 endpoint=(
                     f"{_ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN % ad_account_id}/"
-                    f"{self.campaign_group_id.remote_ref.split(':')[-1]}"
+                    f"{linkedin_urn_id(self.campaign_group_id.remote_ref)}"
                 ),
                 headers=account.media_id._get_linkedin_headers(
                     account.sudo().access_token
@@ -284,7 +285,7 @@ class SocialAdvertisingCampaign(models.Model):
         campaign = account._request_linkedin(
             endpoint=(
                 f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
-                f"{self.remote_ref.split(':')[-1]}"
+                f"{linkedin_urn_id(self.remote_ref)}"
             ),
             headers=account.media_id._get_linkedin_headers(account.sudo().access_token),
             return_json=False,
@@ -320,7 +321,8 @@ class SocialAdvertisingCampaign(models.Model):
         response = account._request_linkedin(
             method="POST",
             endpoint=(
-                _ENDPOINT_AD_CAMPAIGNS_LINKEDIN % advertising_account_urn.split(":")[-1]
+                _ENDPOINT_AD_CAMPAIGNS_LINKEDIN
+                % linkedin_urn_id(advertising_account_urn)
             ),
             headers=account.media_id._get_linkedin_headers(account.sudo().access_token),
             json_data={
@@ -440,16 +442,7 @@ class SocialAdvertisingCampaign(models.Model):
         self.ensure_one()
         self._validate_publish_linkedin()
         account = self._linkedin_account()
-        advertising_account_urn = account._get_linkedin_advertising_account()
-        if not advertising_account_urn:
-            raise UserError(
-                _(
-                    "No LinkedIn advertising account is in use for the "
-                    "account %(account)s. Open its Advertising tab, "
-                    "fetch the advertising accounts and choose one.",
-                    account=account.display_name,
-                )
-            )
+        advertising_account_urn = account._require_linkedin_advertising_account()
         group_urn = self._linkedin_publish_campaign_group(
             account, advertising_account_urn
         )
@@ -530,18 +523,10 @@ class SocialAdvertisingCampaign(models.Model):
             values["politicalIntent"] = self.linkedin_political_intent
         values.update(self._linkedin_runschedule_values())
         ad_account_id = account._require_linkedin_ad_account_id()
-        response = account._request_linkedin(
-            method="POST",
-            endpoint=(
-                f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
-                f"{self.remote_ref.split(':')[-1]}"
-            ),
-            headers=account.media_id._get_linkedin_headers(
-                account.sudo().access_token,
-                x_restli_method="PARTIAL_UPDATE",
-            ),
-            json_data={"patch": {"$set": values}},
-            return_json=False,
+        response = account._patch_linkedin(
+            f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
+            f"{linkedin_urn_id(self.remote_ref)}",
+            values,
         )
         if response.status_code in (200, 204):
             self.with_context(skip_linkedin_needs_update=True).write(
@@ -589,25 +574,10 @@ class SocialAdvertisingCampaign(models.Model):
             raise UserError(_("The campaign must have a social account."))
         stage = self.env["social.stage"]._require_linkedin_stage("campaign", "ARCHIVED")
         ad_account_id = account._require_linkedin_ad_account_id()
-        response = account._request_linkedin(
-            method="POST",
-            endpoint=(
-                f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
-                f"{self.remote_ref.split(':')[-1]}"
-            ),
-            headers=account.media_id._get_linkedin_headers(
-                account.sudo().access_token,
-                x_restli_method="PARTIAL_UPDATE",
-            ),
-            json_data={
-                "patch": {
-                    "$set": {
-                        "status": "ARCHIVED",
-                        **self._linkedin_runschedule_values(),
-                    }
-                }
-            },
-            return_json=False,
+        response = account._patch_linkedin(
+            f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
+            f"{linkedin_urn_id(self.remote_ref)}",
+            {"status": "ARCHIVED", **self._linkedin_runschedule_values()},
         )
         if response.status_code not in (200, 204):
             raise UserError(

@@ -7,7 +7,10 @@ from urllib.parse import quote
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from ..social_advertising_linkedin_utils import _ENDPOINT_AD_CREATIVES_LINKEDIN
+from ..social_advertising_linkedin_utils import (
+    _ENDPOINT_AD_CREATIVES_LINKEDIN,
+    linkedin_urn_id,
+)
 from .social_advertising_campaign import LINKEDIN_LOCKED_CODES
 
 _logger = logging.getLogger(__name__)
@@ -128,7 +131,7 @@ class SocialAdvertisingAd(models.Model):
         """
         ad_account_urn = self.advertising_account_id.remote_ref
         ad_account_id = (
-            ad_account_urn.split(":")[-1]
+            linkedin_urn_id(ad_account_urn)
             if ad_account_urn
             else self.account_id._require_linkedin_ad_account_id()
         )
@@ -189,18 +192,10 @@ class SocialAdvertisingAd(models.Model):
         :param endpoint: the Creatives API endpoint of this ad.
         """
         account = self.account_id
-        response = account._request_linkedin(
-            method="POST",
-            endpoint=endpoint,
-            headers=account.media_id._get_linkedin_headers(
-                account.sudo().access_token,
-                content_type="application/json",
-                x_restli_method="PARTIAL_UPDATE",
-            ),
-            json_data={
-                "patch": {"$set": {"intendedStatus": LINKEDIN_PENDING_DELETION_CODE}}
-            },
-            return_json=False,
+        response = account._patch_linkedin(
+            endpoint,
+            {"intendedStatus": LINKEDIN_PENDING_DELETION_CODE},
+            content_type="application/json",
         )
         if response.status_code not in (200, 204):
             raise UserError(

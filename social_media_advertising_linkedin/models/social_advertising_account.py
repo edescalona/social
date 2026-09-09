@@ -3,7 +3,10 @@
 
 from odoo import api, fields, models
 
-from ..social_advertising_linkedin_utils import _URL_CAMPAIGN_MANAGER_LINKEDIN
+from ..social_advertising_linkedin_utils import (
+    _URL_CAMPAIGN_MANAGER_LINKEDIN,
+    linkedin_urn_id,
+)
 
 
 class SocialAdvertisingAccount(models.Model):
@@ -65,7 +68,7 @@ class SocialAdvertisingAccount(models.Model):
         reference = super()._get_display_reference()
         if self.media_id.media_type != "linkedin":
             return reference
-        return reference.split(":")[-1]
+        return linkedin_urn_id(reference)
 
     @api.depends("media_id.media_type")
     def _compute_display_name(self):
@@ -81,7 +84,7 @@ class SocialAdvertisingAccount(models.Model):
                 and advertising_account.remote_ref
             )
         ):
-            identifier = advertising_account.remote_ref.split(":")[-1]
+            identifier = linkedin_urn_id(advertising_account.remote_ref)
             advertising_account.web_url = (
                 f"{_URL_CAMPAIGN_MANAGER_LINKEDIN}{identifier}/"
             )

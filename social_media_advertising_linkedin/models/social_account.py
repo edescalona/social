@@ -26,6 +26,7 @@ from ..social_advertising_linkedin_utils import (
     _SCOPE_ADS_LINKEDIN,
     _URL_CAMPAIGN_MANAGER_LINKEDIN,
     linkedin_date_struct,
+    linkedin_urn_id,
 )
 from .social_advertising_campaign import LINKEDIN_DELETED_CODES
 
@@ -123,7 +124,7 @@ class SocialAccount(models.Model):
         )
         return {
             "remote_ref": account_urn,
-            "name": data.get("name") or account_urn.split(":")[-1],
+            "name": data.get("name") or linkedin_urn_id(account_urn),
             "environment": "test" if data.get("test") else "production",
             "currency_id": currency.id,
             "linkedin_status": data.get("status") or False,
@@ -197,7 +198,9 @@ class SocialAccount(models.Model):
         :rtype: dict
         """
         response = self._request_linkedin(
-            endpoint=(f"{_ENDPOINT_AD_ACCOUNTS_LINKEDIN}/{account_urn.split(':')[-1]}"),
+            endpoint=(
+                f"{_ENDPOINT_AD_ACCOUNTS_LINKEDIN}/{linkedin_urn_id(account_urn)}"
+            ),
             headers=self.media_id._get_linkedin_headers(self.sudo().access_token),
             return_json=False,
         )
@@ -219,7 +222,33 @@ class SocialAccount(models.Model):
         :rtype: str | bool
         """
         advertising_account = self._get_linkedin_advertising_account()
-        return advertising_account.split(":")[-1] if advertising_account else False
+        return linkedin_urn_id(advertising_account) if advertising_account else False
+
+    def _linkedin_no_advertising_account_message(self):
+        """Return what to tell the user when no advertising account is in use.
+
+        Nothing of the Ads API is addressed without one, so the same sentence
+        is what the two helpers below raise and what the checks that only
+        report the problem put on their list.
+
+        :rtype: str
+        """
+        return _(
+            "No LinkedIn advertising account is in use for the "
+            "account %(account)s. Open its Advertising tab, "
+            "fetch the advertising accounts and choose one.",
+            account=self.display_name,
+        )
+
+    def _require_linkedin_advertising_account(self):
+        """Return the advertising account URN in use, or raise.
+
+        :rtype: str
+        """
+        advertising_account_urn = self._get_linkedin_advertising_account()
+        if not advertising_account_urn:
+            raise UserError(self._linkedin_no_advertising_account_message())
+        return advertising_account_urn
 
     def _require_linkedin_ad_account_id(self):
         """Return the identifier of the advertising account, or raise.
@@ -231,15 +260,35 @@ class SocialAccount(models.Model):
         """
         ad_account_id = self._get_linkedin_ad_account_id()
         if not ad_account_id:
-            raise UserError(
-                _(
-                    "No LinkedIn advertising account is in use for the "
-                    "account %(account)s. Open its Advertising tab, "
-                    "fetch the advertising accounts and choose one.",
-                    account=self.display_name,
-                )
-            )
+            raise UserError(self._linkedin_no_advertising_account_message())
         return ad_account_id
+
+    def _patch_linkedin(self, endpoint, values, content_type=None):
+        """Send a partial update to the Ads API.
+
+        Every write of this module is the same call: a ``POST`` carrying the
+        ``PARTIAL_UPDATE`` Rest.li method and a ``$set`` patch. What the
+        answer means is the caller's to decide, so it comes back unchecked
+        and each one keeps the error it words for its own entity.
+
+        :param endpoint: the entity to patch, identifier included.
+        :param values: the fields to set.
+        :param content_type: the media type of the body, for the endpoint
+            that asks for one.
+        :return: the answer of LinkedIn.
+        """
+        self.ensure_one()
+        return self._request_linkedin(
+            method="POST",
+            endpoint=endpoint,
+            headers=self.media_id._get_linkedin_headers(
+                self.sudo().access_token,
+                content_type=content_type,
+                x_restli_method="PARTIAL_UPDATE",
+            ),
+            json_data={"patch": {"$set": values}},
+            return_json=False,
+        )
 
     def _fetch_linkedin_creatives(self, campaign_urns=None):
         """Fetch the creatives of the advertising account.
@@ -256,46 +305,73 @@ class SocialAccount(models.Model):
         ad_account_id = self._get_linkedin_ad_account_id()
         if not ad_account_id:
             return []
+        params_fields = ["q", "sortOrder", "pageSize"]
+        params_values = {
+            "q": "criteria",
+            "sortOrder": "ASCENDING",
+            "pageSize": _PAGE_SIZE_LINKEDIN,
+        }
+        if campaign_urns:
+            params_fields.append("campaigns")
+            params_values["campaigns"] = list(campaign_urns)
+        elements = self._paginate_linkedin_ads(
+            _ENDPOINT_AD_CREATIVES_LINKEDIN % ad_account_id,
+            params_fields,
+            params_values,
+            _("The ads could not be read from LinkedIn: %(error)s"),
+        )
         # The creatives are filtered by the environment of the account: a
         # production account must never see the test entities of the
         # application.
         is_test = self.environment == "test"
+        return [
+            element
+            for element in elements
+            if bool(element.get("isTest", False)) == is_test
+        ]
+
+    def _paginate_linkedin_ads(
+        self, endpoint, params_fields, params_values, error_message
+    ):
+        """Read every page of an Ads finder, following its cursor.
+
+        The finders of the Ads API paginate with a cursor since the version
+        202401: the answer carries the token of the next page in its
+        metadata, and the run stops on the page that brings no token or no
+        element.
+
+        :param endpoint: the Ads API endpoint to read.
+        :param params_fields: the query parameters, ``pageToken`` aside.
+        :param params_values: their values, ``pageToken`` aside.
+        :param error_message: the already translated message to raise when
+            LinkedIn refuses, carrying a ``%(error)s`` for the detail. Each
+            caller words its own: what could not be read is what the user
+            needs to be told.
+        :return: every element of every page, in the order they came.
+        :rtype: list
+        """
         elements = []
         page_token = None
         while True:
-            params_fields = ["q", "sortOrder", "pageSize"]
-            params_values = {
-                "q": "criteria",
-                "sortOrder": "ASCENDING",
-                "pageSize": _PAGE_SIZE_LINKEDIN,
-            }
-            if campaign_urns:
-                params_fields.append("campaigns")
-                params_values["campaigns"] = list(campaign_urns)
+            page_fields = params_fields
+            page_values = params_values
             if page_token:
-                params_fields.append("pageToken")
-                params_values["pageToken"] = page_token
+                page_fields = params_fields + ["pageToken"]
+                page_values = {**params_values, "pageToken": page_token}
             response = self._request_linkedin(
-                endpoint=_ENDPOINT_AD_CREATIVES_LINKEDIN % ad_account_id,
+                endpoint=endpoint,
                 headers=self.media_id._get_linkedin_headers(self.sudo().access_token),
-                params_fields=params_fields,
-                params_values=params_values,
+                params_fields=page_fields,
+                params_values=page_values,
                 return_json=False,
             )
             if response.status_code != 200:
                 raise UserError(
-                    _(
-                        "The ads could not be read from LinkedIn: %(error)s",
-                        error=self._linkedin_error_message(response),
-                    )
+                    error_message % {"error": self._linkedin_error_message(response)}
                 )
             data = response.json()
             page_elements = data.get("elements", [])
-            elements += [
-                element
-                for element in page_elements
-                if bool(element.get("isTest", False)) == is_test
-            ]
+            elements += page_elements
             page_token = data.get("metadata", {}).get("nextPageToken")
             if not page_elements or not page_token:
                 break
@@ -315,41 +391,20 @@ class SocialAccount(models.Model):
         :return: The list of elements.
         :rtype: list
         """
-        elements = []
-        page_token = None
-        while True:
-            params_fields = ["q", "pageSize"]
-            params_values = {"q": "search", "pageSize": _PAGE_SIZE_LINKEDIN}
-            if search:
-                params_fields.append("search")
-                params_values["search"] = search
-            if fields:
-                params_fields.append("fields")
-                params_values["fields"] = fields
-            if page_token:
-                params_fields.append("pageToken")
-                params_values["pageToken"] = page_token
-            response = self._request_linkedin(
-                endpoint=endpoint,
-                headers=self.media_id._get_linkedin_headers(self.sudo().access_token),
-                params_fields=params_fields,
-                params_values=params_values,
-                return_json=False,
-            )
-            if response.status_code != 200:
-                raise UserError(
-                    _(
-                        "The campaigns could not be read from LinkedIn: %(error)s",
-                        error=self._linkedin_error_message(response),
-                    )
-                )
-            data = response.json()
-            page_elements = data.get("elements", [])
-            elements += page_elements
-            page_token = data.get("metadata", {}).get("nextPageToken")
-            if not page_elements or not page_token:
-                break
-        return elements
+        params_fields = ["q", "pageSize"]
+        params_values = {"q": "search", "pageSize": _PAGE_SIZE_LINKEDIN}
+        if search:
+            params_fields.append("search")
+            params_values["search"] = search
+        if fields:
+            params_fields.append("fields")
+            params_values["fields"] = fields
+        return self._paginate_linkedin_ads(
+            endpoint,
+            params_fields,
+            params_values,
+            _("The campaigns could not be read from LinkedIn: %(error)s"),
+        )
 
     def _prefetch_linkedin_upsert(
         self, groups, campaigns, SocialGroup, SocialAdvertisingCampaign, Currency
@@ -688,18 +743,12 @@ class SocialAccount(models.Model):
             if not advertising_account_urn:
                 return {
                     "success": False,
-                    "message": _(
-                        "No LinkedIn advertising account is in use for "
-                        "the account %(account)s. Open its Advertising "
-                        "tab, fetch the advertising accounts and "
-                        "choose one.",
-                        account=self.display_name,
-                    ),
+                    "message": self._linkedin_no_advertising_account_message(),
                     "groups": 0,
                     "campaigns": 0,
                     "ads": 0,
                 }
-            ad_account_id = advertising_account_urn.split(":")[-1]
+            ad_account_id = linkedin_urn_id(advertising_account_urn)
             groups = self._fetch_linkedin_ad_entities(
                 _ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN % ad_account_id
             )
@@ -900,7 +949,7 @@ class SocialAccount(models.Model):
             )
         }
         advertising_account = self.advertising_account_ids.filtered("is_current")[:1]
-        ad_account_id = (advertising_account.remote_ref or "").split(":")[-1]
+        ad_account_id = linkedin_urn_id(advertising_account.remote_ref)
         # LinkedIn answers `costInUsd`, whatever the currency the advertising
         # account is billed in, so the cost is stored in dollars.
         currency = self.env.ref("base.USD", raise_if_not_found=False)
@@ -937,7 +986,7 @@ class SocialAccount(models.Model):
                     "statistics_date_to": end_date,
                     "url": f"{_URL_CAMPAIGN_MANAGER_LINKEDIN}{ad_account_id}/"
                     f"creatives?creativeIds="
-                    f"{quote(str([remote_ref.split(':')[-1]]))}",
+                    f"{quote(str([linkedin_urn_id(remote_ref)]))}",
                 }
             )
         return res

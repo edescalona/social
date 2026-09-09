@@ -10,6 +10,19 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
 
 _URL_CAMPAIGN_MANAGER_LINKEDIN = "https://www.linkedin.com/campaignmanager/accounts/"
 
+
+def linkedin_urn_id(urn):
+    """Return the identifier at the end of a LinkedIn URN.
+
+    The Ads API names an entity by its URN everywhere but in the path of an
+    endpoint, which takes the bare identifier.
+
+    :param urn: the URN, or anything falsy when there is none.
+    :rtype: str
+    """
+    return (urn or "").split(":")[-1]
+
+
 _ENDPOINT_AD_ACCOUNTS_LINKEDIN = "/adAccounts"
 _ENDPOINT_AD_ACCOUNT_USERS_LINKEDIN = "/adAccountUsers"
 _ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN = "/adAccounts/%s/adCampaignGroups"
