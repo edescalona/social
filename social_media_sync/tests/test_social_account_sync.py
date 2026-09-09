@@ -374,19 +374,35 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
         self.assertEqual(after, before)
 
     def test_notify_posts_updated(self):
+        """What the dashboard listens for: the type, the account and the text.
+
+        The whole payload is asserted, not only the account: the notice
+        travels on a type of its own while it is worded as an information
+        message, and the card reads both.
+        """
+        account = self.social_account_id
         Bus = self.env["bus.bus"]
         with patch.object(type(Bus), "_sendone", autospec=True) as patch_sendone:
-            self.social_account_id._notify_posts_updated()
+            account._notify_posts_updated()
         patch_sendone.assert_called_once()
-        self.assertEqual(
-            patch_sendone.call_args[0][1], self.social_account_id.user_id.partner_id
-        )
+        self.assertEqual(patch_sendone.call_args[0][1], account.user_id.partner_id)
         self.assertEqual(patch_sendone.call_args[0][2], "social_posts_updated")
-        payload = patch_sendone.call_args[0][3]
-        self.assertEqual(payload["account_id"], self.social_account_id.id)
+        self.assertEqual(
+            patch_sendone.call_args[0][3],
+            {
+                "account_id": account.id,
+                "message_type": "info",
+                "message": account._format_user_notification(
+                    "The posts of the account were updated.",
+                    media=account.media_type or account.media_id.name,
+                    account_name=account.name,
+                    message_type="info",
+                ),
+            },
+        )
         self.assertIn(
-            self.social_account_id.name,
-            payload["message"],
+            account.name,
+            patch_sendone.call_args[0][3]["message"],
             "A user may be responsible for several accounts, so the message "
             "has to name the one that was updated",
         )

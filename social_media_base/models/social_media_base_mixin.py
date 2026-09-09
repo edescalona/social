@@ -210,15 +210,23 @@ class SocialMediaBaseMixin(models.AbstractModel):
         media=False,
         social_name=False,
         account_name=False,
+        bus_type=None,
+        payload=None,
     ):
         """Notify the user of an event through the bus.
 
         :param target: partner to notify, the current user by default.
-        :param notif_type: bus notification type, ``danger`` by default.
+        :param notif_type: bus notification type, ``danger`` by default. It is
+            what words the message: its last part is the kind of notice.
         :param notif_message: the message to display to the user.
         :param media: media type to prefix the message with.
         :param social_name: social media name to append to the media type.
         :param account_name: account name shown instead of the media name.
+        :param bus_type: the type the message travels on, ``notif_type`` by
+            default. A notice a listener of its own reads — and not the
+            notification service — says the same thing on a type of its own.
+        :param payload: extra keys the message carries, for a listener that
+            needs to know which record the notice is about.
         """
         message_type, message = self._prepare_user_notification(
             notif_type,
@@ -230,9 +238,10 @@ class SocialMediaBaseMixin(models.AbstractModel):
         if message:
             self.env["bus.bus"]._sendone(
                 target or self.env.user.partner_id,
-                notif_type,
+                bus_type or notif_type,
                 {
                     "message_type": message_type,
                     "message": message,
+                    **(payload or {}),
                 },
             )
