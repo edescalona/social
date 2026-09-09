@@ -1,15 +1,53 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from datetime import timedelta
+from unittest.mock import patch
+
+from odoo import fields
+from odoo.tools import mute_logger
+
 from odoo.addons.social_media_base.models.social_account import (
     STATISTICS_WINDOW_DAYS,
 )
 
-from .test_social_common import TestSocialMediaBaseCommon
+from .test_social_common import PATCH_ACCOUNT, TestSocialMediaBaseCommon
+
+LOG_PATH = "odoo.addons.social_media_base.models.social_account"
 
 
 class TestSocialPostStatisticsBase(TestSocialMediaBaseCommon):
     """Reading the figures of a publication back from the social media."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.now = fields.Datetime.now()
+        cls.other_account_id = cls.SocialAccount.create(
+            {
+                "name": "Linkedin Second",
+                "media_id": cls.social_media_id.id,
+            }
+        )
+
+    def _publication(self, account=None, days_ago=1, **values):
+        """Create a publication that is online and inside the window."""
+        return self.SocialPostAccount.create(
+            dict(
+                {
+                    "post_id": self.social_post_id.id,
+                    "account_id": (account or self.social_account_id).id,
+                    "message": "Test message",
+                    "state": "posted",
+                    "remote_ref": "remote-ref",
+                    "published_date": self.now - timedelta(days=days_ago),
+                },
+                **values,
+            )
+        )
+
+    def _window_lines(self, account):
+        return self.SocialPostAccount.search(account._statistics_window_domain())
 
     def test_statistics_date_starts_empty(self):
         """A publication nobody read carries no date.
@@ -32,3 +70,102 @@ class TestSocialPostStatisticsBase(TestSocialMediaBaseCommon):
         ``social_media_base``, so it is not a preference to widen.
         """
         self.assertEqual(STATISTICS_WINDOW_DAYS, 30)
+
+    def test_window_keeps_the_recent_publication(self):
+        """A publication of the day before the limit is still asked about."""
+        recent = self._publication(days_ago=STATISTICS_WINDOW_DAYS - 1)
+        self.assertIn(recent, self._window_lines(self.social_account_id))
+
+    def test_window_leaves_out_the_old_publication(self):
+        """One day past the limit is one day out of the pass, for good.
+
+        Nothing widens the window afterwards, which is what gives the pass a
+        fixed cost.
+        """
+        old = self._publication(days_ago=STATISTICS_WINDOW_DAYS + 1)
+        self.assertNotIn(old, self._window_lines(self.social_account_id))
+
+    def test_window_leaves_out_the_deleted_publication(self):
+        """A publication gone from the social media has nothing left to ask."""
+        deleted = self._publication(state="deleted")
+        self.assertNotIn(deleted, self._window_lines(self.social_account_id))
+
+    def test_window_leaves_out_the_publication_without_reference(self):
+        """Without a ``remote_ref`` there is nothing to ask the figures of."""
+        unknown = self._publication(remote_ref=False)
+        self.assertNotIn(unknown, self._window_lines(self.social_account_id))
+
+    def test_window_leaves_out_another_account(self):
+        """Every account is asked about its own publications only."""
+        other = self._publication(account=self.other_account_id)
+        self.assertNotIn(other, self._window_lines(self.social_account_id))
+
+    def test_the_pass_hands_the_window_to_the_connector(self):
+        """The connector receives exactly the lines of the window.
+
+        The pass chooses, the hook spends: what the connector is handed is
+        what base decided is worth a call.
+        """
+        inside = self._publication(days_ago=1)
+        outside = self._publication(days_ago=STATISTICS_WINDOW_DAYS + 1)
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=lambda account, lines: lines,
+        ) as hook:
+            refreshed = self.social_account_id._refresh_window_statistics()
+        handed = hook.call_args.args[1]
+        self.assertIn(inside, handed)
+        self.assertNotIn(outside, handed)
+        self.assertEqual(refreshed, handed)
+
+    def test_the_pass_spends_nothing_without_a_connector(self):
+        """The empty hook answers no line, so nothing is stamped.
+
+        With no connector installed the pass walks the accounts and asks
+        nobody: it is the connector that spends the call.
+        """
+        publication = self._publication()
+        self.assertFalse(self.social_account_id._refresh_window_statistics())
+        self.assertFalse(publication.statistics_date)
+
+    def test_an_account_without_publications_is_not_asked_about(self):
+        """No line in the window, no call for that account."""
+        self._publication(account=self.social_account_id)
+        accounts = self.social_account_id + self.other_account_id
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=lambda account, lines: lines,
+        ) as hook:
+            accounts._refresh_window_statistics()
+        self.assertEqual(hook.call_count, 1)
+
+    @mute_logger(LOG_PATH)
+    def test_an_account_that_fails_does_not_stop_the_next(self):
+        """Each account is read inside its own savepoint.
+
+        The pass writes as it goes, so the social media refusing one account
+        must not undo what another one already wrote nor keep it from being
+        asked at all.
+        """
+        broken = self._publication(account=self.social_account_id)
+        working = self._publication(account=self.other_account_id)
+        read = self.SocialPostAccount
+
+        def refresh(account, lines):
+            if account == self.social_account_id:
+                raise ValueError("The social media refused this account")
+            lines.write({"statistics_date": self.now})
+            return lines
+
+        with patch(
+            PATCH_ACCOUNT.format("_refresh_post_statistics"),
+            autospec=True,
+            side_effect=refresh,
+        ):
+            accounts = self.social_account_id + self.other_account_id
+            read = accounts._refresh_window_statistics()
+        self.assertEqual(read, working)
+        self.assertFalse(broken.statistics_date)
+        self.assertTrue(working.statistics_date)

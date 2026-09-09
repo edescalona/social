@@ -5,6 +5,7 @@ import base64
 import logging
 from collections import defaultdict
 from contextlib import contextmanager
+from datetime import timedelta
 
 import psycopg2
 
@@ -790,6 +791,80 @@ class SocialAccount(models.Model):
             else:
                 to_create.append(dict(statistics, account_id=self.id, date=day))
         return existing + statistics_model.create(to_create)
+
+    def _statistics_window_domain(self):
+        """Return the publications whose figures the periodic refresh reads.
+
+        Only the ones that are online and were published inside the window: a
+        line marked as deleted has nothing left to ask about, and one outside
+        the window keeps the last figures that were read for it.
+
+        The window is what keeps this pass affordable in
+        ``social_media_base``: what it spends depends on the days it looks
+        back and not on how much the account has published.
+
+        :rtype: list
+        """
+        limit = fields.Datetime.now() - timedelta(days=STATISTICS_WINDOW_DAYS)
+        return [
+            ("account_id", "in", self.ids),
+            ("state", "=", "posted"),
+            ("remote_ref", "!=", False),
+            ("published_date", ">=", limit),
+        ]
+
+    def _refresh_post_statistics(self, post_accounts):
+        """Read the figures of these publications back from the social media.
+
+        Empty hook, and the only place these figures are read: whichever pass
+        wants them — the daily refresh of base, the *Update* button, the
+        import of ``social_media_sync`` — hands its own lines here instead of
+        asking the social media itself.
+
+        The lines arrive already chosen: whoever calls decides which ones are
+        worth a call, and this only spends it. Every connector takes the ones
+        of its own media type and leaves the rest to the next, which is also
+        what makes the answer meaningful — a line the social media did not
+        report is not a line whose figures are zero.
+
+        The connector stamps ``statistics_date`` on the lines it answers for,
+        in the same write as the figures.
+
+        :param post_accounts: the lines to read, every one of them with a
+            ``remote_ref``.
+        :return: the lines the social media really answered for.
+        :rtype: recordset
+        """
+        return self.env["social.post.account"]
+
+    def _refresh_window_statistics(self):
+        """Read back the figures of the recent publications of these accounts.
+
+        Each account goes inside its own savepoint
+        (:meth:`~._account_guard`): the pass writes as it goes, so an account
+        the social media refuses must neither undo what the previous ones
+        already wrote nor stop the ones still to come.
+
+        The lines are searched with ``sudo()`` for the same reason the daily
+        series is written with it: they belong to the responsible of the
+        account and nothing is decided here, so a regular user refreshing his
+        own account has to reach them all the same.
+
+        :return: the lines the social media answered for.
+        :rtype: recordset
+        """
+        post_accounts = self.env["social.post.account"]
+        refreshed = post_accounts
+        for account in self:
+            lines = post_accounts.sudo().search(account._statistics_window_domain())
+            if not lines:
+                continue
+            with account._account_guard(
+                "Error refreshing the statistics of the publications of "
+                "the account %s"
+            ):
+                refreshed |= account._refresh_post_statistics(lines)
+        return refreshed
 
     def validate_access_token(self):
         """Hook for the connector modules to refresh an expired token.
