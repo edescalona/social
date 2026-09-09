@@ -18,7 +18,7 @@
                 <field name="name" />
                 <field name="account_id" />
                 <field name="media_id" optional="hide" />
-                <field name="remote_ref" />
+                <field name="remote_ref" column_invisible="1" />
                 <field name="environment" />
                 <field name="currency_id" optional="show" />
                 <field name="last_sync_date" optional="hide" />
@@ -83,7 +83,7 @@
                         <group>
                             <field name="account_id" readonly="1" />
                             <field name="media_id" readonly="1" />
-                            <field name="remote_ref" readonly="1" />
+                            <field name="remote_ref" invisible="1" />
                             <field name="is_current" readonly="1" />
                         </group>
                         <group>
@@ -104,7 +104,6 @@
         <field name="arch" type="xml">
             <search>
                 <field name="name" />
-                <field name="remote_ref" />
                 <field name="account_id" />
                 <filter
                     name="in_use"

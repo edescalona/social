@@ -445,12 +445,12 @@ same treatment is a feature of its own.
 ``remote_ref`` is writable through RPC.
 ---------------------------------------
 
-The form views render ``remote_ref`` readonly, and on the ads and the
-advertising accounts the ACL backs it: a social media user only reads
-them. The campaigns and the campaign groups are the ones he writes, so
-on those two he can still change or empty the field through RPC and
-orphan the record on the social media. Restricting the field is a
-hardening candidate for a later version.
+The views hide ``remote_ref``, and on the ads and the advertising
+accounts the ACL backs it: a social media user only reads them. The
+campaigns and the campaign groups are the ones he writes, so on those
+two he can still change or empty the field through RPC and orphan the
+record on the social media. Restricting the field is a hardening
+candidate for a later version.
 
 Connector modules without an advertising layer.
 -----------------------------------------------

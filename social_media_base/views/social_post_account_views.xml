@@ -150,13 +150,10 @@
                     <div class="oe_button_box" name="button_box">
                         <!-- The address is cleared when the publication is
                              known to be gone, so it is the sign that the
-                             publication is on the social media. `remote_ref`
-                             cannot be used in the condition: it is restricted
-                             to the developers, and a field the user may not
-                             read is not loaded. The state is checked too
-                             because a deleted publication keeps its remote
-                             reference, and the button asks the social media before
-                             opening anything anyway. -->
+                             publication is on the social media. The state is
+                             checked too because a deleted publication keeps
+                             its remote reference, and the button asks the
+                             social media before opening anything anyway. -->
                         <button
                             type="object"
                             name="action_open_post_account_url"
@@ -182,7 +179,7 @@
                             <field name="state" widget="badge" />
                             <field name="published_date" />
                             <field name="is_scheduled" />
-                            <field name="remote_ref" groups="base.group_no_one" />
+                            <field name="remote_ref" invisible="1" />
                         </group>
                     </group>
                     <group string="Message">

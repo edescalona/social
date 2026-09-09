@@ -84,7 +84,7 @@
                                 readonly="1"
                             />
                             <field name="name" />
-                            <field name="remote_ref" />
+                            <field name="remote_ref" column_invisible="1" />
                             <field name="environment" />
                             <field name="currency_id" optional="show" />
                             <field name="web_url" widget="url" optional="hide" />

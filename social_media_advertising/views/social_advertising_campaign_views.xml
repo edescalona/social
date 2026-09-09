@@ -73,11 +73,7 @@
                                 name="advertising_account_id"
                                 invisible="not advertising_account_id"
                             />
-                            <field
-                                name="remote_ref"
-                                readonly="1"
-                                invisible="not remote_ref"
-                            />
+                            <field name="remote_ref" invisible="1" />
                             <field name="active" invisible="1" />
                         </group>
                     </group>

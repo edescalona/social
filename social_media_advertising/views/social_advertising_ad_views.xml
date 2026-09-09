@@ -215,7 +215,7 @@
                         </group>
                         <group>
                             <field name="created_date" />
-                            <field name="remote_ref" groups="base.group_no_one" />
+                            <field name="remote_ref" invisible="1" />
                             <field name="url" widget="url" />
                             <field name="last_sync_date" />
                         </group>
