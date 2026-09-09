@@ -3,6 +3,7 @@
 
 from . import test_common_linkedin
 from . import test_account_linkedin
+from . import test_account_statistics_linkedin
 from . import test_media_linkedin
 from . import test_post_linkedin
 from . import test_controller

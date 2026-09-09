@@ -106,6 +106,17 @@ _URN_COMMENT_LINKEDIN = "urn:li:comment:"
 # single entity by URN do not take.
 _FINDER_PARAMS_LINKEDIN = ("q", "organizationalEntity")
 
+# The two kinds of publication ``organizationalEntityShareStatistics`` answers
+# for, each one with the URN prefix that tells it apart in the feed, the query
+# parameter it is asked with and the key naming it in the answer.
+#
+# The order matters: the two answers are merged with ``update()``, so the last
+# entry is the one that wins on a URN both of them reported.
+_ENTITY_STATISTICS_LINKEDIN = (
+    (_URN_SHARE_LINKEDIN, "shares", "share"),
+    (_URN_UGC_POST_LINKEDIN, "ugcPosts", "ugcPost"),
+)
+
 # Days of daily buckets the check for updates watches. The window has to be
 # wider than the interval of the cron so a bucket is compared against itself at
 # least once before ageing out of it, and wide enough to still catch a figure

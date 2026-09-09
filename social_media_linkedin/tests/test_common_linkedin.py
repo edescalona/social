@@ -14,6 +14,8 @@ from odoo.addons.social_media_base.tests.test_social_common import (
     TestSocialMediaBaseCommon,
 )
 
+from ..social_linkedin_utils import social_url_encode
+
 PATCH_WIZARD_LINKEDIN = "odoo.addons.social_media_linkedin.wizards.{}"
 PATCH_WIZARD_ACCOUNT_LINKEDIN = PATCH_WIZARD_LINKEDIN.format("wizard_social_account.{}")
 
@@ -213,6 +215,14 @@ class TestSocialCommonLinkedin(LinkedinMockMixin, TestSocialMediaBaseCommon):
     def _fake_urns(self, prefix, count):
         """Return URNs as long as the ones LinkedIn answers."""
         return [f"{prefix}{7132564752928563200 + index}" for index in range(count)]
+
+    def _linkedin_query_string(self, call):
+        """Rebuild the query string that a ``_request_linkedin`` call sends."""
+        kwargs = call.kwargs
+        return "&".join(
+            social_url_encode(param_field, kwargs["params_values"])
+            for param_field in kwargs["params_fields"]
+        )
 
     @contextmanager
     def _patch_recent_statistics(self, statistics=None, side_effect=None):

@@ -9,15 +9,12 @@ from odoo.exceptions import UserError
 from odoo.tools import is_list_of
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
-    _FINDER_PARAMS_LINKEDIN,
     _POSTS_MAX_PAGES_LINKEDIN,
     _POSTS_PAGE_SIZE_LINKEDIN,
     _SCOPE_READ_POSTS_LINKEDIN,
     _UPDATE_CHECK_DAYS_LINKEDIN,
     _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
-    _URN_ORGANIZATION_LINKEDIN,
-    _URN_UGC_POST_LINKEDIN,
     _URN_VIDEO_LINKEDIN,
     _batch_urns_by_url_size,
     datetime_from_epoch_milliseconds,
@@ -25,7 +22,6 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
 )
 
 from ..social_linkedin_sync_utils import (
-    _ENTITY_STATISTICS_LINKEDIN,
     _PROJECTION_ACTOR_LINKEDIN,
     _URN_PERSON_LINKEDIN,
 )
@@ -121,157 +117,6 @@ class SocialAccount(models.Model):
             _POSTS_MAX_PAGES_LINKEDIN,
         )
         return posts, False
-
-    def _filter_urns(self, posts, urn_prefix):
-        """Return the URNs of the posts of one kind, in the order given.
-
-        :param posts: the posts as the Posts API answered them.
-        :param urn_prefix: ``urn:li:share:`` or ``urn:li:ugcPost:``.
-        :rtype: list
-        """
-        return [
-            post["id"]
-            for post in posts
-            if post.get("id") and post["id"].startswith(urn_prefix)
-        ]
-
-    def _parse_share_statistics(self, payload, urn_key):
-        """Read the answer of ``organizationalEntityShareStatistics``.
-
-        The shares and the UGC posts are asked for with a parameter of their
-        own but answer the very same block, only the key naming the entity
-        changes. An entity with no activity at all is left out of the answer,
-        and is therefore left out of the result: its figures are all zero.
-
-        :param payload: the parsed answer of LinkedIn.
-        :param urn_key: ``share`` or ``ugcPost``.
-        :return: Statistics tuple by post URN.
-        :rtype: dict
-        """
-        statistics = {}
-        for element in payload.get("elements", []):
-            urn = element.get(urn_key)
-            if not urn:
-                continue
-            totals = element.get("totalShareStatistics", {})
-            statistics[urn] = (
-                totals.get("clickCount", 0),
-                totals.get("likeCount", 0),
-                totals.get("commentCount", 0),
-                totals.get("shareCount", 0),
-                totals.get("engagement", 0),
-                totals.get("impressionCount", 0),
-            )
-        return statistics
-
-    def _get_entity_share_statistics(
-        self,
-        urns,
-        param_field,
-        urn_key,
-        error_label,
-        params_fields=None,
-        params_values=None,
-    ):
-        """Read ``organizationalEntityShareStatistics`` for the given URNs.
-
-        LinkedIn takes every URN in the query string and documents that
-        endpoint as not paginated, so the URNs are split into as many calls
-        as the 4 KB limit of the query string needs.
-
-        :param urns: the URNs to read the statistics of.
-        :param param_field: ``shares`` or ``ugcPosts``.
-        :param urn_key: the key naming the entity in the answer.
-        :param error_label: what to call the call in the error message.
-        :return: Statistics tuple by post URN.
-        :rtype: dict
-        """
-        data = {}
-        for batch in _batch_urns_by_url_size(
-            urns,
-            param_field,
-            params_fields=params_fields,
-            params_values=params_values,
-        ):
-            response = self._request_linkedin(
-                endpoint="/organizationalEntityShareStatistics",
-                headers=self.media_id._get_linkedin_headers(
-                    access_token=self.sudo().access_token, x_restli_method="FINDER"
-                ),
-                params_fields=params_fields + [param_field],
-                params_values={**params_values, param_field: [",".join(batch)]},
-                linkedin_v2=True,
-                return_json=False,
-            )
-            if response.status_code != 200:
-                raise UserError(
-                    _(
-                        "%(label)s: %(error)s",
-                        label=error_label,
-                        error=self._linkedin_error_message(response),
-                    )
-                )
-            data.update(self._parse_share_statistics(response.json(), urn_key))
-        return data
-
-    def _get_ugc_posts_statistics(
-        self,
-        posts=None,
-        params_fields=None,
-        params_values=None,
-    ):
-        """Read the likes and the comments of the UGC posts of the feed.
-
-        LinkedIn documents ``socialActions`` as the up-to-date source of
-        those two counts, the ones the feed shows, which is why they are read
-        apart from the rest of the figures. It is asked for in as many calls
-        as the 4 KB limit of the query string needs.
-
-        :return: ``(likes, comments)`` by UGC post URN.
-        :rtype: dict
-        """
-        data = {}
-        if not posts:
-            return data
-        urns = self._filter_urns(posts, _URN_UGC_POST_LINKEDIN)
-        for batch in _batch_urns_by_url_size(
-            urns,
-            "ids",
-            params_fields=params_fields,
-            params_values=params_values,
-        ):
-            response = self._request_linkedin(
-                endpoint="/socialActions",
-                headers=self.media_id._get_linkedin_headers(
-                    access_token=self.sudo().access_token
-                ),
-                params_fields=params_fields + ["ids"],
-                params_values={**params_values, "ids": [",".join(batch)]},
-                return_json=False,
-                linkedin_v2=True,
-            )
-            if response.status_code != 200:
-                raise UserError(
-                    _(
-                        "The likes and the comments of the publications could not be "
-                        "read: %(error)s",
-                        error=self._linkedin_error_message(response),
-                    )
-                )
-            data.update(
-                {
-                    urn_id: (
-                        post_reaction.get("likesSummary", {}).get("totalLikes", 0),
-                        post_reaction.get("commentsSummary", {}).get(
-                            "aggregatedTotalComments", 0
-                        ),
-                    )
-                    for urn_id, post_reaction in response.json()
-                    .get("results", {})
-                    .items()
-                }
-            )
-        return data
 
     def _get_reactions(self, entities):
         """Read which of the given entities the account already reacted to.
@@ -456,80 +301,6 @@ class SocialAccount(models.Model):
         ] or elements
         identifiers = preferred[0].get("identifiers", [])
         return identifiers[0].get("identifier", False) if identifiers else False
-
-    def _get_entity_statistics(
-        self,
-        posts=None,
-        params_fields=None,
-        params_values=None,
-    ):
-        """Merge the statistics of the share posts and of the UGC posts.
-
-        Three calls are needed. ``organizationalEntityShareStatistics``
-        answers the whole block of figures, but the shares and the UGC posts
-        are asked for with a parameter of their own. ``socialActions`` is
-        read on top of it because LinkedIn documents its likes and its
-        comments as the up-to-date ones, the ones the feed shows.
-
-        :return: Statistics tuple by post URN.
-        :rtype: dict
-        """
-        if self.media_type != "linkedin":
-            return {}
-        if not posts:
-            return {}
-        if not params_fields:
-            params_fields = ["q", "organizationalEntity"]
-        if not params_values:
-            params_values = {
-                "q": "organizationalEntity",
-                "organizationalEntity": f"{_URN_ORGANIZATION_LINKEDIN}"
-                f"{self.linkedin_account_id}",
-            }
-        entity_params = {
-            "params_fields": list(params_fields),
-            "params_values": dict(params_values),
-        }
-        # The same endpoint asked once per kind of publication. Both bring the
-        # clicks, the shares, the engagement and the impressions; the likes and
-        # the comments come from ``socialActions`` below, which is the source
-        # LinkedIn documents as the up-to-date one.
-        errors_by_field = {
-            "shares": _("The statistics of the shared publications could not be read"),
-            "ugcPosts": _("The statistics of the publications could not be read"),
-        }
-        data = {}
-        for urn_prefix, param_field, urn_key in _ENTITY_STATISTICS_LINKEDIN:
-            data.update(
-                self._get_entity_share_statistics(
-                    self._filter_urns(posts, urn_prefix),
-                    param_field,
-                    urn_key,
-                    errors_by_field[param_field],
-                    **entity_params,
-                )
-            )
-        # ``socialActions`` takes neither the criteria of the share finder
-        # nor the organization it is about.
-        social_actions = self._get_ugc_posts_statistics(
-            posts=posts,
-            params_fields=[
-                param_field
-                for param_field in params_fields
-                if param_field not in _FINDER_PARAMS_LINKEDIN
-            ],
-            params_values={
-                key: value
-                for key, value in params_values.items()
-                if key not in _FINDER_PARAMS_LINKEDIN
-            },
-        )
-        for urn, (likes, comments) in social_actions.items():
-            clicks, __, __, shares, engagement, impressions = data.get(
-                urn, (0, 0, 0, 0, 0, 0)
-            )
-            data[urn] = (clicks, likes, comments, shares, engagement, impressions)
-        return data
 
     def _update_posts_statistics(self, post_id, domain, imported=None):
         statistics = super()._update_posts_statistics(post_id, domain, imported)

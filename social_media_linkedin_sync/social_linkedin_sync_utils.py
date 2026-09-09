@@ -1,22 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo.addons.social_media_linkedin.social_linkedin_utils import (
-    _URN_SHARE_LINKEDIN,
-    _URN_UGC_POST_LINKEDIN,
-)
-
-# The two kinds of publication ``organizationalEntityShareStatistics`` answers
-# for, each one with the URN prefix that tells it apart in the feed, the query
-# parameter it is asked with and the key naming it in the answer.
-#
-# The order matters: the two answers are merged with ``update()``, so the last
-# entry is the one that wins on a URN both of them reported.
-_ENTITY_STATISTICS_LINKEDIN = (
-    (_URN_SHARE_LINKEDIN, "shares", "share"),
-    (_URN_UGC_POST_LINKEDIN, "ugcPosts", "ugcPost"),
-)
-
 # Scopes no call of this module requires. The Community Management migration
 # guide maps, since June 2023, ``r_organization_social`` to
 # ``r_organization_social_feed`` and ``w_organization_social`` to
