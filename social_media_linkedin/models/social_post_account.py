@@ -9,8 +9,10 @@ import psycopg2
 from odoo import _, models
 from odoo.exceptions import UserError
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.tools import split_every
 
 from ..social_linkedin_utils import (
+    _BATCH_GET_MAX_IDS_LINKEDIN,
     _ENDPOINT_POST_LINKEDIN,
     _SCOPE_READ_POSTS_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
@@ -178,6 +180,32 @@ class SocialPostAccount(models.Model):
                 },
             )
         return True
+
+    def _check_remote_posts_exist(self):
+        """Confirm a batch of suspects in one call per hundred.
+
+        The Posts API answers a ``BATCH_GET`` by ``ids``, so the price of
+        confirming a deletion is one call per ``_BATCH_GET_MAX_IDS_LINKEDIN``
+        suspects and not one per suspect, which is what makes it affordable
+        for the pass that sweeps the whole feed.
+
+        The lines are asked about one account at a time: each account has its
+        own token and its own page role, and a URN is asked about from the
+        account that published it.
+        """
+        linkedin = self.filtered(
+            lambda line: line.account_id.media_type == "linkedin" and line.remote_ref
+        )
+        others = self - linkedin
+        gone = super(SocialPostAccount, others)._check_remote_posts_exist()
+        confirmed = set()
+        for account, lines in linkedin.grouped("account_id").items():
+            account._check_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
+            for batch in split_every(
+                _BATCH_GET_MAX_IDS_LINKEDIN, lines.mapped("remote_ref"), list
+            ):
+                confirmed |= account._get_posts_gone(batch)
+        return gone | linkedin.filtered(lambda line: line.remote_ref in confirmed)
 
     def _delete_post_account(self):
         if self.media_id.media_type == "linkedin" and self.remote_ref:

@@ -385,9 +385,11 @@ class SocialAccount(models.Model):
                 add_values=True,
             )
         discovered = [post["id"] for post in ugc_posts if post.get("id")]
-        # A post missing from the answer is only gone when the whole feed was
-        # read: on a partial answer the same search would mark live
-        # publications as deleted.
+        # Missing from the answer only makes a publication a suspect, and the
+        # marking asks LinkedIn about each of them by URN. The whole feed has
+        # to have been read to bother asking: on a partial answer everything
+        # the page ever published looks absent, and confirming it would spend
+        # a call per hundred publications to mark none of them.
         if feed_is_complete:
             PostAccount.search(
                 [
@@ -396,7 +398,7 @@ class SocialAccount(models.Model):
                     ("account_id", "=", self.id),
                     ("state", "!=", "deleted"),
                 ]
-            )._register_remote_post_gone()
+            )._register_remote_posts_gone()
         # The publications Odoo knows and the answer did not bring. Their
         # figures are refreshed all the same, by URN, which is what spares
         # reading the feed. ``sudo`` because the publications are scoped to

@@ -2032,6 +2032,33 @@ class TestSocialPostBaseUsers(TestSocialMediaBaseCommon):
         ):
             self.assertFalse(post_account._remote_post_gone_on_action())
 
+    def _create_suspect_lines(self, count):
+        """Create ``count`` published lines, each on its own account.
+
+        A publication belongs to one account, so a batch of suspects is a line
+        per account, each with the reference the social media is asked about.
+        """
+        lines = self.SocialPostAccount.browse()
+        for index in range(count):
+            account = self.SocialAccount.create(
+                {
+                    "name": "Linkedin batch %s" % index,
+                    "media_id": self.social_media_id.id,
+                    "username": "linkedin_batch_%s" % index,
+                }
+            )
+            lines |= self.SocialPostAccount.create(
+                {
+                    "post_id": self.social_post_id.id,
+                    "account_id": account.id,
+                    "message": "Test message",
+                    "remote_ref": "urn:li:share:%s" % index,
+                    "post_account_url": "https://example.test/post/%s" % index,
+                    "state": "posted",
+                }
+            )
+        return lines
+
     def test_register_remote_post_gone_keeps_the_reference(self):
         """The reference survives the deletion: detection is not infallible."""
         post_account = self.social_post_account_id
@@ -2046,3 +2073,58 @@ class TestSocialPostBaseUsers(TestSocialMediaBaseCommon):
         self.assertEqual(post_account.state, "deleted")
         self.assertFalse(post_account.post_account_url)
         self.assertEqual(post_account.remote_ref, "urn:li:share:kept")
+
+    def test_check_remote_posts_exist_answers_only_the_confirmed(self):
+        """The plural answers the lines the social media reported as gone."""
+        lines = self._create_suspect_lines(3)
+        with patch.object(
+            type(lines),
+            "_check_remote_post_exists",
+            autospec=True,
+            side_effect=lambda line: line.remote_ref != "urn:li:share:1",
+        ) as check:
+            self.assertEqual(lines._check_remote_posts_exist(), lines[1])
+        self.assertEqual(check.call_count, 3)
+
+    @mute_logger(LOGGER_POST_ACCOUNT)
+    def test_check_remote_posts_exist_leaves_out_a_failing_check(self):
+        """A check that raises confirms nothing and stops nobody else."""
+        lines = self._create_suspect_lines(3)
+
+        def check(line):
+            if line.remote_ref == "urn:li:share:0":
+                raise ValueError("unreachable")
+            return line.remote_ref != "urn:li:share:1"
+
+        with patch.object(
+            type(lines), "_check_remote_post_exists", autospec=True, side_effect=check
+        ):
+            self.assertEqual(lines._check_remote_posts_exist(), lines[1])
+        self.assertEqual(lines[0].state, "posted")
+
+    def test_register_remote_posts_gone_marks_only_the_confirmed(self):
+        """The bulk entry point writes on the confirmed lines and no others."""
+        lines = self._create_suspect_lines(3)
+        with patch.object(
+            type(lines),
+            "_check_remote_post_exists",
+            autospec=True,
+            side_effect=lambda line: line.remote_ref != "urn:li:share:1",
+        ):
+            self.assertEqual(lines._register_remote_posts_gone(), lines[1])
+        self.assertEqual(lines[1].state, "deleted")
+        self.assertFalse(lines[1].post_account_url)
+        self.assertEqual(lines[1].remote_ref, "urn:li:share:1")
+        for line in lines[0] | lines[2]:
+            self.assertEqual(line.state, "posted")
+            self.assertTrue(line.post_account_url)
+
+    def test_register_remote_posts_gone_asks_nothing_about_nothing(self):
+        """An empty batch of suspects reaches neither the social media nor the
+        database."""
+        with patch.object(
+            type(self.SocialPostAccount), "_check_remote_post_exists", autospec=True
+        ) as check:
+            self.assertFalse(self.SocialPostAccount._register_remote_posts_gone())
+        check.assert_not_called()
+        self.assertNotEqual(self.social_post_account_id.state, "deleted")

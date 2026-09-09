@@ -51,7 +51,15 @@ Main features:
   them collected, on demand and through the scheduled actions of *Social
   Media Sync*.
 - Full resynchronization of a page, the only pass that notices a
-  publication deleted on LinkedIn.
+  publication deleted on LinkedIn. Missing from the feed never marks
+  anything on its own: LinkedIn is asked about each suspect by its URN,
+  one call per hundred of them, and only a ``404`` writes the deletion.
+  The `Posts
+  API <https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api>`__
+  publishes asynchronously (``PUBLISH_REQUESTED``), answers the author
+  finder in reader context, and states that a page returning fewer
+  results than asked is not the end of the feed — so a publication that
+  is alive can be absent from a listing read whole.
 - Verification that a publication still exists on LinkedIn before its
   thread is read.
 - Comment threads read from the dashboard, with their replies, and
