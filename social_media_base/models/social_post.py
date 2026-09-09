@@ -498,19 +498,14 @@ class SocialPost(models.Model):
     )
     def _compute_post_statistics(self):
         for post in self:
-            post.count_post_clicks = sum(post.mapped("post_account_ids.click_count"))
-            post.count_post_shares = sum(post.mapped("post_account_ids.share_count"))
-            post.count_post_likes = sum(post.mapped("post_account_ids.like_count"))
-            post.count_post_engagement = sum(post.mapped("post_account_ids.engagement"))
-            post.count_post_impression = sum(
-                post.mapped("post_account_ids.impression_count")
-            )
-            post.count_post_comments = sum(
-                post.mapped("post_account_ids.comment_count")
-            )
-            post.count_post_interactions = sum(
-                post.mapped("post_account_ids.interactions_count")
-            )
+            lines = post.post_account_ids
+            post.count_post_clicks = sum(lines.mapped("click_count"))
+            post.count_post_shares = sum(lines.mapped("share_count"))
+            post.count_post_likes = sum(lines.mapped("like_count"))
+            post.count_post_engagement = sum(lines.mapped("engagement"))
+            post.count_post_impression = sum(lines.mapped("impression_count"))
+            post.count_post_comments = sum(lines.mapped("comment_count"))
+            post.count_post_interactions = sum(lines.mapped("interactions_count"))
 
     def _compute_link_click_count(self):
         """Count the clicks Odoo registered on the links of the publications.
@@ -692,20 +687,19 @@ class SocialPost(models.Model):
         :rtype: list
         """
         posts_account = []
-        for account in self.account_ids:
-            if account.id not in self.post_account_ids.mapped("account_id").ids:
-                posts_account.append(
-                    Command.create(
-                        {
-                            "post_id": self.id,
-                            "account_id": account.id,
-                            "state": "ready",
-                            "message": self.message,
-                            "image_ids": [Command.set(self.image_ids.ids)],
-                            "video_ids": [Command.set(self.video_ids.ids)],
-                        }
-                    )
+        for account in self.account_ids - self.post_account_ids.account_id:
+            posts_account.append(
+                Command.create(
+                    {
+                        "post_id": self.id,
+                        "account_id": account.id,
+                        "state": "ready",
+                        "message": self.message,
+                        "image_ids": [Command.set(self.image_ids.ids)],
+                        "video_ids": [Command.set(self.video_ids.ids)],
+                    }
                 )
+            )
         return posts_account
 
     def _sync_pending_lines_message(self):

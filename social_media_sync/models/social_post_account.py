@@ -8,7 +8,7 @@ from datetime import datetime
 import pytz
 import requests
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.tools.misc import _format_time_ago
 
 _logger = logging.getLogger(__name__)
@@ -323,6 +323,31 @@ class SocialPostAccount(models.Model):
         self.ensure_one()
         stored = set((self.media_refs or {}).values())
         return [media for media in medias if media in stored]
+
+    @api.model
+    def _by_remote_ref(self, refs, sudo=False, active_test=True):
+        """Index the publications of these remote references by reference.
+
+        Both bridges read the page the social media answered and have to tell
+        which of its entries are already in Odoo. The two flags are what
+        differs between them: LinkedIn reconciles the archived publications
+        too and reads them past the record rules, X only the visible ones.
+
+        A reference the constraint of the model already keeps unique answers
+        one publication; the first one wins if a database ever holds two.
+
+        :param refs: the remote references the social media answered.
+        :param bool sudo: whether to read past the record rules.
+        :param bool active_test: whether to leave the archived ones out.
+        :rtype: dict
+        """
+        if not refs:
+            return {}
+        records = self.sudo() if sudo else self
+        lines = records.with_context(active_test=active_test).search(
+            [("remote_ref", "in", list(refs))]
+        )
+        return {ref: found[:1] for ref, found in lines.grouped("remote_ref").items()}
 
     def _map_medias_account(self, **values):
         """Download a media of the social media and attach it here.

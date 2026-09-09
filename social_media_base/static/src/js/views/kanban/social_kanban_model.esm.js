@@ -7,21 +7,33 @@ export class SocialKanbanModel extends RelationalModel {
         return [];
     }
 
+    /**
+     * The fields the account bar of the dashboard draws.
+     *
+     * Its own method so a module adding to the card asks for its fields in
+     * the same read instead of a second one over the same rows.
+     *
+     * @returns {String[]}
+     */
+    _accountFields() {
+        return [
+            "id",
+            "name",
+            "company_id",
+            "media_id",
+            "account_url",
+            "impression_count",
+            "interactions_count",
+            "engagement",
+            "need_update",
+        ];
+    }
+
     async _loadAccounts() {
         return await this.orm.searchRead(
             "social.account",
             this._getDomainSocialAccount(),
-            [
-                "id",
-                "name",
-                "company_id",
-                "media_id",
-                "account_url",
-                "impression_count",
-                "interactions_count",
-                "engagement",
-                "need_update",
-            ]
+            this._accountFields()
         );
     }
 

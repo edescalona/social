@@ -142,16 +142,6 @@ class SocialAccount(models.Model):
             "retweet_count", 0
         ), public_metrics.get("quote_count", 0)
 
-    def _get_post_accounts_by_tweet(self, tweet_ids):
-        """Prefetch post accounts by tweet id to avoid per-tweet searches."""
-        post_accounts_by_tweet = {}
-        if tweet_ids:
-            for existing in self.env["social.post.account"].search(
-                [("remote_ref", "in", tweet_ids)]
-            ):
-                post_accounts_by_tweet.setdefault(existing.remote_ref, existing)
-        return post_accounts_by_tweet
-
     def _notify_tweets_error(self, account, errors):
         """Report the errors X answered instead of a timeline.
 
@@ -235,7 +225,7 @@ class SocialAccount(models.Model):
                         m.media_key: (m.media_key, m.url, m.type)
                         for m in (response.includes.get("media") or [])
                     }
-                    post_accounts_by_tweet = account._get_post_accounts_by_tweet(
+                    post_accounts_by_tweet = PostAccount._by_remote_ref(
                         [str(val_x.id) for val_x in (response.data or []) if val_x.id]
                     )
                     users = {

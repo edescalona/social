@@ -711,13 +711,9 @@ class SocialAccount(models.Model):
         # answers it for the whole page.
         own_reactions = self._get_reactions(refreshed_urns)
         post_accounts = []
-        post_accounts_by_urn = {}
-        for existing in (
-            PostAccount.sudo()
-            .with_context(active_test=False)
-            .search([("remote_ref", "in", discovered)])
-        ):
-            post_accounts_by_urn.setdefault(existing.remote_ref, existing)
+        post_accounts_by_urn = PostAccount._by_remote_ref(
+            discovered, sudo=True, active_test=False
+        )
         for ugc_post in ugc_posts:
             post_account = post_accounts_by_urn.get(ugc_post.get("id"), PostAccount)
             content = ugc_post.get("content", {})

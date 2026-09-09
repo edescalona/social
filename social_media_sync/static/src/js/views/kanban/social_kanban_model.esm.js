@@ -75,21 +75,7 @@ patch(SocialKanbanModel.prototype, {
      *
      * @override
      */
-    async _loadAccounts() {
-        const accounts = await super._loadAccounts();
-        if (!accounts.length) {
-            return accounts;
-        }
-        const pending = await this.orm.silent.read(
-            "social.account",
-            accounts.map((account) => account.id),
-            ["pending_initial_sync", "posts_need_import"]
-        );
-        const byId = new Map(pending.map((row) => [row.id, row]));
-        return accounts.map((account) => ({
-            ...account,
-            pending_initial_sync: Boolean(byId.get(account.id)?.pending_initial_sync),
-            posts_need_import: Boolean(byId.get(account.id)?.posts_need_import),
-        }));
+    _accountFields() {
+        return [...super._accountFields(), "pending_initial_sync", "posts_need_import"];
     },
 });

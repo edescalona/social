@@ -74,22 +74,54 @@ class SocialAccount(models.Model):
             return res
         self._check_linkedin_scopes(["r_ads"])
         account_urns = dict.fromkeys(self._fetch_linkedin_ad_account_urns())
+        data_by_urn = {
+            account_urn: self._fetch_linkedin_ad_account(account_urn)
+            for account_urn in account_urns
+        }
+        currency_by_name = self._linkedin_currencies_by_name(data_by_urn.values())
         return res + [
             self._prepare_linkedin_advertising_account(
-                account_urn, self._fetch_linkedin_ad_account(account_urn)
+                account_urn, data, currency_by_name=currency_by_name
             )
-            for account_urn in account_urns
+            for account_urn, data in data_by_urn.items()
         ]
 
-    def _prepare_linkedin_advertising_account(self, account_urn, data):
+    def _linkedin_currencies_by_name(self, elements):
+        """Return the currencies these ``adAccounts`` elements name, by name.
+
+        Read once for the whole page: LinkedIn answers the currency as its
+        code, and an advertising account per currency would be one query per
+        advertising account.
+
+        :param elements: The ``adAccounts`` elements of the page.
+        :rtype: dict
+        """
+        names = {
+            element.get("currency") for element in elements if element.get("currency")
+        }
+        return (
+            self.env["res.currency"]
+            .search([("name", "in", list(names))])
+            .grouped("name")
+        )
+
+    def _prepare_linkedin_advertising_account(
+        self, account_urn, data, currency_by_name=None
+    ):
         """Map an ``adAccounts`` element to a ``social.advertising.account``.
 
         :param account_urn: The advertising account URN.
         :param data: The ``adAccounts`` element of that URN.
+        :param currency_by_name: The currencies of the page by name, read by
+            :meth:`~._linkedin_currencies_by_name`. Without it the currency
+            of this element alone is read.
         :rtype: dict
         """
-        currency = self.env["res.currency"].search(
-            [("name", "=", data.get("currency"))], limit=1
+        Currency = self.env["res.currency"]
+        currency = (
+            currency_by_name.get(data.get("currency"), Currency)
+            if currency_by_name is not None
+            else Currency.search([("name", "=", data.get("currency"))], limit=1)
         )
         return {
             "remote_ref": account_urn,
@@ -458,16 +490,12 @@ class SocialAccount(models.Model):
             .with_context(skip_linkedin_budget_check=True, active_test=False)
         )
         Currency = self.env["res.currency"]
-        AdvertisingAccount = self.env["social.advertising.account"].sudo()
         current_advertising_account = self.advertising_account_ids.filtered(
             "is_current"
         )[:1]
-        advertising_account_by_urn = {
-            advertising_account.remote_ref: advertising_account
-            for advertising_account in AdvertisingAccount.search(
-                [("account_id", "=", self.id)]
-            )
-        }
+        advertising_account_by_urn = self.sudo().advertising_account_ids.grouped(
+            "remote_ref"
+        )
         counts = {"groups": 0, "campaigns": 0}
         groups_by_urn = {}
         stages = self.env["social.stage"].search(

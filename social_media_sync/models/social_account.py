@@ -164,14 +164,12 @@ class SocialAccount(models.Model):
                 return json.dumps([])
         imported = set()
         statistics = accounts._update_posts_statistics(post_id, domain, imported)
-        pending = accounts.filtered(
-            lambda account: account.pending_initial_sync and account.id in imported
-        )
+        imported_accounts = accounts.filtered(lambda account: account.id in imported)
+        pending = imported_accounts.filtered("pending_initial_sync")
         if pending:
             pending.sudo().write({"pending_initial_sync": False})
-        accounts.filtered(
-            lambda account: account.posts_need_import and account.id in imported
-        )._clear_posts_need_import()
+        # ``_clear_posts_need_import`` keeps the ones actually flagged.
+        imported_accounts._clear_posts_need_import()
         return json.dumps(statistics)
 
     def _full_resync(self):

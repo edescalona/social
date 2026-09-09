@@ -3,6 +3,7 @@
 
 import base64
 import logging
+from collections import defaultdict
 
 import psycopg2
 
@@ -178,8 +179,25 @@ class SocialAccount(models.Model):
 
     @api.depends("post_account_ids.campaign_id", "post_ids.campaign_id")
     def _compute_utm_campaign_count(self):
+        """Count the marketing campaigns of the posts of every account.
+
+        The two sides of :meth:`~._get_utm_campaigns` read as an aggregate
+        for the whole recordset, so the dashboard costs two queries instead
+        of two per account.
+        """
+        campaigns_by_account = defaultdict(set)
+        for account, campaign in self.env["social.post.account"]._read_group(
+            domain=[("account_id", "in", self.ids), ("campaign_id", "!=", False)],
+            groupby=["account_id", "campaign_id"],
+        ):
+            campaigns_by_account[account].add(campaign.id)
+        for accounts, campaign in self.env["social.post"]._read_group(
+            domain=[("account_ids", "in", self.ids), ("campaign_id", "!=", False)],
+            groupby=["account_ids", "campaign_id"],
+        ):
+            campaigns_by_account[accounts].add(campaign.id)
         for account in self:
-            account.utm_campaign_count = len(account._get_utm_campaigns())
+            account.utm_campaign_count = len(campaigns_by_account[account])
 
     def action_open_utm_campaigns(self):
         """Open the marketing campaigns of the publications of this account."""

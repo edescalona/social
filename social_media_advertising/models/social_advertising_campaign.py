@@ -91,17 +91,14 @@ class SocialAdvertisingCampaign(models.Model):
 
     @api.depends("media_id", "account_ids")
     def _compute_allow_media_ids(self):
-        SocialMedia = self.env["social.media"]
-        # The allowed media types repeat across records, so each distinct
-        # set is searched once instead of once per campaign.
-        media_ids_by_types = {}
-        for campaign in self:
-            media_types = tuple(campaign._available_campaign())
-            if media_types not in media_ids_by_types:
-                media_ids_by_types[media_types] = SocialMedia.search(
-                    [("media_type", "in", list(media_types))]
-                ).ids
-            campaign.allow_media_ids = [Command.set(media_ids_by_types[media_types])]
+        # The answer of the hook does not vary between records: it is the
+        # list of media types the installed connectors declare.
+        media_ids = (
+            self.env["social.media"]
+            .search([("media_type", "in", self._available_campaign())])
+            .ids
+        )
+        self.allow_media_ids = [Command.set(media_ids)]
 
     @api.depends("name", "media_id")
     def _compute_display_name(self):
@@ -116,7 +113,9 @@ class SocialAdvertisingCampaign(models.Model):
     def _available_campaign(self):
         """Return the media types allowed on a campaign.
 
-        Connector modules append their own.
+        Connector modules append their own. The answer is the same for every
+        record — it depends on what is installed, not on the campaign — so
+        the compute calling it asks once for the whole recordset.
 
         :rtype: list
         """

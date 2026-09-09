@@ -56,14 +56,14 @@ class SocialAccount(models.Model):
     rate_limit_endpoint = fields.Json(copy=False, default=dict)
 
     def _get_group_account_username(self):
-        """Group these accounts by username to detect duplicated X users.
+        """Return the usernames more than one of these accounts holds.
 
         Only the X accounts already holding a username are grouped: the
         constraint calling it receives every account of the post, and neither
         the accounts of another media nor the ones whose username is still
         empty are a duplicate of anything.
 
-        :return: Tuples of username and number of accounts using it.
+        :return: Tuples of duplicated username and number of accounts using it.
         :rtype: list
         """
         return self._read_group(
@@ -74,6 +74,7 @@ class SocialAccount(models.Model):
             ],
             groupby=["username"],
             aggregates=["__count"],
+            having=[("__count", ">", 1)],
         )
 
     def _fields_account_url(self):

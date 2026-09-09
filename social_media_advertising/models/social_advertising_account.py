@@ -69,11 +69,11 @@ class SocialAdvertisingAccount(models.Model):
     campaign_ids = fields.One2many(
         "social.advertising.campaign", "advertising_account_id"
     )
-    campaign_count = fields.Integer(compute="_compute_campaign_count")
+    campaign_count = fields.Integer(compute="_compute_campaign_counts")
     campaign_group_ids = fields.One2many(
         "social.advertising.campaign.group", "advertising_account_id"
     )
-    campaign_group_count = fields.Integer(compute="_compute_campaign_group_count")
+    campaign_group_count = fields.Integer(compute="_compute_campaign_counts")
 
     _sql_constraints = [
         (
@@ -84,21 +84,17 @@ class SocialAdvertisingAccount(models.Model):
         ),
     ]
 
-    @api.depends("campaign_ids")
-    def _compute_campaign_count(self):
-        counts = dict(
+    @api.depends("campaign_ids", "campaign_group_ids")
+    def _compute_campaign_counts(self):
+        """Count the campaigns and the campaign groups of these accounts."""
+        campaigns = dict(
             self.env["social.advertising.campaign"]._read_group(
                 domain=[("advertising_account_id", "in", self.ids)],
                 groupby=["advertising_account_id"],
                 aggregates=["__count"],
             )
         )
-        for advertising_account in self:
-            advertising_account.campaign_count = counts.get(advertising_account, 0)
-
-    @api.depends("campaign_group_ids")
-    def _compute_campaign_group_count(self):
-        counts = dict(
+        groups = dict(
             self.env["social.advertising.campaign.group"]._read_group(
                 domain=[("advertising_account_id", "in", self.ids)],
                 groupby=["advertising_account_id"],
@@ -106,7 +102,8 @@ class SocialAdvertisingAccount(models.Model):
             )
         )
         for advertising_account in self:
-            advertising_account.campaign_group_count = counts.get(
+            advertising_account.campaign_count = campaigns.get(advertising_account, 0)
+            advertising_account.campaign_group_count = groups.get(
                 advertising_account, 0
             )
 
@@ -172,7 +169,18 @@ class SocialAdvertisingAccount(models.Model):
         environments = dict(
             self._fields["environment"]._description_selection(self.env)
         )
-        for advertising_account in self.filtered("is_current"):
+        current = self.filtered("is_current")
+        in_use = dict(
+            self._read_group(
+                domain=[
+                    ("account_id", "in", current.account_id.ids),
+                    ("is_current", "=", True),
+                ],
+                groupby=["account_id"],
+                aggregates=["__count"],
+            )
+        )
+        for advertising_account in current:
             account = advertising_account.account_id
             if advertising_account.environment != account.environment:
                 raise ValidationError(
@@ -189,15 +197,7 @@ class SocialAdvertisingAccount(models.Model):
                         environment=environments.get(account.environment),
                     )
                 )
-            if (
-                self.search_count(
-                    [
-                        ("account_id", "=", account.id),
-                        ("is_current", "=", True),
-                    ]
-                )
-                > 1
-            ):
+            if in_use.get(account, 0) > 1:
                 raise ValidationError(
                     _(
                         "The account %(account)s can only work with one "

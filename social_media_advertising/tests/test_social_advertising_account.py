@@ -110,6 +110,17 @@ class TestSocialAdvertisingAccount(TestSocialAdvertisingCommon):
         with self.assertRaises(ValidationError):
             second.write({"is_current": True})
 
+    def test_the_first_offender_of_the_recordset_is_the_one_reported(self):
+        """The constraint reports the offender the recordset reaches first."""
+        wrong_environment = self._create_advertising_account(
+            remote_ref="urn:ad:1", environment="production"
+        )
+        duplicate = self._create_advertising_account(remote_ref="urn:ad:2")
+        self._create_advertising_account(remote_ref="urn:ad:3", is_current=True)
+        with self.assertRaises(ValidationError) as context:
+            (wrong_environment + duplicate).write({"is_current": True})
+        self.assertIn(wrong_environment.display_name, str(context.exception))
+
     def test_the_account_in_use_follows_the_environment(self):
         advertising_account = self._create_advertising_account(
             remote_ref="urn:ad:1", environment="production"

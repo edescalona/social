@@ -45,15 +45,15 @@ class SocialPost(models.Model):
     def _check_account_ids(self):
         """Reject posts sent twice to the same X user, which X reads as spam."""
         for post in self:
-            for username, count in post.account_ids._get_group_account_username():
-                if count > 1:
-                    raise ValidationError(
-                        _(
-                            "There are X accounts with the same username "
-                            "(%(username)s), please check to avoid spam errors.",
-                            username=username,
-                        )
+            duplicates = post.account_ids._get_group_account_username()
+            if duplicates:
+                raise ValidationError(
+                    _(
+                        "There are X accounts with the same username "
+                        "(%(username)s), please check to avoid spam errors.",
+                        username=duplicates[0][0],
                     )
+                )
 
     def _get_post_errors(self, media_type, account=None):
         """Add what X refuses to publish.
