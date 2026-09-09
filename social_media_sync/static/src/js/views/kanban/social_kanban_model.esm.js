@@ -64,7 +64,7 @@ patch(SocialKanbanModel.prototype, {
             "update_posts_statistics",
             [account, postId, this._getDomainSocialAccount()]
         );
-        this.postsImported = Boolean(JSON.parse(imported || "[]").length);
+        this.postsImported = Boolean((imported || []).length);
         return refreshed;
     },
 

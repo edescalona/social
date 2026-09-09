@@ -1193,19 +1193,12 @@ class SocialAccount(models.Model):
         publications gone from LinkedIn are marked as deleted before their
         statistics are even asked for.
 
-        ``psycopg2.OperationalError`` with a concurrency pgcode is raised
-        again on purpose, so the retry mechanism of Odoo still sees it.
+        What isolates the account is the guard of the base, ``_account_guard``.
+        What this one adds is the answer to the failure: the responsible user
+        is told instead of the log getting a line nobody reads.
         """
-        self.ensure_one()
-        try:
-            with self.env.cr.savepoint():
-                yield
-        except psycopg2.OperationalError as error:
-            if error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                raise
-            self._notify_statistics_failure(error)
-        except Exception as error:  # noqa: BLE001 - the API may fail in any way
-            self._notify_statistics_failure(error)
+        with self._account_guard(on_error=self._notify_statistics_failure):
+            yield
 
     def _linkedin_refresh_window(self):
         """Return the days the refresh rewrites, both ends included.

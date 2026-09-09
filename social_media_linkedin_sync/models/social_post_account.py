@@ -58,18 +58,9 @@ class SocialPostAccount(models.Model):
             return Attachment, {}
         account = account or self.account_id
         download_urls = account._get_linkedin_images_download_url(image_urns)
-        attachments = Attachment
-        media_refs = {}
-        for urn in image_urns:
-            if not download_urls.get(urn):
-                continue
-            attachment = self._map_medias_account(
-                **{"name": urn, "url": download_urls[urn]}
-            )
-            if attachment:
-                attachments |= attachment
-                media_refs[str(attachment.id)] = urn
-        return attachments, media_refs
+        return self._store_remote_medias(
+            {urn: download_urls.get(urn) for urn in image_urns}
+        )
 
     def _remove_assets_deleted(self, content):
         """Drop the images that are no longer on the LinkedIn post.

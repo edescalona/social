@@ -349,6 +349,35 @@ class SocialPostAccount(models.Model):
         )
         return {ref: found[:1] for ref, found in lines.grouped("remote_ref").items()}
 
+    def _store_remote_medias(self, url_by_ref):
+        """Download the medias of a publication and keep what came back.
+
+        The bridges arrive here having already left out what is stored and
+        what the social media reported without a URL, so a media without one
+        is skipped instead of asked for.
+
+        The attachments come out in the order of the mapping, which is the
+        order the social media listed them in: that is what the card draws.
+
+        :param url_by_ref: ``{reference: url}``, the reference being the one
+            the social media names the media by.
+        :return: the attachments created and the reference of each one, keyed
+            by its identifier. Both go into the same write, so that a
+            downloaded media is never stored without the reference telling it
+            apart from one attached in Odoo.
+        :rtype: tuple
+        """
+        attachments = self.env["ir.attachment"]
+        media_refs = {}
+        for ref, url in url_by_ref.items():
+            if not url:
+                continue
+            attachment = self._map_medias_account(name=ref, url=url)
+            if attachment:
+                attachments |= attachment
+                media_refs[str(attachment.id)] = ref
+        return attachments, media_refs
+
     def _map_medias_account(self, **values):
         """Download a media of the social media and attach it here.
 

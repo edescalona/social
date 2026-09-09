@@ -1,15 +1,12 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import itertools
 import logging
 
-import psycopg2
 import pytz
 from tweepy.errors import TooManyRequests
 
-from odoo import Command, api, fields, models
-from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo import api, fields, models
 
 from odoo.addons.social_media_x.social_x_utils import _URL_X
 
@@ -81,23 +78,7 @@ class SocialAccount(models.Model):
                 account.post_since_id = latest_by_account.get(account.id, False)
 
     def _get_x_statistics(self, statistics):
-        return list(
-            itertools.chain(
-                statistics,
-                self.search_read(
-                    [("media_type", "=", "x")],
-                    [
-                        "name",
-                        "company_id",
-                        "media_id",
-                        "impression_count",
-                        "interactions_count",
-                        "engagement",
-                        "need_update",
-                    ],
-                ),
-            )
-        )
+        return self._media_statistics_payload("x", statistics)
 
     def _get_users_tweets(self, since_id=None):
         """Read the timeline of this account, from ``since_id`` when given."""
@@ -185,19 +166,11 @@ class SocialAccount(models.Model):
     def _update_posts_statistics(self, post_id, domain, imported=None):
         statistics = super()._update_posts_statistics(post_id, domain, imported)
         PostAccount = self.env["social.post.account"]
-        if not self:
-            account_ids = self.search(
-                [
-                    ("media_type", "=", "x"),
-                ]
-            )
-        else:
-            # The timeline is read one account at a time and the quota is
-            # spent per account, so a recordset holding accounts of more than
-            # one social media is narrowed instead of taken whole.
-            account_ids = self.filtered(lambda account: account.media_type == "x")
-            if not account_ids:
-                return self._get_x_statistics(statistics)
+        account_ids = self._accounts_of_media("x")
+        if self and not account_ids:
+            # Asked for accounts, none of them X's: nothing to read, and the
+            # payload is the one the other connectors already filled.
+            return self._get_x_statistics(statistics)
 
         timezone = pytz.timezone(self.env.user.tz or "UTC")
         for account in account_ids:
@@ -284,25 +257,11 @@ class SocialAccount(models.Model):
                                 "state": "posted",
                                 "author": author.username,
                             }
-                            if image_ids:
-                                data.update(
-                                    {
-                                        "image_ids": [
-                                            Command.link(image.id)
-                                            for image in image_ids
-                                        ],
-                                        "media_refs": {
-                                            **(post_account.media_refs or {}),
-                                            **media_refs,
-                                        },
-                                    }
+                            post_accounts.append(
+                                account._import_command(
+                                    post_account, data, image_ids, media_refs
                                 )
-                            if not post_account:
-                                post_accounts.append(Command.create(data))
-                            else:
-                                post_accounts.append(
-                                    Command.update(post_account.id, data)
-                                )
+                            )
                     account.write(
                         account._get_timeline_account_values(
                             response,
@@ -344,19 +303,10 @@ class SocialAccount(models.Model):
         update = super()._x_check_updates()
         for account in self:
             imported = set()
-            try:
-                with self.env.cr.savepoint():
-                    account._update_posts_statistics(None, None, imported)
+            with account._account_guard(
+                "Error importing the posts of the X account %s"
+            ):
+                account._update_posts_statistics(None, None, imported)
                 if imported:
                     update = True
-            except psycopg2.OperationalError as error:
-                if error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                    raise
-                _logger.exception(
-                    "Error importing the posts of the X account %s", account.id
-                )
-            except Exception:  # noqa: BLE001 - one account must not stop the rest
-                _logger.exception(
-                    "Error importing the posts of the X account %s", account.id
-                )
         return update

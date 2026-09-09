@@ -1,7 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import itertools
 import logging
 from collections import Counter
 
@@ -191,7 +190,7 @@ class SocialPostAccount(models.Model):
                 }
             return {
                 "success": True,
-                "data": list(itertools.chain(data.get("data", []), comments)),
+                "data": data.get("data", []) + comments,
             }
         # Answered untouched, ``success`` included: what another social media
         # said about its own comments is not this connector's to rewrite, and
@@ -378,19 +377,11 @@ class SocialPostAccount(models.Model):
             apart from one attached in Odoo.
         :rtype: tuple
         """
-        attachments = self.env["ir.attachment"]
-        media_refs = {}
         medias_exist = self._get_medias_account(media_keys)
+        url_by_ref = {}
         for media in media_keys:
-            if (
-                media not in medias_exist
-                and media_map.get(media, False)
-                and media_map.get(media, False)[1]
-            ):
-                attachment = self._map_medias_account(
-                    **{"name": media, "url": media_map.get(media, False)[1]},
-                )
-                if attachment:
-                    attachments |= attachment
-                    media_refs[str(attachment.id)] = media
-        return attachments, media_refs
+            if media in medias_exist:
+                continue
+            media_data = media_map.get(media)
+            url_by_ref[media] = media_data and media_data[1]
+        return self._store_remote_medias(url_by_ref)

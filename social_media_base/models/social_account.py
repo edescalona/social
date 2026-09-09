@@ -4,6 +4,7 @@
 import base64
 import logging
 from collections import defaultdict
+from contextlib import contextmanager
 
 import psycopg2
 
@@ -868,6 +869,47 @@ class SocialAccount(models.Model):
         """
         return []
 
+    @api.model
+    def _is_concurrency_error(self, error):
+        """Whether the error is the one PostgreSQL raises on a lost race.
+
+        :param error: the exception to look at.
+        :rtype: bool
+        """
+        return (
+            isinstance(error, psycopg2.OperationalError)
+            and error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY
+        )
+
+    @contextmanager
+    def _account_guard(self, log_message=None, on_error=None):
+        """Isolate what is done on one account in its own savepoint.
+
+        Every pass that walks the accounts writes as it goes, so a failure on
+        one of them must neither undo what the previous ones wrote nor stop
+        the ones still to come. The account that fails is rolled back on its
+        own and the pass carries on with the next.
+
+        The concurrency error of PostgreSQL is raised again on purpose, so the
+        retry mechanism of Odoo still sees it.
+
+        :param log_message: the message to log, with a single ``%s`` for the
+            id of the account. Unused when ``on_error`` is given.
+        :param on_error: called with the exception instead of logging, for the
+            caller that answers a failure with something more than a log line.
+        """
+        self.ensure_one()
+        try:
+            with self.env.cr.savepoint():
+                yield
+        except Exception as error:  # noqa: BLE001 - one account cannot stop the rest
+            if self._is_concurrency_error(error):
+                raise
+            if on_error is None:
+                _logger.exception(log_message, self.id)
+            else:
+                on_error(error)
+
     def _run_check_media_updates(self):
         """Check for new updates on the social media.
 
@@ -917,38 +959,51 @@ class SocialAccount(models.Model):
                 )
         return False
 
-    def _need_update(self, need_update=True):
-        """Flag pending updates on the dashboard of the responsible users.
+    def _notify_accounts_by_partner(
+        self, bus_type, need_update=True, payload_accounts=True
+    ):
+        """Raise or lower a notice on the dashboard of the responsible users.
 
-        The check runs in a cron, whose user is not the one owning the
-        account, so the message has to be addressed to each responsible user.
+        The checks that raise these notices run in crons, whose user is not
+        the one owning the account, so the message has to be addressed to each
+        responsible user. The fallback to the user of the environment is what
+        covers the account with no responsible: grouping by the partner alone
+        would file them all under an empty key.
 
-        The payload names the accounts because the dashboard has to tell the
-        user which one to act on: somebody responsible for four accounts on
-        three social media can do nothing with a notice that only says
-        *something needs updating*. Each partner is told about his own
-        accounts and about no others.
+        Each notice keeps its own bus type, and that is what tells them apart
+        on the card: neither state implies the other and several can be drawn
+        at once.
+
+        :param bus_type: the type the client listens on for this notice.
+        :param need_update: whether the notice goes up or comes down.
+        :param payload_accounts: whether the payload names the accounts. The
+            dashboard needs them to tell the user which one to act on:
+            somebody responsible for four accounts can do nothing with a
+            notice that only says *something needs updating*. Each partner is
+            told about his own accounts and about no others.
         """
         partners = self.user_id.partner_id or self.env.user.partner_id
         for partner in partners:
-            accounts = self.filtered(
-                lambda account, partner=partner: account.user_id.partner_id == partner
-            )
-            self.env["bus.bus"]._sendone(
-                partner,
-                "social_need_update",
-                {
-                    "need_update": need_update,
-                    "accounts": [
-                        {
-                            "id": account.id,
-                            "name": account.name,
-                            "media": account.media_id.name,
-                        }
-                        for account in accounts
-                    ],
-                },
-            )
+            payload = {"need_update": need_update}
+            if payload_accounts:
+                accounts = self.filtered(
+                    lambda account, partner=partner: (
+                        account.user_id.partner_id == partner
+                    )
+                )
+                payload["accounts"] = [
+                    {
+                        "id": account.id,
+                        "name": account.name,
+                        "media": account.media_id.name,
+                    }
+                    for account in accounts
+                ]
+            self.env["bus.bus"]._sendone(partner, bus_type, payload)
+
+    def _need_update(self, need_update=True):
+        """Flag pending updates on the dashboard of the responsible users."""
+        self._notify_accounts_by_partner("social_need_update", need_update)
 
     @api.model
     def _get_social_dashboard_url(self):

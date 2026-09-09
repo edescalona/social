@@ -611,15 +611,11 @@ class SocialAccount(models.Model):
         The check runs in a cron, whose user is not the one owning the
         account, so the message has to be addressed to each responsible
         user. The ads themselves are not fetched: the user decides when to
-        synchronize.
+        synchronize, so the payload does not name them.
         """
-        partners = self.user_id.partner_id or self.env.user.partner_id
-        for partner in partners:
-            self.env["bus.bus"]._sendone(
-                partner,
-                "social_ads_need_update",
-                {"need_update": need_update},
-            )
+        self._notify_accounts_by_partner(
+            "social_ads_need_update", need_update, payload_accounts=False
+        )
 
     @api.model
     def _run_check_ads_updates(self):
@@ -631,19 +627,8 @@ class SocialAccount(models.Model):
         not drop the check of the others.
         """
         for account in self.sudo().search(self._get_advertising_accounts_domain()):
-            try:
-                with self.env.cr.savepoint():
-                    account._check_ads_updates()
-            except psycopg2.OperationalError as error:
-                if error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                    raise
-                _logger.exception(
-                    "Error checking the ads of the account %s", account.id
-                )
-            except Exception:  # noqa: BLE001 - one account must not stop the rest
-                _logger.exception(
-                    "Error checking the ads of the account %s", account.id
-                )
+            with account._account_guard("Error checking the ads of the account %s"):
+                account._check_ads_updates()
 
     def action_import_campaigns(self):
         """Import the campaign groups and campaigns from the social media.

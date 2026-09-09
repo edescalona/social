@@ -1,7 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import json
 from unittest.mock import patch
 
 import psycopg2
@@ -83,8 +82,7 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
             return_value=fake_statistics,
         ):
             update_statistics = self.social_account_id.update_posts_statistics()
-            load_update_statistics = json.loads(update_statistics)
-            self.assertEqual(load_update_statistics[0]["like_count"], 5)
+            self.assertEqual(update_statistics[0]["like_count"], 5)
 
     def test_update_posts_statistics_clears_the_pending_initial_sync(self):
         """The manual update is the very import the cron was going to run.
@@ -611,4 +609,4 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
         ) as mock_update:
             answer = self.SocialAccount.update_posts_statistics()
         mock_update.assert_not_called()
-        self.assertEqual(json.loads(answer), [])
+        self.assertEqual(answer, [])

@@ -9,17 +9,17 @@ from odoo.addons.mail.models.discuss.mail_guest import add_guest_to_context
 
 class ThreadControllerSocial(ThreadController):
     def _prepare_result(self):
+        """Return the author of the comment in the shape the client expects.
+
+        The shape is the one ``mail`` gives every author it sends to the web
+        client, so the dialog reads the comment published on the social media
+        the same way it reads a message of a chatter.
+        """
+        partner = request.env.user.partner_id
         return {
-            "author": {
-                "id": request.env.user.partner_id.id,
-                "name": request.env.user.partner_id.name,
-                "is_company": request.env.user.partner_id.is_company,
-                "user": {
-                    "id": request.env.uid,
-                    "isInternalUser": request.env.user._is_internal(),
-                },
-                "type": "partner",
-            }
+            "author": partner.mail_partner_format(
+                {"id": True, "name": True, "is_company": True, "user": {}}
+            )[partner]
         }
 
     @route("/mail/message/post", methods=["POST"], type="json", auth="public")

@@ -1,16 +1,12 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import itertools
 import json
 import logging
 from datetime import timedelta
 
-import psycopg2
-
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
 from odoo.tools import is_list_of
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
@@ -584,17 +580,11 @@ class SocialAccount(models.Model):
 
     def _update_posts_statistics(self, post_id, domain, imported=None):
         statistics = super()._update_posts_statistics(post_id, domain, imported)
-        if not self:
-            account_ids = self.search([("media_type", "=", "linkedin")])
-        else:
-            # The feed is read one account at a time, so a recordset holding
-            # accounts of more than one social media is narrowed instead of
-            # taken whole: the others are not this connector's to read.
-            account_ids = self.filtered(
-                lambda account: account.media_type == "linkedin"
-            )
-            if not account_ids:
-                return statistics
+        account_ids = self._accounts_of_media("linkedin")
+        if self and not account_ids:
+            # Asked for accounts, none of them LinkedIn's: what the other
+            # connectors answered goes back untouched.
+            return statistics
         for account in account_ids:
             with account._statistics_guard():
                 account._import_linkedin_posts(post_id=post_id)
@@ -744,22 +734,9 @@ class SocialAccount(models.Model):
             )
             if post_account:
                 post_account._remove_assets_deleted(content)
-            if attach_images:
-                data.update(
-                    {
-                        "image_ids": [
-                            Command.link(image.id) for image in attach_images
-                        ],
-                        "media_refs": {
-                            **(post_account.media_refs or {}),
-                            **media_refs,
-                        },
-                    }
-                )
-            if not post_account:
-                post_accounts.append(Command.create(data))
-            else:
-                post_accounts.append(Command.update(post_account.id, data))
+            post_accounts.append(
+                self._import_command(post_account, data, attach_images, media_refs)
+            )
         for line in stale_lines:
             post_accounts.append(
                 Command.update(
@@ -797,27 +774,9 @@ class SocialAccount(models.Model):
         self._clear_posts_need_import()
 
     def _get_account_statistics(self, statistics=None):
-        data = self.search_read(
-            [("media_type", "=", "linkedin")],
-            [
-                "name",
-                "company_id",
-                "media_id",
-                "account_url",
-                "impression_count",
-                "interactions_count",
-                "engagement",
-                "need_update",
-            ],
+        return self._media_statistics_payload(
+            "linkedin", statistics, extra_fields=("account_url",)
         )
-        if statistics:
-            data = list(
-                itertools.chain(
-                    statistics,
-                    data,
-                )
-            )
-        return data
 
     def _linkedin_read_watched_figures(self):
         """Ask LinkedIn for the figures the update check compares.
@@ -1162,23 +1121,12 @@ class SocialAccount(models.Model):
                 # here would only fail again. The next pass retries it two
                 # hours later.
                 continue
-            try:
-                # Each account in its own savepoint: the check writes, so a
-                # database error on one of them would otherwise abort the
-                # cursor and take down every account left, including the
-                # credentials the base already flagged.
-                with self.env.cr.savepoint():
-                    update = account._check_linkedin_updates(buckets) or update
-            except psycopg2.OperationalError as error:
-                if error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                    raise
-                _logger.exception(
-                    "Error checking the updates of the LinkedIn account %s",
-                    account.id,
-                )
-            except Exception:  # noqa: BLE001 - one account cannot stop the rest
-                _logger.exception(
-                    "Error checking the updates of the LinkedIn account %s",
-                    account.id,
-                )
+            # Each account in its own savepoint: the check writes, so a
+            # database error on one of them would otherwise abort the cursor
+            # and take down every account left, including the credentials the
+            # base already flagged.
+            with account._account_guard(
+                "Error checking the updates of the LinkedIn account %s"
+            ):
+                update = account._check_linkedin_updates(buckets) or update
         return update

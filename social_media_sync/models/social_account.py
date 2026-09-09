@@ -1,14 +1,10 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import json
 import logging
 from datetime import timedelta
 
-import psycopg2
-
-from odoo import _, api, fields, models
-from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo import Command, _, api, fields, models
 
 _logger = logging.getLogger(__name__)
 
@@ -155,13 +151,13 @@ class SocialAccount(models.Model):
 
         :param post_id: post to update, all of them when not set.
         :param domain: additional domain on the posts.
-        :rtype: str
+        :rtype: list
         """
         accounts = self or self.search([])
         if not self:
             accounts = accounts._accounts_to_import()
             if not accounts:
-                return json.dumps([])
+                return []
         imported = set()
         statistics = accounts._update_posts_statistics(post_id, domain, imported)
         imported_accounts = accounts.filtered(lambda account: account.id in imported)
@@ -170,7 +166,7 @@ class SocialAccount(models.Model):
             pending.sudo().write({"pending_initial_sync": False})
         # ``_clear_posts_need_import`` keeps the ones actually flagged.
         imported_accounts._clear_posts_need_import()
-        return json.dumps(statistics)
+        return statistics
 
     def _full_resync(self):
         """Hook for the connectors to read everything again and reconcile it.
@@ -219,19 +215,8 @@ class SocialAccount(models.Model):
         same rows.
         """
         for account in self.sudo().search([("pending_initial_sync", "=", False)]):
-            try:
-                with self.env.cr.savepoint():
-                    account._full_resync()
-            except psycopg2.OperationalError as error:
-                if error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                    raise
-                _logger.exception(
-                    "Error on the full resync of the account %s", account.id
-                )
-            except Exception:  # noqa: BLE001 - one account must not stop the rest
-                _logger.exception(
-                    "Error on the full resync of the account %s", account.id
-                )
+            with account._account_guard("Error on the full resync of the account %s"):
+                account._full_resync()
 
     def _trigger_initial_sync(self):
         """Run the posts-statistics sync now so the dashboard is populated
@@ -254,18 +239,6 @@ class SocialAccount(models.Model):
         cron.sudo()._trigger(
             at=fields.Datetime.now()
             + timedelta(seconds=INITIAL_SYNC_TRIGGER_DELAY_SECONDS)
-        )
-
-    @api.model
-    def _is_concurrency_error(self, error):
-        """Whether the error is the one PostgreSQL raises on a lost race.
-
-        :param error: the exception to look at.
-        :rtype: bool
-        """
-        return (
-            isinstance(error, psycopg2.OperationalError)
-            and error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY
         )
 
     def _reschedule_initial_sync(self):
@@ -467,26 +440,80 @@ class SocialAccount(models.Model):
 
         :param need_update: whether the notice goes up or comes down.
         """
-        partners = self.user_id.partner_id or self.env.user.partner_id
-        for partner in partners:
-            accounts = self.filtered(
-                lambda account, partner=partner: account.user_id.partner_id == partner
-            )
-            self.env["bus.bus"]._sendone(
-                partner,
-                "social_posts_need_import",
-                {
-                    "need_update": need_update,
-                    "accounts": [
-                        {
-                            "id": account.id,
-                            "name": account.name,
-                            "media": account.media_id.name,
-                        }
-                        for account in accounts
-                    ],
-                },
-            )
+        self._notify_accounts_by_partner("social_posts_need_import", need_update)
+
+    @api.model
+    def _import_command(self, post_account, values, attachments, media_refs):
+        """Return the command that writes one imported publication.
+
+        The medias go in the same write as the rest of the publication, so a
+        downloaded media is never stored without the reference telling it
+        apart from one attached in Odoo. The references already stored win
+        nothing over the new ones: what this pass read is what the social
+        media says today.
+
+        :param post_account: the line already in Odoo, an empty recordset when
+            the publication has never been imported.
+        :param values: the fields read from the social media.
+        :param attachments: the medias downloaded in this pass.
+        :param media_refs: the reference of each downloaded media, keyed by
+            its identifier.
+        :rtype: tuple
+        """
+        if attachments:
+            values = {
+                **values,
+                "image_ids": [
+                    Command.link(attachment.id) for attachment in attachments
+                ],
+                "media_refs": {**(post_account.media_refs or {}), **media_refs},
+            }
+        if not post_account:
+            return Command.create(values)
+        return Command.update(post_account.id, values)
+
+    def _accounts_of_media(self, media_type):
+        """Return the accounts of one social media this pass has to read.
+
+        The feed is read one account at a time and the quota is spent per
+        account, so a recordset holding accounts of more than one social media
+        is narrowed instead of taken whole: the others are not this
+        connector's to read. An empty recordset means *every account*, which
+        is how the crons call it.
+
+        :param media_type: the social media the caller reads.
+        :rtype: recordset
+        """
+        if not self:
+            return self.search([("media_type", "=", media_type)])
+        return self.filtered(lambda account: account.media_type == media_type)
+
+    def _media_statistics_payload(self, media_type, statistics, extra_fields=()):
+        """Append the figures of one social media to what the others answered.
+
+        Each connector adds its own accounts to the payload the dashboard
+        reads, so the chain of ``super()`` calls ends with the accounts of
+        every social media in the order the connectors ran.
+
+        :param media_type: the social media whose accounts are added.
+        :param statistics: what the connectors before this one answered.
+        :param extra_fields: the fields this social media reads on top of the
+            common ones, in the place they occupy in the payload.
+        :rtype: list
+        """
+        return list(statistics or []) + self.search_read(
+            [("media_type", "=", media_type)],
+            [
+                "name",
+                "company_id",
+                "media_id",
+                *extra_fields,
+                "impression_count",
+                "interactions_count",
+                "engagement",
+                "need_update",
+            ],
+        )
 
     def _on_account_associated(self):
         """Queue the import of what these accounts already published."""
