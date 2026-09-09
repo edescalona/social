@@ -1200,6 +1200,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_base/models/social_post_account.py:0
 #: code:addons/social_media_base/models/social_post_account.py:0
+#: code:addons/social_media_base/models/social_post_account.py:0
 #, python-format
 msgid "Post deleted [%(account)s]"
 msgstr ""
@@ -1699,6 +1700,8 @@ msgstr ""
 
 #. module: social_media_base
 #. odoo-javascript
+#. odoo-python
+#: code:addons/social_media_base/models/social_post_account.py:0
 #: code:addons/social_media_base/static/src/js/views/kanban/social_kanban_record.esm.js:0
 #, python-format
 msgid "The post does not exist or has been deleted."

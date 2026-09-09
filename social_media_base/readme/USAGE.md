@@ -155,6 +155,14 @@ Scheduled publishing.
 - The check reads the file type Odoo deduces from the name of the file, so a
   file renamed to another extension gets through. The social media remains the
   last authority on what it accepts.
+- A media removed from a post is not deleted on the spot: it stops belonging
+  to the post, and the scheduled action *Base: Auto-vacuum internal data*
+  deletes it a day later. Until then only the administrators see it, in
+  *Settings > Technical > Attachments*, which is where a file removed by
+  mistake can still be downloaded. A file attached to a post that is never
+  saved leaves the same way.
+- A media a publication still carries is never taken away: the publications of
+  a post point at the very files of the post.
 - A *Planned* post can be moved to *Cancelled* with the *Cancel* button, and a
   *Planned* or *Cancelled* post back to *Draft* with the *Draft* button. Once
   the post is publishing, partially published or published it can no longer be

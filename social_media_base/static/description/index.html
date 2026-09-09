@@ -707,6 +707,14 @@ social media, which the post says as soon as the file is attached: see
 <li>The check reads the file type Odoo deduces from the name of the file,
 so a file renamed to another extension gets through. The social media
 remains the last authority on what it accepts.</li>
+<li>A media removed from a post is not deleted on the spot: it stops
+belonging to the post, and the scheduled action <em>Base: Auto-vacuum
+internal data</em> deletes it a day later. Until then only the
+administrators see it, in <em>Settings &gt; Technical &gt; Attachments</em>, which
+is where a file removed by mistake can still be downloaded. A file
+attached to a post that is never saved leaves the same way.</li>
+<li>A media a publication still carries is never taken away: the
+publications of a post point at the very files of the post.</li>
 <li>A <em>Planned</em> post can be moved to <em>Cancelled</em> with the <em>Cancel</em> button,
 and a <em>Planned</em> or <em>Cancelled</em> post back to <em>Draft</em> with the <em>Draft</em>
 button. Once the post is publishing, partially published or published
