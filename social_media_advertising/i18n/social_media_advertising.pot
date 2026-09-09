@@ -131,6 +131,11 @@ msgid "Ad Count"
 msgstr ""
 
 #. module: social_media_advertising
+#: model:ir.model,name:social_media_advertising.model_social_advertising_ad
+msgid "Ad Served on a Social Media and its Statistics"
+msgstr ""
+
+#. module: social_media_advertising
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_ad__url
 msgid "Ad URL"
 msgstr ""
@@ -172,6 +177,11 @@ msgid ""
 msgstr ""
 
 #. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
+msgid "Ads the social media serves for this account."
+msgstr ""
+
+#. module: social_media_advertising
 #: model:ir.ui.menu,name:social_media_advertising.social_advertising_menu
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
 msgid "Advertising"
@@ -187,6 +197,11 @@ msgstr ""
 #. module: social_media_advertising
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_ad__advertising_account_is_current
 msgid "Advertising Account In Use"
+msgstr ""
+
+#. module: social_media_advertising
+#: model:ir.model,name:social_media_advertising.model_social_advertising_account
+msgid "Advertising Account Mirrored from a Social Media"
 msgstr ""
 
 #. module: social_media_advertising
@@ -241,11 +256,6 @@ msgid ""
 msgstr ""
 
 #. module: social_media_advertising
-#: model:ir.actions.act_window,name:social_media_advertising.social_advertising_account_action
-msgid "Advertising accounts"
-msgstr ""
-
-#. module: social_media_advertising
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_post__allow_social_campaign_ids
 msgid "Allow Social Campaign"
 msgstr ""
@@ -278,6 +288,23 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_campaign_group_view_search
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_campaign_view_search
 msgid "Archived"
+msgstr ""
+
+#. module: social_media_advertising
+#. odoo-javascript
+#: code:addons/social_media_advertising/static/src/js/views/kanban/ads_kanban_buttons.xml:0
+#, python-format
+msgid ""
+"Ask the social media again for the ads of every account and the figures it "
+"reports for them, instead of waiting for the next automatic pass."
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
+msgid ""
+"Ask the social media which advertising accounts this account may work with. "
+"It brings in no campaign and no ad: choose one of them afterwards to work "
+"with it."
 msgstr ""
 
 #. module: social_media_advertising
@@ -320,7 +347,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_advertising/models/social_account.py:0
 #: code:addons/social_media_advertising/models/social_advertising_account.py:0
-#: model:ir.actions.act_window,name:social_media_advertising.social_advertising_campaign_group_action
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_account_view_form
 #, python-format
@@ -333,10 +359,18 @@ msgid "Campaign Manager URL"
 msgstr ""
 
 #. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_advertising_campaign_group_action
-msgid ""
-"Campaign groups let you share a total budget across several\n"
-"                campaigns and manage them as a unit."
+#: model:ir.model,name:social_media_advertising.model_social_advertising_campaign
+msgid "Campaign Promoting the Posts of a Social Media Account"
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
+msgid "Campaign groups of the advertising accounts of this account."
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_account_view_form
+msgid "Campaign groups of this advertising account."
 msgstr ""
 
 #. module: social_media_advertising
@@ -349,7 +383,6 @@ msgstr ""
 #: code:addons/social_media_advertising/models/social_account.py:0
 #: code:addons/social_media_advertising/models/social_advertising_account.py:0
 #: code:addons/social_media_advertising/models/social_advertising_campaign_group.py:0
-#: model:ir.actions.act_window,name:social_media_advertising.social_advertising_campaign_action
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_account_view_form
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_campaign_group_view_form
@@ -359,10 +392,18 @@ msgid "Campaigns"
 msgstr ""
 
 #. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_advertising_campaign_action
-msgid ""
-"Campaigns hold the budget and bidding settings used to promote\n"
-"                your posts on social media."
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
+msgid "Campaigns of the advertising accounts of this account."
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_account_view_form
+msgid "Campaigns of this advertising account."
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_campaign_group_view_form
+msgid "Campaigns of this campaign group."
 msgstr ""
 
 #. module: social_media_advertising
@@ -434,21 +475,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_ad__cost
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_ad_view_tree
 msgid "Cost"
-msgstr ""
-
-#. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_advertising_campaign_action
-msgid "Create your first campaign"
-msgstr ""
-
-#. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_advertising_campaign_group_action
-msgid "Create your first campaign group"
-msgstr ""
-
-#. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_stage_action
-msgid "Create your first stage"
 msgstr ""
 
 #. module: social_media_advertising
@@ -786,6 +812,7 @@ msgstr ""
 #. module: social_media_advertising
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_ad__media_type
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_campaign__media_type
+#: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_campaign_group__media_type
 msgid "Media Type"
 msgstr ""
 
@@ -870,11 +897,6 @@ msgid "No ads yet"
 msgstr ""
 
 #. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_advertising_account_action
-msgid "No advertising account yet"
-msgstr ""
-
-#. module: social_media_advertising
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_campaign__message_needaction_counter
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_campaign_group__message_needaction_counter
 msgid "Number of Actions"
@@ -926,16 +948,18 @@ msgid ""
 msgstr ""
 
 #. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_advertising_account_action
-msgid ""
-"Open a social media account, go to its Advertising tab and\n"
-"                click Fetch advertising accounts to bring them from the\n"
-"                social media."
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_ad_view_form
+msgid "Open ad"
 msgstr ""
 
 #. module: social_media_advertising
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_ad_view_form
-msgid "Open ad"
+msgid "Open the publication this ad promotes."
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_ad_view_form
+msgid "Open this ad on the social media, in a new tab."
 msgstr ""
 
 #. module: social_media_advertising
@@ -1034,23 +1058,8 @@ msgid "Sequence"
 msgstr ""
 
 #. module: social_media_advertising
-#: model:ir.model,name:social_media_advertising.model_social_advertising_account
-msgid "Social Advertising Account"
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model,name:social_media_advertising.model_social_advertising_ad
-msgid "Social Advertising Ad"
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model,name:social_media_advertising.model_social_advertising_campaign
-msgid "Social Advertising Campaign"
-msgstr ""
-
-#. module: social_media_advertising
 #: model:ir.model,name:social_media_advertising.model_social_advertising_campaign_group
-msgid "Social Advertising Campaign Group"
+msgid "Set of Campaigns Managed as a Unit on a Social Media"
 msgstr ""
 
 #. module: social_media_advertising
@@ -1064,16 +1073,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_post_account_view_search_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_advertising.social_post_view_search_inherit
 msgid "Social Campaign"
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model,name:social_media_advertising.model_social_stage
-msgid "Social Stage"
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model,name:social_media_advertising.model_social_tag
-msgid "Social Tag"
 msgstr ""
 
 #. module: social_media_advertising
@@ -1106,17 +1105,8 @@ msgid "Stage"
 msgstr ""
 
 #. module: social_media_advertising
-#: model:ir.actions.act_window,name:social_media_advertising.social_stage_action
 #: model:ir.ui.menu,name:social_media_advertising.social_stage_root_menu
 msgid "Stages"
-msgstr ""
-
-#. module: social_media_advertising
-#: model_terms:ir.actions.act_window,help:social_media_advertising.social_stage_action
-msgid ""
-"Stages mirror the statuses a social media gives to a campaign,\n"
-"                a campaign group or an ad. Each social media module declares its\n"
-"                own, and the code is the value returned by the social media."
 msgstr ""
 
 #. module: social_media_advertising
@@ -1156,6 +1146,18 @@ msgid ""
 msgstr ""
 
 #. module: social_media_advertising
+#: model:ir.model.fields,help:social_media_advertising.field_social_advertising_ad__stage_code
+msgid ""
+"Status code of the social media, used by the connector modules to tell their"
+" own statuses apart in the views."
+msgstr ""
+
+#. module: social_media_advertising
+#: model:ir.model,name:social_media_advertising.model_social_stage
+msgid "Status of a Campaign, a Campaign Group or an Ad"
+msgstr ""
+
+#. module: social_media_advertising
 #: model:ir.model.fields,help:social_media_advertising.field_social_advertising_ad__stage_id
 msgid "Status of this ad on the social media."
 msgstr ""
@@ -1190,37 +1192,13 @@ msgid "Sync ads"
 msgstr ""
 
 #. module: social_media_advertising
+#: model:ir.model,name:social_media_advertising.model_social_tag
+msgid "Tag Classifying the Social Media Campaigns"
+msgstr ""
+
+#. module: social_media_advertising
 #: model:ir.model.fields,field_description:social_media_advertising.field_social_advertising_campaign__tag_ids
 msgid "Tags"
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model.fields,help:social_media_advertising.field_social_advertising_ad__stage_code
-msgid ""
-"Technical field: status code of the social media, used by the connector "
-"modules to tell their own statuses apart in the views."
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model.fields,help:social_media_advertising.field_social_account__ads_need_update
-msgid ""
-"Technical field: the social media has ads this account does not know about "
-"yet. It is raised by the cron checking for new ads and cleared by the next "
-"synchronization."
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model.fields,help:social_media_advertising.field_social_account__can_sync_advertising_accounts
-msgid ""
-"Technical field: whether a connector module can list the advertising "
-"accounts of this social media."
-msgstr ""
-
-#. module: social_media_advertising
-#: model:ir.model.fields,help:social_media_advertising.field_social_advertising_ad__can_delete_remote_ad
-msgid ""
-"Technical field: whether the connector module of this social media deletes "
-"an ad, and this one is not gone already."
 msgstr ""
 
 #. module: social_media_advertising
@@ -1267,6 +1245,13 @@ msgstr ""
 #: model:ir.model.constraint,message:social_media_advertising.constraint_social_advertising_campaign_group_remote_ref_uniq
 #: model:ir.model.constraint,message:social_media_advertising.constraint_social_advertising_campaign_remote_ref_uniq
 msgid "The remote reference must be unique per social media."
+msgstr ""
+
+#. module: social_media_advertising
+#: model:ir.model.fields,help:social_media_advertising.field_social_account__ads_need_update
+msgid ""
+"The social media has ads this account does not know about yet. It is raised "
+"by the cron checking for new ads and cleared by the next synchronization."
 msgstr ""
 
 #. module: social_media_advertising
@@ -1324,11 +1309,25 @@ msgid "Warning"
 msgstr ""
 
 #. module: social_media_advertising
+#: model:ir.model.fields,help:social_media_advertising.field_social_account__can_sync_advertising_accounts
+msgid ""
+"Whether a connector module can list the advertising accounts of this social "
+"media."
+msgstr ""
+
+#. module: social_media_advertising
 #: model:ir.model.fields,help:social_media_advertising.field_social_advertising_ad__advertising_account_is_current
 msgid ""
 "Whether the advertising account this ad belongs to is the one the social "
 "media account works with right now. Ads of the other advertising accounts "
 "are kept as they were last synchronized."
+msgstr ""
+
+#. module: social_media_advertising
+#: model:ir.model.fields,help:social_media_advertising.field_social_advertising_ad__can_delete_remote_ad
+msgid ""
+"Whether the connector module of this social media deletes an ad, and this "
+"one is not gone already."
 msgstr ""
 
 #. module: social_media_advertising
@@ -1338,6 +1337,14 @@ msgid ""
 "social media only returns the test advertising accounts, their campaigns and"
 " their ads, which are never served nor billed. This setting does not affect "
 "the publication of posts."
+msgstr ""
+
+#. module: social_media_advertising
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_account_view_form_inherit
+#: model_terms:ir.ui.view,arch_db:social_media_advertising.social_advertising_account_view_form
+msgid ""
+"Work with this advertising account: its campaigns, its ads and their figures"
+" are the ones read from the social media."
 msgstr ""
 
 #. module: social_media_advertising

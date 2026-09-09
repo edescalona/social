@@ -26,9 +26,14 @@ class SocialPost(models.Model):
         """Preselect the X accounts of the active company."""
         return self._default_account_ids_for_media("x") + super()._default_account_ids()
 
-    @api.constrains("account_ids", "message", "image_ids", "video_ids")
+    @api.constrains("account_ids")
     def _check_account_ids(self):
-        """Reject posts sent twice to the same X user, which X reads as spam."""
+        """Reject posts sent twice to the same X user, which X reads as spam.
+
+        Only the accounts of the post decide the answer, so they are the only
+        trigger: the duplicate appears when the selection changes, not when
+        the content does.
+        """
         for post in self:
             duplicates = post.account_ids._get_group_account_username()
             if duplicates:

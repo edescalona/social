@@ -73,9 +73,12 @@ class SocialPostAccount(models.Model):
                 "and try again later."
             )
             try:
-                result = self.account_id._valid_time_request(endpoint="delete_post")
                 if self.remote_ref:
-                    if not result:
+                    # Asking about the quota is not a mute question: with the
+                    # window still open it tells the user when to retry. On a
+                    # line that never reached X there is nothing to delete, so
+                    # there is nothing to warn about either.
+                    if not self.account_id._valid_time_request(endpoint="delete_post"):
                         message_error = quota_error
                     else:
                         client_api = self.account_id.get_client_api(
@@ -83,7 +86,15 @@ class SocialPostAccount(models.Model):
                         )
                         response = client_api.delete_tweet(self.remote_ref)
                         if response.errors:
-                            message_error = ", ".join(response.errors)
+                            # tweepy answers the errors as dicts, so what X
+                            # said is under its message key; the dict itself
+                            # is the fallback for a shape without one.
+                            message_error = ", ".join(
+                                str(
+                                    error.get("detail") or error.get("message") or error
+                                )
+                                for error in response.errors
+                            )
             except TooManyRequests as exManyRequest:
                 self.account_id._get_message_many_requests(
                     exManyRequest, endpoint="delete_post"

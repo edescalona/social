@@ -621,6 +621,16 @@ Account ownership.
   an administrator of the application can renew them without ever seeing
   them.
 
+Notifications you may never see.
+--------------------------------
+
+- *Update statistics* answers one of two notices: that the daily figures
+  were refreshed, or that the social media reports no figures by day and
+  there is no history to update. The second one only reaches a connector
+  whose API answers aggregated figures alone, which is neither of the
+  two shipped today: LinkedIn and X both report by day, so the button
+  always answers the first one.
+
 .. |DASHBOARD| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/DASHBOARD.png
 .. |POSTS_KANBAN| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/POSTS_KANBAN.png
 .. |STATISTICS| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/STATISTICS.png

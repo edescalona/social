@@ -172,7 +172,6 @@ class SocialAccount(models.Model):
             # payload is the one the other connectors already filled.
             return self._get_x_statistics(statistics)
 
-        timezone = pytz.timezone(self.env.user.tz or "UTC")
         for account in account_ids:
             try:
                 result = account._valid_time_request(endpoint="get_tweets")
@@ -199,7 +198,10 @@ class SocialAccount(models.Model):
                         for m in (response.includes.get("media") or [])
                     }
                     post_accounts_by_tweet = PostAccount._by_remote_ref(
-                        [str(val_x.id) for val_x in (response.data or []) if val_x.id]
+                        [str(val_x.id) for val_x in (response.data or []) if val_x.id],
+                        account,
+                        sudo=True,
+                        active_test=False,
                     )
                     users = {
                         str(u.id): u for u in (response.includes.get("users", []) or [])
@@ -245,8 +247,11 @@ class SocialAccount(models.Model):
                                 ),
                                 "message": message_text,
                                 "account_id": account.id,
+                                # ``created_at`` comes with its offset and
+                                # ``published_date`` is stored in UTC, which
+                                # is what the client converts for the reader.
                                 "published_date": val_x.created_at.astimezone(
-                                    timezone
+                                    pytz.utc
                                 ).replace(tzinfo=None),
                                 "like_count": public_metrics[0],
                                 "impression_count": public_metrics[1],

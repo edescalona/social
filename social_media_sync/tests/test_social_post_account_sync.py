@@ -22,6 +22,88 @@ LOGGER_SYNC_POST_ACCOUNT = "odoo.addons.social_media_sync.models.social_post_acc
 
 @tagged("post_install", "-at_install")
 class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
+    def test_by_remote_ref_answers_only_the_account_asked_for(self):
+        """Two accounts seeing the same publication keep a line each.
+
+        The reference is what the social media answers, not what identifies a
+        line: without the account in the domain the import of one account
+        writes over the publication of the other.
+        """
+        other_account = self.SocialAccount.create(
+            {
+                "name": "Second Linkedin",
+                "media_id": self.social_media_id.id,
+            }
+        )
+        shared_ref = "shared-publication"
+        mine = self.social_post_account_id
+        mine.remote_ref = shared_ref
+        theirs = self.SocialPostAccount.create(
+            {
+                "post_id": self.social_post_id.id,
+                "account_id": other_account.id,
+                "message": "Test message",
+                "remote_ref": shared_ref,
+            }
+        )
+        PostAccount = self.env["social.post.account"]
+        self.assertEqual(
+            PostAccount._by_remote_ref([shared_ref], self.social_account_id),
+            {shared_ref: mine},
+        )
+        self.assertEqual(
+            PostAccount._by_remote_ref([shared_ref], other_account),
+            {shared_ref: theirs},
+        )
+
+    def test_by_remote_ref_reads_what_the_reader_cannot_see(self):
+        """The reconciliation is not scoped by who runs the import.
+
+        The import runs from a cron, which is not the user responsible for the
+        account, and an archived line is still a line: whatever the search
+        leaves out is imported again under a second publication for the same
+        remote reference.
+        """
+        reader = self.env["res.users"].create(
+            {
+                "login": "social_reader",
+                "name": "Social Reader",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref(
+                                "social_media_base.group_social_media_user"
+                            ).id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.social_account_id.user_id = self.env.ref("base.user_admin")
+        line = self.social_post_account_id
+        line.write({"remote_ref": "hidden-publication", "active": False})
+        PostAccount = self.env["social.post.account"].with_user(reader)
+        self.assertEqual(
+            PostAccount._by_remote_ref(
+                ["hidden-publication"],
+                self.social_account_id,
+                sudo=True,
+                active_test=False,
+            ),
+            {"hidden-publication": line},
+        )
+        self.assertFalse(
+            PostAccount._by_remote_ref(["hidden-publication"], self.social_account_id),
+            "Without the flags the line is invisible, and the import creates "
+            "a second one for the same publication.",
+        )
+
+    def test_by_remote_ref_cannot_be_asked_without_an_account(self):
+        """The account is a required parameter, not a flag with a default."""
+        with self.assertRaises(TypeError):
+            self.env["social.post.account"]._by_remote_ref(["whatever"])
+
     def test_statistics_views_show_the_imported_figures(self):
         """The figures this module imports are read from the publication.
 

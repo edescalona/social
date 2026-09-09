@@ -421,3 +421,13 @@ Account ownership.
   from everybody but the system administrators, and the connectors read and
   write them internally, so an administrator of the application can renew
   them without ever seeing them.
+
+Notifications you may never see.
+---------------
+
+- *Update statistics* answers one of two notices: that the daily figures were
+  refreshed, or that the social media reports no figures by day and there is
+  no history to update. The second one only reaches a connector whose API
+  answers aggregated figures alone, which is neither of the two shipped
+  today: LinkedIn and X both report by day, so the button always answers the
+  first one.

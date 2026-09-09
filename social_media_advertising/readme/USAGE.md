@@ -206,3 +206,13 @@ Campaign ownership.
   regular user of the *Social Media / User: Own Accounts* group only sees the
   campaigns he is responsible for; the *Social Media / Administrator* group
   sees all of them.
+
+Notifications you may never see.
+---------------
+
+- The check for new ads runs every six hours and raises a notice on the
+  dashboard of the ads, and on the account itself, when the social media
+  serves an ad this database does not know about. It needs an advertising
+  account marked as *in use* on the social media account: without one there
+  is no advertiser to ask, the check reads nothing and the notice never goes
+  up.

@@ -463,20 +463,21 @@ go out as usual.</li>
 <li><a class="reference internal" href="#expired-credentials" id="toc-entry-16">Expired credentials.</a></li>
 <li><a class="reference internal" href="#statistics-of-the-accounts" id="toc-entry-17">Statistics of the accounts.</a></li>
 <li><a class="reference internal" href="#account-ownership" id="toc-entry-18">Account ownership.</a></li>
+<li><a class="reference internal" href="#notifications-you-may-never-see" id="toc-entry-19">Notifications you may never see.</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-19">Known issues / Roadmap</a><ul>
-<li><a class="reference internal" href="#multi-company-scope-of-the-posts" id="toc-entry-20">Multi-company scope of the posts.</a></li>
-<li><a class="reference internal" href="#limits-of-the-social-media-not-of-the-account" id="toc-entry-21">Limits of the social media, not of the account</a></li>
-<li><a class="reference internal" href="#figures-of-a-card-without-a-synchronization-module" id="toc-entry-22">Figures of a card without a synchronization module</a></li>
-<li><a class="reference internal" href="#storage-of-the-medias-of-a-post" id="toc-entry-23">Storage of the medias of a post</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-20">Known issues / Roadmap</a><ul>
+<li><a class="reference internal" href="#multi-company-scope-of-the-posts" id="toc-entry-21">Multi-company scope of the posts.</a></li>
+<li><a class="reference internal" href="#limits-of-the-social-media-not-of-the-account" id="toc-entry-22">Limits of the social media, not of the account</a></li>
+<li><a class="reference internal" href="#figures-of-a-card-without-a-synchronization-module" id="toc-entry-23">Figures of a card without a synchronization module</a></li>
+<li><a class="reference internal" href="#storage-of-the-medias-of-a-post" id="toc-entry-24">Storage of the medias of a post</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-24">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-25">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-26">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-27">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-28">Maintainers</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-25">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-26">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-27">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-28">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-29">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -1006,11 +1007,22 @@ an administrator of the application can renew them without ever seeing
 them.</li>
 </ul>
 </div>
+<div class="section" id="notifications-you-may-never-see">
+<h2><a class="toc-backref" href="#toc-entry-19">Notifications you may never see.</a></h2>
+<ul class="simple">
+<li><em>Update statistics</em> answers one of two notices: that the daily figures
+were refreshed, or that the social media reports no figures by day and
+there is no history to update. The second one only reaches a connector
+whose API answers aggregated figures alone, which is neither of the
+two shipped today: LinkedIn and X both report by day, so the button
+always answers the first one.</li>
+</ul>
+</div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-19">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-20">Known issues / Roadmap</a></h1>
 <div class="section" id="multi-company-scope-of-the-posts">
-<h2><a class="toc-backref" href="#toc-entry-20">Multi-company scope of the posts.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-21">Multi-company scope of the posts.</a></h2>
 <p>The accounts (<tt class="docutils literal">social.account</tt>) and their daily statistics
 (<tt class="docutils literal">social.account.statistics</tt>) are the multi-company records: they
 carry a company and a record rule that filters them. The posts and their
@@ -1020,7 +1032,7 @@ database a social media administrator therefore sees the posts of every
 company.</p>
 </div>
 <div class="section" id="limits-of-the-social-media-not-of-the-account">
-<h2><a class="toc-backref" href="#toc-entry-21">Limits of the social media, not of the account</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-22">Limits of the social media, not of the account</a></h2>
 <p>The limits a post is checked against are those of the social media, not
 those of the account. A paid plan can raise them — X Premium takes the
 message from 280 to 25 000 characters — and an account on such a plan is
@@ -1032,7 +1044,7 @@ than the one the account really has warns too much, never too little,
 and it never blocks saving.</p>
 </div>
 <div class="section" id="figures-of-a-card-without-a-synchronization-module">
-<h2><a class="toc-backref" href="#toc-entry-22">Figures of a card without a synchronization module</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Figures of a card without a synchronization module</a></h2>
 <p>The views of a publication only draw what this module counts, so a
 counter no import fills is no longer shown at zero. Two places still add
 up to zero on their own: the likes and the comments printed on every
@@ -1042,7 +1054,7 @@ reports no daily figures. It is accurate — nobody asked the social media
 tell the two apart.</p>
 </div>
 <div class="section" id="storage-of-the-medias-of-a-post">
-<h2><a class="toc-backref" href="#toc-entry-23">Storage of the medias of a post</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-24">Storage of the medias of a post</a></h2>
 <p>The images and videos of a post and of its publications are ordinary
 <tt class="docutils literal">ir.attachment</tt> records, kept for as long as the record that owns
 them. A post published on several accounts stores each media once,
@@ -1061,7 +1073,7 @@ database.</p>
 </div>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-24">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-25">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -1069,15 +1081,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-25">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-26">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-26">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-27">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-27">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-28">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -1086,7 +1098,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-28">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-29">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

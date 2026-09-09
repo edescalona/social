@@ -62,6 +62,11 @@ msgid "Active"
 msgstr "Activo"
 
 #. module: social_media_advertising_linkedin
+#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_ad
+msgid "Ad Served on a Social Media and its Statistics"
+msgstr "Anuncio servido en una red social y sus estadísticas"
+
+#. module: social_media_advertising_linkedin
 #: model:ir.model.fields,help:social_media_advertising_linkedin.field_social_advertising_campaign__linkedin_format
 msgid ""
 "Ad format of the campaign on LinkedIn. A campaign only accepts posts of its "
@@ -79,6 +84,11 @@ msgstr ""
 #: model:ir.ui.menu,name:social_media_advertising_linkedin.social_advertising_ad_linkedin_menu
 msgid "Ads"
 msgstr "Anuncios"
+
+#. module: social_media_advertising_linkedin
+#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_account
+msgid "Advertising Account Mirrored from a Social Media"
+msgstr "Cuenta publicitaria reflejada de una red social"
 
 #. module: social_media_advertising_linkedin
 #: model:ir.actions.act_window,name:social_media_advertising_linkedin.social_advertising_account_linkedin_action
@@ -117,6 +127,14 @@ msgid "Brand awareness"
 msgstr "Notoriedad de marca"
 
 #. module: social_media_advertising_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_advertising_linkedin.social_account_view_form_inherit
+msgid ""
+"Bring in from LinkedIn the campaign groups and the campaigns of the "
+"advertising account in use, with the figures LinkedIn reports for them. It "
+"creates nothing on LinkedIn."
+msgstr "Trae de LinkedIn los grupos de campañas y las campañas de la cuenta publicitaria en uso, con las cifras que LinkedIn informa de ellos. No crea nada en LinkedIn."
+
+#. module: social_media_advertising_linkedin
 #: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_account__linkedin_type__business
 msgid "Business"
 msgstr "Empresa"
@@ -126,6 +144,11 @@ msgstr "Empresa"
 #: model:ir.ui.menu,name:social_media_advertising_linkedin.social_advertising_campaign_group_linkedin_menu
 msgid "Campaign Groups"
 msgstr "Grupos de campañas"
+
+#. module: social_media_advertising_linkedin
+#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_campaign
+msgid "Campaign Promoting the Posts of a Social Media Account"
+msgstr "Campaña que promociona las publicaciones de una cuenta de una red social"
 
 #. module: social_media_advertising_linkedin
 #. odoo-python
@@ -233,6 +256,21 @@ msgstr "Contenido para publicar en redes sociales"
 #: model_terms:ir.ui.view,arch_db:social_media_advertising_linkedin.social_advertising_campaign_view_form_inherit
 msgid "Create in LinkedIn"
 msgstr "Crear en LinkedIn"
+
+#. module: social_media_advertising_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_advertising_linkedin.social_advertising_campaign_group_view_form_inherit
+msgid ""
+"Create the campaign group on LinkedIn in draft status. It spends nothing "
+"while it stays in draft: activating it is done from Campaign Manager."
+msgstr "Crea el grupo de campañas en LinkedIn en estado borrador. Mientras siga en borrador no gasta nada: activarlo se hace desde Campaign Manager."
+
+#. module: social_media_advertising_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_advertising_linkedin.social_advertising_campaign_view_form_inherit
+msgid ""
+"Create the campaign on LinkedIn in draft status, together with its campaign "
+"group when that one is not there yet. It spends nothing while it stays in "
+"draft: activating it is done from Campaign Manager."
+msgstr "Crea la campaña en LinkedIn en estado borrador, junto con su grupo de campañas cuando ese todavía no está. Mientras siga en borrador no gasta nada: activarla se hace desde Campaign Manager."
 
 #. module: social_media_advertising_linkedin
 #: model_terms:ir.actions.act_window,help:social_media_advertising_linkedin.social_advertising_campaign_linkedin_action
@@ -570,11 +608,6 @@ msgstr ""
 "total del grupo de campañas limita el gasto global."
 
 #. module: social_media_advertising_linkedin
-#: model:ir.model.fields,field_description:social_media_advertising_linkedin.field_social_advertising_campaign_group__media_type
-msgid "Media Type"
-msgstr "Tipo de red social"
-
-#. module: social_media_advertising_linkedin
 #: model_terms:ir.actions.act_window,help:social_media_advertising_linkedin.social_advertising_ad_linkedin_action
 msgid "No LinkedIn ads yet"
 msgstr "Todavía no hay anuncios de LinkedIn"
@@ -582,10 +615,6 @@ msgstr "Todavía no hay anuncios de LinkedIn"
 #. module: social_media_advertising_linkedin
 #. odoo-python
 #: code:addons/social_media_advertising_linkedin/models/social_account.py:0
-#: code:addons/social_media_advertising_linkedin/models/social_advertising_campaign.py:0
-#: code:addons/social_media_advertising_linkedin/models/social_advertising_campaign_group.py:0
-#: code:addons/social_media_advertising_linkedin/models/social_post.py:0
-#: code:addons/social_media_advertising_linkedin/models/social_post_account.py:0
 #, python-format
 msgid ""
 "No LinkedIn advertising account is in use for the account %(account)s. Open "
@@ -690,39 +719,33 @@ msgid "Removed"
 msgstr "Eliminada"
 
 #. module: social_media_advertising_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_advertising_linkedin.social_advertising_campaign_group_view_form_inherit
+msgid ""
+"Send to LinkedIn the name and the total budget held in Odoo. Anything else "
+"is only changed from Campaign Manager."
+msgstr "Envía a LinkedIn el nombre y el presupuesto total guardados en Odoo. Cualquier otra cosa solo se cambia desde Campaign Manager."
+
+#. module: social_media_advertising_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_advertising_linkedin.social_advertising_campaign_view_form_inherit
+msgid ""
+"Send to LinkedIn the name, the unit cost and the daily budget held in Odoo. "
+"Anything else is only changed from Campaign Manager."
+msgstr "Envía a LinkedIn el nombre, el coste unitario y el presupuesto diario guardados en Odoo. Cualquier otra cosa solo se cambia desde Campaign Manager."
+
+#. module: social_media_advertising_linkedin
+#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_campaign_group
+msgid "Set of Campaigns Managed as a Unit on a Social Media"
+msgstr "Conjunto de campañas gestionadas como una unidad en una red social"
+
+#. module: social_media_advertising_linkedin
 #: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_campaign__linkedin_format__single_video
 msgid "Single video"
 msgstr "Vídeo único"
 
 #. module: social_media_advertising_linkedin
-#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_account
-msgid "Social Advertising Account"
-msgstr "Cuenta publicitaria social"
-
-#. module: social_media_advertising_linkedin
-#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_ad
-msgid "Social Advertising Ad"
-msgstr "Anuncio publicitario social"
-
-#. module: social_media_advertising_linkedin
-#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_campaign
-msgid "Social Advertising Campaign"
-msgstr "Campaña publicitaria social"
-
-#. module: social_media_advertising_linkedin
-#: model:ir.model,name:social_media_advertising_linkedin.model_social_advertising_campaign_group
-msgid "Social Advertising Campaign Group"
-msgstr "Grupo de campañas publicitarias sociales"
-
-#. module: social_media_advertising_linkedin
 #: model:ir.model,name:social_media_advertising_linkedin.model_social_media
 msgid "Social Media Supported by the System"
 msgstr "Red social admitida por el sistema"
-
-#. module: social_media_advertising_linkedin
-#: model:ir.model,name:social_media_advertising_linkedin.model_social_stage
-msgid "Social Stage"
-msgstr "Etapa social"
 
 #. module: social_media_advertising_linkedin
 #: model_terms:ir.actions.act_window,help:social_media_advertising_linkedin.social_stage_linkedin_action
@@ -738,6 +761,11 @@ msgstr ""
 #: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_campaign__linkedin_format__standard_update
 msgid "Standard update"
 msgstr "Publicación estándar"
+
+#. module: social_media_advertising_linkedin
+#: model:ir.model,name:social_media_advertising_linkedin.model_social_stage
+msgid "Status of a Campaign, a Campaign Group or an Ad"
+msgstr "Estado de una campaña, un grupo de campañas o un anuncio"
 
 #. module: social_media_advertising_linkedin
 #: model:ir.model.fields,help:social_media_advertising_linkedin.field_social_advertising_account__linkedin_status
@@ -777,15 +805,10 @@ msgstr ""
 #. module: social_media_advertising_linkedin
 #: model:ir.model.fields,help:social_media_advertising_linkedin.field_social_account__linkedin_missing_ads_scopes
 msgid ""
-"Technical field: the Advertising API scopes the token of this account was "
-"not granted. A token keeps the scopes it was issued with, so an account "
-"associated before this module was installed has to be authorized again to "
-"reach the Ads API."
-msgstr ""
-"Campo técnico: los permisos de la API de anuncios que LinkedIn no concedió "
-"al token de esta cuenta. Un token conserva los permisos con los que se "
-"emitió, así que una cuenta asociada antes de instalar este módulo tiene que "
-"autorizarse de nuevo para poder llamar a la API de anuncios."
+"The Advertising API scopes the token of this account was not granted. A "
+"token keeps the scopes it was issued with, so an account associated before "
+"this module was installed has to be authorized again to reach the Ads API."
+msgstr "Permisos de la Advertising API que no se concedieron al token de esta cuenta. Un token conserva los permisos con los que se emitió, así que una cuenta asociada antes de instalar este módulo hay que autorizarla de nuevo para llegar a la Ads API."
 
 #. module: social_media_advertising_linkedin
 #. odoo-python
@@ -1336,3 +1359,32 @@ msgstr ""
 "Por qué LinkedIn está sirviendo o no los anuncios de esta cuenta "
 "publicitaria: RUNNABLE cuando es elegible; en caso contrario, los motivos "
 "por los que no lo es, como BILLING_HOLD o ACCOUNT_TOTAL_BUDGET_HOLD."
+
+#~ msgid "Media Type"
+#~ msgstr "Tipo de red social"
+
+#~ msgid "Social Advertising Account"
+#~ msgstr "Cuenta publicitaria social"
+
+#~ msgid "Social Advertising Ad"
+#~ msgstr "Anuncio publicitario social"
+
+#~ msgid "Social Advertising Campaign"
+#~ msgstr "Campaña publicitaria social"
+
+#~ msgid "Social Advertising Campaign Group"
+#~ msgstr "Grupo de campañas publicitarias sociales"
+
+#~ msgid "Social Stage"
+#~ msgstr "Etapa social"
+
+#~ msgid ""
+#~ "Technical field: the Advertising API scopes the token of this account was "
+#~ "not granted. A token keeps the scopes it was issued with, so an account "
+#~ "associated before this module was installed has to be authorized again to "
+#~ "reach the Ads API."
+#~ msgstr ""
+#~ "Campo técnico: los permisos de la API de anuncios que LinkedIn no "
+#~ "concedió al token de esta cuenta. Un token conserva los permisos con los "
+#~ "que se emitió, así que una cuenta asociada antes de instalar este módulo "
+#~ "tiene que autorizarse de nuevo para poder llamar a la API de anuncios."

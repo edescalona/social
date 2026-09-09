@@ -6,13 +6,11 @@ import {patch} from "@web/core/utils/patch";
 patch(SocialKanbanModel.prototype, {
     /** @override */
     async onLikePost(record) {
-        super.onLikePost(record);
         return await this._reactLinkedinPost(record, "action_like_post");
     },
 
     /** @override */
     async onUnlikePost(record) {
-        super.onUnlikePost(record);
         return await this._reactLinkedinPost(record, "action_unlike_post");
     },
 

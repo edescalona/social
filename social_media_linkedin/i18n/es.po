@@ -48,6 +48,14 @@ msgstr ""
 #. module: social_media_linkedin
 #: model_terms:ir.ui.view,arch_db:social_media_linkedin.social_account_view_form_inherit
 msgid ""
+"Ask LinkedIn whether the token still works. The automatic check answers from "
+"the stored dates, this one calls LinkedIn, so it also notices a token "
+"revoked there and renews it when it can."
+msgstr "Pregunta a LinkedIn si el token sigue funcionando. La comprobación automática responde con las fechas almacenadas; esta llama a LinkedIn, así que también detecta un token revocado allí y lo renueva cuando puede."
+
+#. module: social_media_linkedin
+#: model_terms:ir.ui.view,arch_db:social_media_linkedin.social_account_view_form_inherit
+msgid ""
 "Ask the social media again for the daily figures of the page, as far back as "
 "it reports them, and rewrite the time series with them. It imports no "
 "publication: what it rebuilds is the graph of the account."
@@ -376,15 +384,6 @@ msgstr ""
 
 #. module: social_media_linkedin
 #. odoo-python
-#: code:addons/social_media_linkedin/controllers/social_media_linkedin.py:0
-#, python-format
-msgid "The account could not be associated. Check the server log for details."
-msgstr ""
-"No se ha podido asociar la cuenta. Consulte el registro del servidor para "
-"más detalles."
-
-#. module: social_media_linkedin
-#. odoo-python
 #: code:addons/social_media_linkedin/models/social_post_account.py:0
 #, python-format
 msgid ""
@@ -488,3 +487,10 @@ msgstr "Validar token"
 #, python-format
 msgid "the account has no access token"
 msgstr "la cuenta no tiene token de acceso"
+
+#, python-format
+#~ msgid ""
+#~ "The account could not be associated. Check the server log for details."
+#~ msgstr ""
+#~ "No se ha podido asociar la cuenta. Consulte el registro del servidor para "
+#~ "más detalles."

@@ -184,11 +184,6 @@ msgid "Activity Type Icon"
 msgstr ""
 
 #. module: social_media_base
-#: model:ir.model.fields,field_description:social_media_base.field_social_post_account__actor_urn
-msgid "Actor Urn"
-msgstr ""
-
-#. module: social_media_base
 #. odoo-javascript
 #: code:addons/social_media_base/static/src/js/views/kanban/kanban_buttons.xml:0
 #, python-format
@@ -245,6 +240,15 @@ msgid ""
 msgstr ""
 
 #. module: social_media_base
+#. odoo-javascript
+#: code:addons/social_media_base/static/src/js/views/kanban/kanban_buttons.xml:0
+#, python-format
+msgid ""
+"Ask the social media again for the publications and the figures of these "
+"accounts, instead of waiting for the next automatic pass."
+msgstr ""
+
+#. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.wizard_social_account_view_form
 msgid "Associate"
 msgstr ""
@@ -267,10 +271,31 @@ msgid "Attachment Count"
 msgstr ""
 
 #. module: social_media_base
+#. odoo-javascript
+#: code:addons/social_media_base/static/src/js/views/kanban/kanban_buttons.xml:0
+#, python-format
+msgid "Authorize Odoo on a social media and link one of its accounts."
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_media_view_kanban
+msgid ""
+"Authorize Odoo on this social media and link one of its accounts. It opens "
+"the association wizard of the social media."
+msgstr ""
+
+#. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 msgid ""
 "Authorize this account again and refresh the keys and the token it publishes"
 " with."
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.wizard_social_account_view_form
+msgid ""
+"Authorize this account again and refresh the keys and the token it publishes"
+" with. The account and its history are kept."
 msgstr ""
 
 #. module: social_media_base
@@ -296,6 +321,13 @@ msgstr ""
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_account__avatar_512
 msgid "Avatar 512"
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
+msgid ""
+"Bring the post back to the lists it was taken out of. It publishes nothing "
+"by itself."
 msgstr ""
 
 #. module: social_media_base
@@ -418,6 +450,13 @@ msgid "Content to Publish on Social Media"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.utm_campaign_view_form
+msgid ""
+"Create a post already linked to this marketing campaign, so what it "
+"publishes reports its clicks under it."
+msgstr ""
+
+#. module: social_media_base
 #: model_terms:ir.actions.act_window,help:social_media_base.social_post_action
 msgid "Create your first post"
 msgstr ""
@@ -452,6 +491,11 @@ msgstr ""
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_wizard_social_account__csrf_state_token
 msgid "Csrf State Token"
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model,name:social_media_base.model_social_account_statistics
+msgid "Daily Figures a Social Media Reports for an Account"
 msgstr ""
 
 #. module: social_media_base
@@ -601,10 +645,18 @@ msgid "Font awesome icon e.g. fa-tasks"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
+msgid ""
+"Give up on sending this post. It can only be cancelled while nothing has "
+"left for the social media, and it can be taken back to draft afterwards."
+msgstr ""
+
+#. module: social_media_base
 #: model_terms:ir.actions.act_window,help:social_media_base.social_account_action
 msgid ""
 "Go to Configuration &gt; Social Media and use\n"
-"                <b>Associate account</b> to link your LinkedIn or X account."
+"                <b>Associate account</b> to link an account of one of the\n"
+"                installed social media."
 msgstr ""
 
 #. module: social_media_base
@@ -842,6 +894,13 @@ msgid "Link Tracker Click"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.wizard_social_account_view_form
+msgid ""
+"Link the selected account with Odoo. From then on it can be published on, "
+"and its figures are brought in."
+msgstr ""
+
+#. module: social_media_base
 #. odoo-python
 #: code:addons/social_media_base/tests/test_social_post_base.py:0
 #: code:addons/social_media_base/tests/test_social_post_base.py:0
@@ -868,6 +927,11 @@ msgid ""
 "Marketing campaign of the parent post. A publication imported from the "
 "social media has no parent post, so its campaign is written on the imported "
 "publication itself."
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid "Marketing campaigns the publications of this account report to."
 msgstr ""
 
 #. module: social_media_base
@@ -1090,6 +1154,11 @@ msgid "Open publication"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form
+msgid "Open this publication on the social media, in a new tab."
+msgstr ""
+
+#. module: social_media_base
 #: model:ir.model.fields.selection,name:social_media_base.selection__social_post__state__partially_published
 msgid "Partially Published"
 msgstr ""
@@ -1163,10 +1232,20 @@ msgid "Posts"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.utm_campaign_view_form
+msgid "Posts published under this marketing campaign."
+msgstr ""
+
+#. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_account__post_ids
 msgid ""
 "Posts that target this account. Inverse of the accounts of a post, it is "
 "what keeps the counter up to date."
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid "Posts this account is one of the targets of."
 msgstr ""
 
 #. module: social_media_base
@@ -1206,6 +1285,14 @@ msgstr ""
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_link_tracker__social_post_account_id
 msgid "Publication the tracked link was published in."
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
+msgid ""
+"Publish the post right away on the selected accounts, without waiting for "
+"the planned date. Only the publications still pending are sent: what already"
+" reached the social media is not sent twice."
 msgstr ""
 
 #. module: social_media_base
@@ -1306,11 +1393,6 @@ msgstr ""
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__count_post_shares
 msgid "Shares"
-msgstr ""
-
-#. module: social_media_base
-#: model:ir.model,name:social_media_base.model_social_account_statistics
-msgid "Social Account Daily Statistics"
 msgstr ""
 
 #. module: social_media_base
@@ -1472,6 +1554,23 @@ msgid ""
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_form
+msgid ""
+"Take the post back to draft to work on it again. Nothing is sent to the "
+"social media, and nothing already published is withdrawn."
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model.fields,help:social_media_base.field_social_post_account__message
+msgid ""
+"Text this publication sends to the social media, which is not the text of "
+"its post: every publication carries its own UTM source, so each link is "
+"rewritten into a tracker of its own and the same post reads differently on "
+"every account. Publications imported from the social media have no post to "
+"read a message from either."
+msgstr ""
+
+#. module: social_media_base
 #. odoo-python
 #: code:addons/social_media_base/models/utm_medium.py:0
 #, python-format
@@ -1519,6 +1618,13 @@ msgstr ""
 
 #. module: social_media_base
 #. odoo-python
+#: code:addons/social_media_base/models/social_media_base_mixin.py:0
+#, python-format
+msgid "The account could not be associated. Check the server log for details."
+msgstr ""
+
+#. module: social_media_base
+#. odoo-python
 #: code:addons/social_media_base/models/social_post_account.py:0
 #, python-format
 msgid ""
@@ -1541,6 +1647,14 @@ msgstr ""
 msgid ""
 "The credentials of the account are no longer valid and could not be renewed:"
 " %(error)s. Update the account to authorize it again."
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model.fields,help:social_media_base.field_social_account__need_update
+msgid ""
+"The credentials of the account expired and it has to be authorized again. It"
+" means that and nothing else; an account with publications left to import is"
+" marked with posts_need_import, in the synchronization module."
 msgstr ""
 
 #. module: social_media_base
@@ -1928,6 +2042,13 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_search
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_view_search
 msgid "Without Campaign"
+msgstr ""
+
+#. module: social_media_base
+#. odoo-javascript
+#: code:addons/social_media_base/static/src/js/views/kanban/kanban_buttons.xml:0
+#, python-format
+msgid "Write a new post and choose the accounts it goes to."
 msgstr ""
 
 #. module: social_media_base

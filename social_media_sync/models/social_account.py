@@ -376,19 +376,17 @@ class SocialAccount(models.Model):
         several of them.
         """
         for account in self:
-            self.env["bus.bus"]._sendone(
-                account.user_id.partner_id,
-                "social_posts_updated",
-                {
-                    "account_id": account.id,
-                    "message_type": "info",
-                    "message": account._format_user_notification(
-                        _("The posts of the account were updated."),
-                        media=account.media_type or account.media_id.name,
-                        account_name=account.name,
-                        message_type="info",
-                    ),
-                },
+            account._notify_user_client(
+                target=account.user_id.partner_id,
+                notif_type="social_form_info",
+                notif_message=_("The posts of the account were updated."),
+                media=account.media_type or account.media_id.name,
+                account_name=account.name,
+                # The dashboard reloads itself on this type, so it is not the
+                # notification service reading it, and the account is what
+                # tells the card which figures to read again.
+                bus_type="social_posts_updated",
+                payload={"account_id": account.id},
             )
 
     def _flag_posts_need_import(self):
