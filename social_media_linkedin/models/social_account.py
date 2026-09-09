@@ -1146,6 +1146,72 @@ class SocialAccount(models.Model):
             if post.get("id")
         ]
 
+    def _get_posts_gone(self, urns):
+        """Ask LinkedIn which of these URNs it no longer serves.
+
+        ``BATCH_GET`` answers ``results`` with the publications it served and
+        ``errors`` with one entry per URN it refused, each carrying its own
+        status. That per-URN status is the whole point: a ``404`` is a
+        deletion, a ``403`` is a page role the token lost and a ``429`` is a
+        throttled application, and the three arrive in the same answer.
+
+        Fail open, like every other check of this kind: a request that could
+        not be made confirms nothing, so the caller marks nothing. Which is
+        why the answer is not read with :meth:`_get_posts`, that drops the
+        ``errors`` block and raises as soon as the answer is not a ``200``.
+
+        :param urns: the remote references to ask about, at most
+            ``_BATCH_GET_MAX_IDS_LINKEDIN`` of them.
+        :return: the URNs LinkedIn reported as gone.
+        :rtype: set
+        """
+        self.ensure_one()
+        urns = list(urns)
+        if not urns:
+            return set()
+        try:
+            response = self._request_linkedin(
+                endpoint=_ENDPOINT_POSTS_LINKEDIN,
+                headers=self.media_id._get_linkedin_headers(
+                    self.sudo().access_token, x_restli_method="BATCH_GET"
+                ),
+                params_fields=["ids"],
+                params_values={"ids": urns},
+                return_json=False,
+            )
+        except Exception:  # noqa: BLE001 - unreachable is not deleted
+            _logger.exception(
+                "Error asking LinkedIn about %s publications, none of them is "
+                "marked as gone",
+                len(urns),
+            )
+            return set()
+        if response.status_code != 200:
+            _logger.warning(
+                "LinkedIn answered %(code)s when asked about %(count)s "
+                "publications, none of them is marked as gone: %(error)s",
+                {
+                    "code": response.status_code,
+                    "count": len(urns),
+                    "error": self._linkedin_error_message(response),
+                },
+            )
+            return set()
+        try:
+            errors = response.json().get("errors") or {}
+        except ValueError:
+            _logger.warning(
+                "LinkedIn answered something other than JSON when asked about "
+                "%s publications, none of them is marked as gone",
+                len(urns),
+            )
+            return set()
+        return {
+            urn
+            for urn, error in errors.items()
+            if isinstance(error, dict) and error.get("status") == 404
+        }
+
     def _get_linkedin_images_download_url(self, image_urns):
         """Return the download URL of each image.
 

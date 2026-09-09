@@ -11,7 +11,9 @@ from odoo.tools import mute_logger
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    _BATCH_GET_MAX_IDS_LINKEDIN,
     _ENDPOINT_POST_LINKEDIN,
+    _ENDPOINT_POSTS_LINKEDIN,
     _MAX_IMAGE_SIZE_LINKEDIN,
     _MAX_IMAGES_LINKEDIN,
     _MAX_MESSAGE_LENGTH_LINKEDIN,
@@ -25,6 +27,7 @@ LOGGER_POST_ACCOUNT_LINKEDIN = (
     "odoo.addons.social_media_linkedin.models.social_post_account"
 )
 LOGGER_POST_ACCOUNT_BASE = "odoo.addons.social_media_base.models.social_post_account"
+LOGGER_ACCOUNT_LINKEDIN = "odoo.addons.social_media_linkedin.models.social_account"
 MODULE_POST_LINKEDIN = "odoo.addons.social_media_linkedin.models.social_post"
 
 
@@ -1032,4 +1035,147 @@ class TestSocialPostLinkedin(TestSocialCommonLinkedin):
         self.assertEqual(
             mock_request.call_args.kwargs["endpoint"],
             _ENDPOINT_POST_LINKEDIN % quote(post_account.remote_ref),
+        )
+
+    def _linkedin_suspects(self, refs, account=None):
+        """Create a published line per reference on a LinkedIn account.
+
+        The suspects of a batch are lines with a ``remote_ref`` the social
+        media can be asked about, which is the only thing the confirmation
+        reads from them.
+        """
+        account = account or self.SocialAccountLinkedin
+        lines = self.SocialPostAccount.browse()
+        for ref in refs:
+            lines |= self.SocialPostAccount.create(
+                {
+                    "message": "Test Message",
+                    "account_id": account.id,
+                    "media_id": account.media_id.id,
+                    "post_id": self.SocialPostLinkedin.id,
+                    "remote_ref": ref,
+                    "state": "posted",
+                }
+            )
+        return lines
+
+    def _batch_get_response(self, results=(), errors=None, status_code=200):
+        """Answer a ``BATCH_GET`` of ``/posts`` the way LinkedIn does.
+
+        ``results`` carries the publications it served, ``errors`` one entry
+        per URN it refused, each with its own status.
+        """
+        response = MagicMock()
+        response.status_code = status_code
+        response.json.return_value = {
+            "results": {urn: {"id": urn} for urn in results},
+            "errors": errors or {},
+        }
+        return response
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_confirms_only_the_404(self, mock_request):
+        """The publication LinkedIn no longer serves is the confirmed one."""
+        lines = self._linkedin_suspects(["urn:alive:1", "urn:gone", "urn:alive:2"])
+        mock_request.return_value = self._batch_get_response(
+            results=["urn:alive:1", "urn:alive:2"],
+            errors={"urn:gone": {"status": 404, "message": "Not found"}},
+        )
+        gone = lines._check_remote_posts_exist()
+        self.assertEqual(gone.mapped("remote_ref"), ["urn:gone"])
+        self.assertEqual(mock_request.call_count, 1)
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"], _ENDPOINT_POSTS_LINKEDIN
+        )
+        self.assertEqual(mock_request.call_args.kwargs["params_fields"], ["ids"])
+        self.assertEqual(
+            sorted(mock_request.call_args.kwargs["params_values"]["ids"]),
+            ["urn:alive:1", "urn:alive:2", "urn:gone"],
+        )
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_ignores_the_other_errors(self, mock_request):
+        """A lost page role and a rate limit confirm no deletion at all."""
+        lines = self._linkedin_suspects(["urn:forbidden", "urn:throttled"])
+        mock_request.return_value = self._batch_get_response(
+            errors={
+                "urn:forbidden": {"status": 403, "message": "Not enough permissions"},
+                "urn:throttled": {"status": 429, "message": "Too many requests"},
+            },
+        )
+        self.assertFalse(lines._check_remote_posts_exist())
+        self.assertEqual(lines.mapped("state"), ["posted", "posted"])
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_ignores_an_unanswered_urn(self, mock_request):
+        """A URN in neither block was not reported as gone either."""
+        lines = self._linkedin_suspects(["urn:unanswered"])
+        mock_request.return_value = self._batch_get_response()
+        self.assertFalse(lines._check_remote_posts_exist())
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_on_a_failed_answer(self, mock_request):
+        """An answer that is not a 200 confirms nothing."""
+        lines = self._linkedin_suspects(["urn:unknown"])
+        mock_request.return_value = self._batch_get_response(status_code=500)
+        with mute_logger(LOGGER_ACCOUNT_LINKEDIN):
+            self.assertFalse(lines._check_remote_posts_exist())
+        self.assertEqual(lines.state, "posted")
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_when_linkedin_is_unreachable(self, mock_request):
+        """A request that could not be made confirms nothing."""
+        lines = self._linkedin_suspects(["urn:unreachable"])
+        mock_request.side_effect = UserError("boom")
+        with mute_logger(LOGGER_ACCOUNT_LINKEDIN):
+            self.assertFalse(lines._check_remote_posts_exist())
+        self.assertEqual(lines.state, "posted")
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_asks_in_batches(self, mock_request):
+        """Confirming costs one call per hundred suspects, not one each."""
+        count = 2 * _BATCH_GET_MAX_IDS_LINKEDIN + 50
+        lines = self._linkedin_suspects(
+            ["urn:batch:%s" % index for index in range(count)]
+        )
+        mock_request.return_value = self._batch_get_response()
+        self.assertFalse(lines._check_remote_posts_exist())
+        self.assertEqual(mock_request.call_count, 3)
+        self.assertEqual(
+            sorted(
+                len(call.kwargs["params_values"]["ids"])
+                for call in mock_request.call_args_list
+            ),
+            [50, _BATCH_GET_MAX_IDS_LINKEDIN, _BATCH_GET_MAX_IDS_LINKEDIN],
+        )
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_asks_each_account_apart(self, mock_request):
+        """A URN is asked about from the account that published it."""
+        first = self._linkedin_suspects(["urn:first"])
+        second = self._linkedin_suspects(
+            ["urn:second"], account=self.SocialAccountLinkedinData
+        )
+        mock_request.return_value = self._batch_get_response()
+        self.assertFalse((first | second)._check_remote_posts_exist())
+        self.assertEqual(mock_request.call_count, 2)
+        self.assertEqual(
+            sorted(
+                call.kwargs["params_values"]["ids"]
+                for call in mock_request.call_args_list
+            ),
+            [["urn:first"], ["urn:second"]],
+        )
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_posts_exist_delegates_another_media(self, mock_request):
+        """A line of another social media is answered by the generic side."""
+        linkedin = self._linkedin_suspects(["urn:linkedin"])
+        foreign = self.social_post_account_id
+        foreign.write({"remote_ref": False, "state": "posted"})
+        mock_request.return_value = self._batch_get_response()
+        gone = (linkedin | foreign)._check_remote_posts_exist()
+        self.assertEqual(gone, foreign)
+        self.assertEqual(
+            mock_request.call_args.kwargs["params_values"]["ids"], ["urn:linkedin"]
         )
