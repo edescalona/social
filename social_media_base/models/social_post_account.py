@@ -163,6 +163,13 @@ class SocialPostAccount(models.Model):
         "publication. Different from 'Clicks', which is the figure the social "
         "media reports for the publication itself.",
     )
+    statistics_date = fields.Datetime(
+        string="Statistics Read On",
+        readonly=True,
+        copy=False,
+        help="When the figures of this publication were last read back from "
+        "the social media. Empty means they were never read.",
+    )
 
     @api.depends("published_date", "post_id.send_post_date")
     def _compute_effective_date(self):

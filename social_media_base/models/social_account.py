@@ -17,6 +17,11 @@ from ..exceptions import SocialCredentialsError
 
 _logger = logging.getLogger(__name__)
 
+# How far back the periodic refresh reads the figures of the publications.
+# It is what keeps the cost of that pass fixed: the calls it spends depend on
+# the days of the window and not on how much the account has published.
+STATISTICS_WINDOW_DAYS = 30
+
 
 class SocialAccount(models.Model):
     """Account associated with a social media."""
