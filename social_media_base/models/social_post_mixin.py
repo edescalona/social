@@ -83,6 +83,126 @@ class SocialPostMixin(models.AbstractModel):
                     {"res_model": record._name, "res_id": record.id}
                 )
 
+    def _media_holder_models(self):
+        """Return the models that can carry the medias of a post.
+
+        A media is only deleted once nothing points at it any more, and the
+        many2many is declared ``ondelete="restrict"``, so the database refuses
+        to delete one a record still carries. This answers which records those
+        can be: a module adding another holder of the medias adds it here.
+
+        :rtype: list
+        """
+        return ["social.post", "social.post.account"]
+
+    def _owned_media_attachments(self):
+        """Return the medias these records own.
+
+        A media belongs to the record it is anchored to, and only that record
+        answers for it: a publication carries the images of its post and never
+        owns them, so it never decides anything about them.
+
+        :rtype: recordset of ``ir.attachment``
+        """
+        owned = self.env["ir.attachment"]
+        for record in self:
+            owned |= (record.image_ids | record.video_ids).filtered(
+                lambda attachment, record=record: attachment.res_model == record._name
+                and attachment.res_id == record.id
+            )
+        return owned
+
+    def _media_attachments_in_use(self, attachments):
+        """Return the attachments some record still carries.
+
+        :param attachments: the ``ir.attachment`` recordset to look for.
+        :rtype: recordset of ``ir.attachment``
+        """
+        in_use = self.env["ir.attachment"]
+        if not attachments:
+            return in_use
+        for model in self._media_holder_models():
+            holders = (
+                self.env[model]
+                .sudo()
+                .with_context(active_test=False)
+                .search(
+                    [
+                        "|",
+                        ("image_ids", "in", attachments.ids),
+                        ("video_ids", "in", attachments.ids),
+                    ]
+                )
+            )
+            in_use |= (holders.image_ids | holders.video_ids) & attachments
+        return in_use
+
+    def _release_media_attachments(self, previous):
+        """Let go of the medias these records owned and no longer carry.
+
+        The upload widget only forgets the link when the user removes a file,
+        so the attachment and its file outlive the media the post shows.
+        Releasing it is the opposite of :meth:`_anchor_media_attachments`: the
+        attachment goes back to the state an upload starts in, owned by
+        nobody, and :meth:`_gc_lost_media_attachments` deletes it a day later.
+        Nothing is destroyed inside the write that removed the media, and a
+        file removed by mistake is still there until the vacuum runs.
+
+        What is still carried somewhere is left alone: the publications of a
+        post point at the very attachments of the post.
+
+        ``sudo`` because writing a post does not give rights to write on an
+        ``ir.attachment``, and the medias of the post are not the user's to
+        answer for either way.
+
+        :param previous: the medias these records owned before the write, as
+            answered by :meth:`_owned_media_attachments`.
+        """
+        previous = previous.exists()
+        released = previous - self._media_attachments_in_use(previous)
+        if released:
+            released.sudo().write({"res_id": 0})
+
+    @api.autovacuum
+    def _gc_lost_media_attachments(self):
+        """Delete the medias uploaded to a record that was never saved.
+
+        The upload widget stores the file as soon as it is chosen, with the
+        identifier of the record it is attached to, which is ``0`` while the
+        form has never been saved. A file removed from such a form, a form
+        left without saving, and a media released by
+        :meth:`_release_media_attachments` all end up there: an attachment no
+        record points at, and this is the single place that deletes them.
+
+        A day of margin, the one ``mail`` gives the attachments of its
+        composer: the form the file was chosen in may still be open, and a
+        media removed by mistake is still recoverable until then.
+
+        The vacuum walks every model, so this runs once per model carrying
+        the medias, each with its own ``res_model``. The mixin itself is not
+        one of them: nothing is ever uploaded to an abstract model.
+
+        Whatever a record still carries is spared, so a media that got here
+        with a holder left is never deleted under it: the many2many is
+        ``ondelete="restrict"`` and the database would refuse it anyway.
+        """
+        if self._abstract:
+            return
+        limit_date = fields.Datetime.subtract(fields.Datetime.now(), days=1)
+        lost = (
+            self.env["ir.attachment"]
+            .sudo()
+            .search(
+                [
+                    ("res_model", "=", self._name),
+                    ("res_id", "=", 0),
+                    ("create_date", "<", limit_date),
+                    ("write_date", "<", limit_date),
+                ]
+            )
+        )
+        (lost - self._media_attachments_in_use(lost)).unlink()
+
     @staticmethod
     def _sorted_medias(attachments):
         """Return the attachments in the order the user added them.

@@ -736,9 +736,16 @@ class SocialPostAccount(models.Model):
         return records
 
     def write(self, vals):
+        medias_touched = "image_ids" in vals or "video_ids" in vals
+        released = (
+            self._owned_media_attachments()
+            if medias_touched
+            else self.env["ir.attachment"]
+        )
         res = super().write(vals)
-        if "image_ids" in vals or "video_ids" in vals:
+        if medias_touched:
             self._anchor_media_attachments()
+            self._release_media_attachments(released)
         return res
 
     def _media_attachments_to_skip(self):

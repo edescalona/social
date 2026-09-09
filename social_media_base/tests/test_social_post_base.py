@@ -1512,6 +1512,179 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             ("social.post.account", self.social_post_account_id.id),
         )
 
+    def test_removing_a_media_from_a_post_releases_it(self):
+        """A media the post stops carrying goes back to belonging to nobody.
+
+        The upload widget only forgets the link, so without this the file
+        would stay in the filestore until the post itself is deleted. The
+        attachment is not deleted here: the vacuum does it a day later.
+        """
+        post = self.social_post_id
+        video = self.env["ir.attachment"].create(
+            {"name": "removed_video.mp4", "datas": self.video_data}
+        )
+        post.write({"video_ids": [Command.set(video.ids)]})
+        self.assertEqual(video.res_id, post.id)
+        post.write({"video_ids": [Command.clear()]})
+        self.assertFalse(video.res_id)
+        self._age_attachments(video)
+        self.SocialPost._gc_lost_media_attachments()
+        self.assertFalse(video.exists())
+
+    def test_removing_a_media_a_publication_still_carries_keeps_it(self):
+        """The publications of a post point at the very medias of the post."""
+        post = self.social_post_id
+        line = self.social_post_account_id
+        image = self.env["ir.attachment"].create(
+            {"name": "shared_image.png", "datas": self.image_base64}
+        )
+        post.write({"image_ids": [Command.set(image.ids)]})
+        line.write({"image_ids": [Command.set(image.ids)]})
+        post.write({"image_ids": [Command.clear()]})
+        self.assertEqual(image.res_id, post.id)
+        self.assertEqual(line.image_ids, image)
+
+    def test_removing_a_media_the_post_does_not_own_keeps_it(self):
+        """Only the record a media is anchored to answers for it."""
+        post = self.social_post_id
+        downloaded = self.env["ir.attachment"].create(
+            {
+                "name": "downloaded_image.png",
+                "datas": self.image_base64,
+                "res_model": "social.post.account",
+                "res_id": self.social_post_account_id.id,
+            }
+        )
+        post.write({"image_ids": [Command.set(downloaded.ids)]})
+        post.write({"image_ids": [Command.clear()]})
+        self.assertEqual(downloaded.res_id, self.social_post_account_id.id)
+
+    def test_removing_a_media_leaves_the_chatter_attachments_alone(self):
+        """A file of the chatter is not a media of the post."""
+        post = self.social_post_id
+        attached = self.env["ir.attachment"].create(
+            {
+                "name": "chatter_file.txt",
+                "datas": self.image_base64,
+                "res_model": "social.post",
+                "res_id": post.id,
+            }
+        )
+        image = self.env["ir.attachment"].create(
+            {"name": "removed_image.png", "datas": self.image_base64}
+        )
+        post.write({"image_ids": [Command.set(image.ids)]})
+        post.write({"image_ids": [Command.clear()]})
+        self.assertFalse(image.res_id)
+        self.assertEqual(attached.res_id, post.id)
+
+    def test_removing_a_downloaded_media_from_a_publication_releases_it(self):
+        """A publication answers for what it downloaded from the social media."""
+        line = self.social_post_account_id
+        downloaded = self.env["ir.attachment"].create(
+            {
+                "name": "downloaded_image.png",
+                "datas": self.image_base64,
+                "res_model": "social.post.account",
+            }
+        )
+        line.write({"image_ids": [Command.set(downloaded.ids)]})
+        self.assertEqual(downloaded.res_id, line.id)
+        line.write({"image_ids": [Command.clear()]})
+        self.assertFalse(downloaded.res_id)
+        self._age_attachments(downloaded)
+        self.SocialPostAccount._gc_lost_media_attachments()
+        self.assertFalse(downloaded.exists())
+
+    def test_removing_a_media_of_the_post_from_a_publication_keeps_it(self):
+        """What a publication shares with its post belongs to the post."""
+        post = self.social_post_id
+        line = self.social_post_account_id
+        image = self.env["ir.attachment"].create(
+            {"name": "post_image.png", "datas": self.image_base64}
+        )
+        post.write({"image_ids": [Command.set(image.ids)]})
+        line.write({"image_ids": [Command.set(image.ids)]})
+        line.write({"image_ids": [Command.clear()]})
+        self.assertEqual(image.res_id, post.id)
+        self.assertEqual(post.image_ids, image)
+
+    def _age_attachments(self, attachments, days=2):
+        """Move the dates of the attachments back, as the vacuum reads them."""
+        older = fields.Datetime.subtract(fields.Datetime.now(), days=days)
+        # The dates are written in SQL, so what the ORM still holds for these
+        # attachments has to reach the database first and be forgotten after,
+        # or the next flush would write ``write_date`` back to now.
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE ir_attachment SET create_date = %s, write_date = %s "
+            "WHERE id IN %s",
+            (older, older, tuple(attachments.ids)),
+        )
+        attachments.invalidate_recordset(["create_date", "write_date"])
+
+    def test_gc_lost_media_attachments_deletes_what_a_form_never_saved(self):
+        """A file uploaded to a post that was never saved has no owner.
+
+        The widget stores it with ``res_id`` 0, so no record carries it and
+        no record will ever delete it.
+        """
+        lost = self.env["ir.attachment"].create(
+            {
+                "name": "unsaved_video.mp4",
+                "datas": self.video_data,
+                "res_model": "social.post",
+                "res_id": 0,
+            }
+        )
+        self._age_attachments(lost)
+        self.SocialPost._gc_lost_media_attachments()
+        self.assertFalse(lost.exists())
+
+    def test_gc_lost_media_attachments_keeps_a_form_still_open(self):
+        """The day of margin is the form the user has not saved yet."""
+        pending = self.env["ir.attachment"].create(
+            {
+                "name": "pending_video.mp4",
+                "datas": self.video_data,
+                "res_model": "social.post",
+                "res_id": 0,
+            }
+        )
+        self.SocialPost._gc_lost_media_attachments()
+        self.assertTrue(pending.exists())
+
+    def test_gc_lost_media_attachments_keeps_the_medias_of_a_post(self):
+        """An anchored media is old on purpose: it is the post that is old."""
+        image = self.env["ir.attachment"].create(
+            {"name": "old_image.png", "datas": self.image_base64}
+        )
+        self.social_post_id.write({"image_ids": [Command.set(image.ids)]})
+        self._age_attachments(image)
+        self.SocialPost._gc_lost_media_attachments()
+        self.assertTrue(image.exists())
+
+    def test_gc_lost_media_attachments_keeps_what_a_record_carries(self):
+        """The vacuum never deletes a media under the record showing it.
+
+        Nothing releases a media another record carries, and the many2many is
+        ``ondelete="restrict"``, so this is what keeps the vacuum from failing
+        on an attachment that reached ``res_id`` 0 with a holder left.
+        """
+        image = self.env["ir.attachment"].create(
+            {
+                "name": "carried_image.png",
+                "datas": self.image_base64,
+                "res_model": "social.post",
+                "res_id": 0,
+            }
+        )
+        self.social_post_id.write({"image_ids": [Command.link(image.id)]})
+        image.sudo().write({"res_id": 0})
+        self._age_attachments(image)
+        self.SocialPost._gc_lost_media_attachments()
+        self.assertTrue(image.exists())
+
     def test_media_refs_of_a_new_publication_is_empty(self):
         """An empty ``fields.Json`` is stored as ``NULL`` and read as ``False``.
 

@@ -68,15 +68,13 @@ class SocialPostAccount(models.Model):
         LinkedIn, and one without it was attached by hand in Odoo and is
         never touched.
 
-        The attachment is unlinked from the publication, and only deleted
-        when it belongs to it. A publication shares the attachments of its
-        post, so deleting one of those would take the image away from the
-        post and from every other publication of it.
+        The attachment is unlinked from the publication, which is what
+        releases it when the publication owned it: ``write`` lets go of the
+        medias a record stops carrying and the vacuum deletes them. A
+        publication shares the attachments of its post, and those belong to
+        the post, so they are left alone.
 
-        The relation is unlinked before deleting the attachment: the field
-        is declared with ``ondelete="restrict"``, so the database refuses to
-        delete a media that a publication still points at. The reference
-        leaves ``media_refs`` in that very write, which is what
+        The reference leaves ``media_refs`` in that very write, which is what
         ``_check_media_refs`` asks for: the publication never answers for a
         media it no longer holds.
 
@@ -92,9 +90,6 @@ class SocialPostAccount(models.Model):
         )
         if removed:
             dropped = {str(image.id) for image in removed}
-            owned = removed.filtered(
-                lambda image: image.res_model == self._name and image.res_id == self.id
-            )
             self.write(
                 {
                     "image_ids": [Command.unlink(image.id) for image in removed],
@@ -103,7 +98,6 @@ class SocialPostAccount(models.Model):
                     },
                 }
             )
-            owned.sudo().unlink()
         return removed
 
     def _react_linkedin(self, root, author_urn):

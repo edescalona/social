@@ -130,7 +130,7 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         removed = self.SocialPostAccountLinkedin._remove_assets_deleted(content)
         self.assertEqual(self.SocialPostAccountLinkedin.image_ids, kept)
         self.assertEqual(len(removed), 1)
-        self.assertFalse(gone.exists())
+        self.assertFalse(gone.res_id, "The vacuum deletes what nothing owns")
         self.SocialPostAccountLinkedin.invalidate_recordset()
         self.assertEqual(
             self.SocialPostAccountLinkedin.media_refs,
@@ -155,7 +155,7 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         )
         self.SocialPostAccountLinkedin._remove_assets_deleted({})
         self.assertFalse(self.SocialPostAccountLinkedin.image_ids)
-        self.assertFalse(stored.exists())
+        self.assertFalse(stored.res_id, "The vacuum deletes what nothing owns")
         self.SocialPostAccountLinkedin.invalidate_recordset()
         self.assertFalse(self.SocialPostAccountLinkedin.media_refs)
 
@@ -206,7 +206,7 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         self.assertEqual(post.image_ids, shared)
 
     def test_remove_assets_deleted_drops_the_media_of_the_publication(self):
-        """A media the publication downloaded belongs to it and is deleted."""
+        """A media the publication downloaded belongs to it and is released."""
         downloaded = self.create_attachment(attach_name="downloaded.jpg")
         self.SocialPostAccountLinkedin.write(
             {
@@ -217,7 +217,7 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         self.assertEqual(downloaded.res_model, "social.post.account")
         self.assertEqual(downloaded.res_id, self.SocialPostAccountLinkedin.id)
         self.SocialPostAccountLinkedin._remove_assets_deleted({})
-        self.assertFalse(downloaded.exists())
+        self.assertFalse(downloaded.res_id, "The vacuum deletes what nothing owns")
 
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
     def test_action_like_post(self, mock_request):

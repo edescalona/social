@@ -162,6 +162,12 @@ class SocialPost(models.Model):
             if "active" in vals
             else self.browse()
         )
+        medias_touched = "image_ids" in vals or "video_ids" in vals
+        released = (
+            self._owned_media_attachments()
+            if medias_touched
+            else self.env["ir.attachment"]
+        )
         res = super().write(vals)
         if to_toggle:
             lines = to_toggle.with_context(active_test=False).post_account_ids
@@ -179,8 +185,9 @@ class SocialPost(models.Model):
             )
             if to_plan:
                 to_plan.state = "planned"
-        if "image_ids" in vals or "video_ids" in vals:
+        if medias_touched:
             self._anchor_media_attachments()
+            self._release_media_attachments(released)
         return res
 
     def unlink(self):
