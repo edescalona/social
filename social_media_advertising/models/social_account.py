@@ -2,14 +2,15 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import logging
-
-import psycopg2
+from contextlib import contextmanager
 
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
 
-from ..social_advertising_utils import ADVERTISING_ENVIRONMENTS
+from ..social_advertising_utils import (
+    ADVERTISING_ENVIRONMENTS,
+    _advertising_notification,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -382,15 +383,11 @@ class SocialAccount(models.Model):
         view by hand.
         """
         res = self.action_sync_advertising_accounts()
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "type": "success" if res.get("success") else "danger",
-                "message": res.get("message"),
-                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
-            },
-        }
+        return _advertising_notification(
+            res.get("message"),
+            success=res.get("success"),
+            next_action={"type": "ir.actions.client", "tag": "soft_reload"},
+        )
 
     def _fetch_ads(self):
         """Return the ads of this account, as the social media answers them.
@@ -501,6 +498,30 @@ class SocialAccount(models.Model):
         """
         return [("media_id.media_type", "in", self._advertising_media_types())]
 
+    @contextmanager
+    def _advertising_guard(self, log_message):
+        """Isolate one account and let the caller know whether it failed.
+
+        The guard of the base is what rolls the account back and keeps the
+        pass going. What this one adds is an answer: the caller sums the
+        failures up in a single notification instead of interrupting the run,
+        so it has to tell an account that failed from one that answered that
+        it has nothing to serve.
+
+        :param log_message: the message to log, with a single ``%s`` for the
+            id of the account.
+        :return: a mutable ``{"failed": bool, "res": dict}`` the caller fills
+            with the answer and reads back once the block is over.
+        """
+        state = {"failed": False, "res": {}}
+
+        def register_failure(error):
+            state["failed"] = True
+            _logger.exception(log_message, self.id)
+
+        with self._account_guard(on_error=register_failure):
+            yield state
+
     @api.model
     def action_sync_all_ads_notify(self):
         """Fetch the ads of every account the user can see, from the ads view.
@@ -515,23 +536,14 @@ class SocialAccount(models.Model):
         ads = 0
         failures = []
         for account in accounts:
-            try:
-                with self.env.cr.savepoint():
-                    res = account.action_sync_ads()
-            except psycopg2.OperationalError as error:
-                if error.pgcode in PG_CONCURRENCY_ERRORS_TO_RETRY:
-                    raise
-                _logger.exception("Error syncing the ads of the account %s", account.id)
+            with account._advertising_guard(
+                "Error syncing the ads of the account %s"
+            ) as state:
+                state["res"] = account.action_sync_ads()
+            if state["failed"] or not state["res"].get("success"):
                 failures.append(account.display_name)
-                continue
-            except Exception:  # noqa: BLE001 - one account must not stop the rest
-                _logger.exception("Error syncing the ads of the account %s", account.id)
-                failures.append(account.display_name)
-                continue
-            if res.get("success"):
-                ads += res.get("ads", 0)
             else:
-                failures.append(account.display_name)
+                ads += state["res"].get("ads", 0)
         if not accounts:
             message = _("No account of yours can serve ads.")
         elif failures:
@@ -543,14 +555,7 @@ class SocialAccount(models.Model):
             )
         else:
             message = _("%(ads)s ad(s) available.", ads=ads)
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "type": "danger" if failures else "success",
-                "message": message,
-            },
-        }
+        return _advertising_notification(message, success=not failures)
 
     def _fetch_ad_refs(self):
         """Return the references of the ads the social media serves.
@@ -654,15 +659,11 @@ class SocialAccount(models.Model):
         view by hand.
         """
         res = self.action_import_campaigns()
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "type": "success" if res.get("success") else "danger",
-                "message": res.get("message"),
-                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
-            },
-        }
+        return _advertising_notification(
+            res.get("message"),
+            success=res.get("success"),
+            next_action={"type": "ir.actions.client", "tag": "soft_reload"},
+        )
 
     def _propagate_active_to_related(self, active):
         """Archive or unarchive the campaigns and campaign groups too.

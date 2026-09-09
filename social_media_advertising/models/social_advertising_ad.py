@@ -4,6 +4,8 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
+from ..social_advertising_utils import _advertising_notification
+
 
 class SocialAdvertisingAd(models.Model):
     """Ad served by a social media, as the social media reports it.
@@ -271,17 +273,12 @@ class SocialAdvertisingAd(models.Model):
             list once the record is gone.
         :rtype: dict
         """
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "type": "success",
-                "message": message,
-                "next": self._advertising_ad_action(media_type)
-                if gone
-                else {"type": "ir.actions.client", "tag": "soft_reload"},
-            },
-        }
+        return _advertising_notification(
+            message,
+            next_action=self._advertising_ad_action(media_type)
+            if gone
+            else {"type": "ir.actions.client", "tag": "soft_reload"},
+        )
 
     def action_open_url(self):
         """Open this ad on the social media."""
