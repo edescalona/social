@@ -56,6 +56,49 @@ class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
             {shared_ref: theirs},
         )
 
+    def test_by_remote_ref_reads_what_the_reader_cannot_see(self):
+        """The reconciliation is not scoped by who runs the import.
+
+        The import runs from a cron, which is not the user responsible for the
+        account, and an archived line is still a line: whatever the search
+        leaves out is imported again under a second publication for the same
+        remote reference.
+        """
+        reader = self.env["res.users"].create(
+            {
+                "login": "social_reader",
+                "name": "Social Reader",
+                "groups_id": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref(
+                                "social_media_base.group_social_media_user"
+                            ).id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.social_account_id.user_id = self.env.ref("base.user_admin")
+        line = self.social_post_account_id
+        line.write({"remote_ref": "hidden-publication", "active": False})
+        PostAccount = self.env["social.post.account"].with_user(reader)
+        self.assertEqual(
+            PostAccount._by_remote_ref(
+                ["hidden-publication"],
+                self.social_account_id,
+                sudo=True,
+                active_test=False,
+            ),
+            {"hidden-publication": line},
+        )
+        self.assertFalse(
+            PostAccount._by_remote_ref(["hidden-publication"], self.social_account_id),
+            "Without the flags the line is invisible, and the import creates "
+            "a second one for the same publication.",
+        )
+
     def test_by_remote_ref_cannot_be_asked_without_an_account(self):
         """The account is a required parameter, not a flag with a default."""
         with self.assertRaises(TypeError):

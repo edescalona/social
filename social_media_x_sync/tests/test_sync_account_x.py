@@ -212,6 +212,65 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         )
         self.assertEqual(post_account.image_ids.mapped("name"), ["media_key_tests"])
 
+    def test_import_updates_an_archived_line_instead_of_duplicating_it(self):
+        """A tweet whose line is archived is reconciled, not imported again.
+
+        The line is the only place holding ``remote_ref``, so a page read
+        without the archived ones brings the same tweet in under a second
+        publication.
+        """
+        line = self.SocialPostAccountX
+        line.write({"remote_ref": "archived_tweet", "active": False})
+        fake_client = MagicMock()
+        fake_client.get_users_tweets.return_value.includes = {
+            "users": [MagicMock(id="author_12345", username="username-idx")]
+        }
+        fake_tweet = MagicMock(
+            referenced_tweets=None,
+            in_reply_to_user_id=None,
+            conversation_id="archived_tweet",
+            id="archived_tweet",
+            author_id="author_12345",
+            text="Archived tweet text",
+            created_at=datetime(2026, 3, 1, 8, 0, tzinfo=pytz.utc),
+            attachments={},
+            entities=None,
+        )
+        fake_tweet.get.return_value = "archived_tweet"
+        fake_client.get_users_tweets.return_value.data = [fake_tweet]
+        (
+            patch_get_client_api,
+            patch_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client=fake_client)
+        with (
+            patch(PATCH_SYNC_ACCOUNT.format("_update_posts_statistics")),
+            patch_get_client_api,
+            patch_valid_time_request,
+            patch.object(
+                type(self.SocialAccount),
+                "_get_public_metrics",
+                autospec=True,
+                return_value=(0, 0, 0, 0, 0),
+            ),
+            patch.object(
+                type(self.SocialAccount),
+                "_get_x_statistics",
+                autospec=True,
+                return_value=None,
+            ),
+        ):
+            self.SocialAccountX._update_posts_statistics(None, [], set())
+        self.env.flush_all()
+        self.env.invalidate_all()
+        lines = self.SocialPostAccount.with_context(active_test=False).search(
+            [
+                ("remote_ref", "=", "archived_tweet"),
+                ("account_id", "=", self.SocialAccountX.id),
+            ]
+        )
+        self.assertEqual(lines, line, "The archived line is the one written.")
+        self.assertEqual(lines.message, "Archived tweet text")
+
     def test_the_timeline_values_carry_no_aggregated_figures(self):
         """What the import writes on the account is the page, not its totals."""
         response = MagicMock()

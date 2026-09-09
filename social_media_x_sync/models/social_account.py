@@ -200,6 +200,8 @@ class SocialAccount(models.Model):
                     post_accounts_by_tweet = PostAccount._by_remote_ref(
                         [str(val_x.id) for val_x in (response.data or []) if val_x.id],
                         account,
+                        sudo=True,
+                        active_test=False,
                     )
                     users = {
                         str(u.id): u for u in (response.includes.get("users", []) or [])

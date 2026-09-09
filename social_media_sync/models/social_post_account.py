@@ -351,6 +351,12 @@ class SocialPostAccount(models.Model):
         reconciling. It is a required parameter for that reason: a caller
         cannot forget what it does not choose to pass.
 
+        The two flags say what is being reconciled, and both bridges answer
+        the same: the archived publications count, and the lines are read past
+        the record rules. Anything left out is imported again under a second
+        line for the same publication, and the cron does not run as the user
+        responsible for the account.
+
         A reference answers one publication of the account; the first one wins
         if a database ever holds two.
 
