@@ -153,11 +153,6 @@ msgid "Account Remote Reference"
 msgstr "Referencia remota de la cuenta"
 
 #. module: social_media_base
-#: model:ir.model.fields,field_description:social_media_base.field_social_account__account_url
-msgid "Account Url"
-msgstr "URL de la cuenta"
-
-#. module: social_media_base
 #: model:ir.actions.act_window,name:social_media_base.social_account_action
 #: model:ir.ui.menu,name:social_media_base.social_account_menu
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_statistics_view_search
@@ -223,6 +218,12 @@ msgid "Add account"
 msgstr "Añadir cuenta"
 
 #. module: social_media_base
+#: model:ir.model.fields,help:social_media_base.field_social_account__web_url
+#: model:ir.model.fields,help:social_media_base.field_social_web_url_mixin__web_url
+msgid "Address of this record on the social media."
+msgstr "Dirección de este registro en la red social."
+
+#. module: social_media_base
 #: model:res.groups,name:social_media_base.group_social_media_manager
 msgid "Administrator"
 msgstr "Administrador"
@@ -273,7 +274,9 @@ msgstr ""
 msgid ""
 "Ask the social media again for the publications and the figures of these "
 "accounts, instead of waiting for the next automatic pass."
-msgstr "Vuelve a pedir a la red social las publicaciones y las cifras de estas cuentas, en lugar de esperar a la siguiente pasada automática."
+msgstr ""
+"Vuelve a pedir a la red social las publicaciones y las cifras de estas "
+"cuentas, en lugar de esperar a la siguiente pasada automática."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.wizard_social_account_view_form
@@ -309,7 +312,9 @@ msgstr "Autoriza a Odoo en una red social y vincula una de sus cuentas."
 msgid ""
 "Authorize Odoo on this social media and link one of its accounts. It opens "
 "the association wizard of the social media."
-msgstr "Autoriza a Odoo en esta red social y vincula una de sus cuentas. Abre el asistente de asociación de la red social."
+msgstr ""
+"Autoriza a Odoo en esta red social y vincula una de sus cuentas. Abre el "
+"asistente de asociación de la red social."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
@@ -325,7 +330,9 @@ msgstr ""
 msgid ""
 "Authorize this account again and refresh the keys and the token it publishes "
 "with. The account and its history are kept."
-msgstr "Vuelve a autorizar esta cuenta y renueva las claves y el token con los que publica. La cuenta y su historial se conservan."
+msgstr ""
+"Vuelve a autorizar esta cuenta y renueva las claves y el token con los que "
+"publica. La cuenta y su historial se conservan."
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_account__avatar_1920
@@ -357,7 +364,9 @@ msgstr "Avatar 512"
 msgid ""
 "Bring the post back to the lists it was taken out of. It publishes nothing "
 "by itself."
-msgstr "Devuelve la publicación a las listas de las que se sacó. Por sí solo no publica nada."
+msgstr ""
+"Devuelve la publicación a las listas de las que se sacó. Por sí solo no "
+"publica nada."
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__campaign_id
@@ -494,7 +503,9 @@ msgstr "Contenido para publicar en redes sociales"
 msgid ""
 "Create a post already linked to this marketing campaign, so what it "
 "publishes reports its clicks under it."
-msgstr "Crea una publicación ya vinculada a esta campaña de marketing, de modo que lo que publique registre sus clics bajo ella."
+msgstr ""
+"Crea una publicación ya vinculada a esta campaña de marketing, de modo que "
+"lo que publique registre sus clics bajo ella."
 
 #. module: social_media_base
 #: model_terms:ir.actions.act_window,help:social_media_base.social_post_action
@@ -703,7 +714,9 @@ msgstr "Icono de Font Awesome, por ejemplo fa-tasks"
 msgid ""
 "Give up on sending this post. It can only be cancelled while nothing has "
 "left for the social media, and it can be taken back to draft afterwards."
-msgstr "Renuncia a enviar esta publicación. Solo se puede cancelar mientras no haya salido nada hacia la red social, y después se puede devolver a borrador."
+msgstr ""
+"Renuncia a enviar esta publicación. Solo se puede cancelar mientras no haya "
+"salido nada hacia la red social, y después se puede devolver a borrador."
 
 #. module: social_media_base
 #: model_terms:ir.actions.act_window,help:social_media_base.social_account_action
@@ -713,7 +726,8 @@ msgid ""
 "                installed social media."
 msgstr ""
 "Ve a Configuración &gt; Redes sociales y usa\n"
-"                <b>Asociar cuenta</b> para vincular una cuenta de una de las\n"
+"                <b>Asociar cuenta</b> para vincular una cuenta de una de "
+"las\n"
 "                redes sociales instaladas."
 
 #. module: social_media_base
@@ -961,7 +975,9 @@ msgstr "Clic del rastreador de enlaces"
 msgid ""
 "Link the selected account with Odoo. From then on it can be published on, "
 "and its figures are brought in."
-msgstr "Vincula con Odoo la cuenta seleccionada. A partir de ese momento se puede publicar en ella y se traen sus cifras."
+msgstr ""
+"Vincula con Odoo la cuenta seleccionada. A partir de ese momento se puede "
+"publicar en ella y se traen sus cifras."
 
 #. module: social_media_base
 #. odoo-python
@@ -997,7 +1013,8 @@ msgstr ""
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
 msgid "Marketing campaigns the publications of this account report to."
-msgstr "Campañas de marketing a las que reportan las publicaciones de esta cuenta."
+msgstr ""
+"Campañas de marketing a las que reportan las publicaciones de esta cuenta."
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_account__media_id
@@ -1216,9 +1233,19 @@ msgid "Only enable this field if your credentials have changed"
 msgstr "Active este campo solo si sus credenciales han cambiado"
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid "Open account"
+msgstr "Abrir cuenta"
+
+#. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form
 msgid "Open publication"
 msgstr "Abrir publicación"
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid "Open this account on the social media, in a new tab."
+msgstr "Abre esta cuenta en la red social, en una pestaña nueva."
 
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form
@@ -1365,7 +1392,10 @@ msgid ""
 "Publish the post right away on the selected accounts, without waiting for "
 "the planned date. Only the publications still pending are sent: what already "
 "reached the social media is not sent twice."
-msgstr "Publica ya la publicación en las cuentas seleccionadas, sin esperar a la fecha planificada. Solo se envían las publicaciones pendientes: lo que ya llegó a la red social no se envía dos veces."
+msgstr ""
+"Publica ya la publicación en las cuentas seleccionadas, sin esperar a la "
+"fecha planificada. Solo se envían las publicaciones pendientes: lo que ya "
+"llegó a la red social no se envía dos veces."
 
 #. module: social_media_base
 #: model:ir.model.fields.selection,name:social_media_base.selection__social_post__state__published
@@ -1567,6 +1597,11 @@ msgid "Social Media Tracked Clicks"
 msgstr "Clics rastreados en redes sociales"
 
 #. module: social_media_base
+#: model:ir.model,name:social_media_base.model_social_web_url_mixin
+msgid "Social Media Web Address"
+msgstr "Dirección web en una red social"
+
+#. module: social_media_base
 #. odoo-javascript
 #: code:addons/social_media_base/static/src/js/views/fields/social_message_field.esm.js:0
 #, python-format
@@ -1638,7 +1673,9 @@ msgstr ""
 msgid ""
 "Take the post back to draft to work on it again. Nothing is sent to the "
 "social media, and nothing already published is withdrawn."
-msgstr "Devuelve la publicación a borrador para volver a trabajar en ella. No se envía nada a la red social ni se retira nada de lo ya publicado."
+msgstr ""
+"Devuelve la publicación a borrador para volver a trabajar en ella. No se "
+"envía nada a la red social ni se retira nada de lo ya publicado."
 
 #. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post_account__message
@@ -1648,7 +1685,12 @@ msgid ""
 "rewritten into a tracker of its own and the same post reads differently on "
 "every account. Publications imported from the social media have no post to "
 "read a message from either."
-msgstr "Texto que esta publicación envía a la red social, que no es el texto de su post: cada publicación lleva su propia fuente UTM, así que cada enlace se reescribe en un rastreador propio y el mismo post se lee distinto en cada cuenta. Las publicaciones importadas de la red social tampoco tienen un post del que leer un mensaje."
+msgstr ""
+"Texto que esta publicación envía a la red social, que no es el texto de su "
+"post: cada publicación lleva su propia fuente UTM, así que cada enlace se "
+"reescribe en un rastreador propio y el mismo post se lee distinto en cada "
+"cuenta. Las publicaciones importadas de la red social tampoco tienen un post "
+"del que leer un mensaje."
 
 #. module: social_media_base
 #. odoo-python
@@ -1705,7 +1747,9 @@ msgstr ""
 #: code:addons/social_media_base/models/social_media_base_mixin.py:0
 #, python-format
 msgid "The account could not be associated. Check the server log for details."
-msgstr "No se ha podido asociar la cuenta. Consulta el registro del servidor para ver los detalles."
+msgstr ""
+"No se ha podido asociar la cuenta. Consulta el registro del servidor para "
+"ver los detalles."
 
 #. module: social_media_base
 #. odoo-python
@@ -1742,7 +1786,10 @@ msgid ""
 "The credentials of the account expired and it has to be authorized again. It "
 "means that and nothing else; an account with publications left to import is "
 "marked with posts_need_import, in the synchronization module."
-msgstr "Las credenciales de la cuenta han caducado y hay que autorizarla otra vez. Significa eso y nada más; una cuenta con publicaciones pendientes de importar se marca con posts_need_import, en el módulo de sincronización."
+msgstr ""
+"Las credenciales de la cuenta han caducado y hay que autorizarla otra vez. "
+"Significa eso y nada más; una cuenta con publicaciones pendientes de "
+"importar se marca con posts_need_import, en el módulo de sincronización."
 
 #. module: social_media_base
 #. odoo-javascript
@@ -1794,6 +1841,8 @@ msgstr "No se ha podido enviar la publicación"
 
 #. module: social_media_base
 #. odoo-javascript
+#. odoo-python
+#: code:addons/social_media_base/models/social_post_account.py:0
 #: code:addons/social_media_base/static/src/js/views/kanban/social_kanban_record.esm.js:0
 #, python-format
 msgid "The post does not exist or has been deleted."
@@ -2136,6 +2185,12 @@ msgid "Videos"
 msgstr "Vídeos"
 
 #. module: social_media_base
+#: model:ir.model.fields,field_description:social_media_base.field_social_account__web_url
+#: model:ir.model.fields,field_description:social_media_base.field_social_web_url_mixin__web_url
+msgid "Web URL"
+msgstr "URL web"
+
+#. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post__message_info
 msgid ""
 "What a social media of the post is going to publish differently from what is "
@@ -2248,18 +2303,3 @@ msgstr "ver menos"
 #, python-format
 msgid "see more"
 msgstr "ver más"
-
-#~ msgid "Actor Urn"
-#~ msgstr "URN del actor"
-
-#~ msgid ""
-#~ "Go to Configuration &gt; Social Media and use\n"
-#~ "                <b>Associate account</b> to link your LinkedIn or X "
-#~ "account."
-#~ msgstr ""
-#~ "Vaya a Configuración &gt; Redes sociales y use\n"
-#~ "                <b>Asociar cuenta</b> para vincular su cuenta de LinkedIn "
-#~ "o de X."
-
-#~ msgid "Social Account Daily Statistics"
-#~ msgstr "Estadísticas diarias de la cuenta social"

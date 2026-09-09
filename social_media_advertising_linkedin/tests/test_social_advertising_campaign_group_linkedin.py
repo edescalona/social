@@ -152,3 +152,16 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
             with self.assertRaises(UserError):
                 group.action_archive_linkedin()
         self.assertNotEqual(group.stage_id.code, "ARCHIVED")
+
+    def test_web_url_points_to_the_group_in_the_campaign_manager(self):
+        group = self.SocialAdvertisingCampaignGroupLinkedin
+        group.advertising_account_id = self.AdvertisingAccountLinkedin
+        self.assertEqual(
+            group.web_url,
+            "https://www.linkedin.com/campaignmanager/accounts/999/"
+            "campaign-groups?campaignGroupIds=%5B%27456%27%5D",
+        )
+
+    def test_web_url_is_empty_without_an_advertising_account(self):
+        """Nothing to build the address from means no button at all."""
+        self.assertFalse(self.SocialAdvertisingCampaignGroupLinkedin.web_url)

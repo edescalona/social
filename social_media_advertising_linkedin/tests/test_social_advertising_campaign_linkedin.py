@@ -517,6 +517,19 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         )
         mock_request.assert_called_once()
 
+    def test_web_url_points_to_the_campaign_in_the_campaign_manager(self):
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = self.AdvertisingAccountLinkedin
+        self.assertEqual(
+            campaign.web_url,
+            "https://www.linkedin.com/campaignmanager/accounts/999/"
+            "campaigns?campaignIds=%5B%27001%27%5D",
+        )
+
+    def test_web_url_is_empty_without_an_advertising_account(self):
+        """Nothing to build the address from means no button at all."""
+        self.assertFalse(self.SocialAdvertisingCampaignLinkedin.web_url)
+
 
 class TestSocialStageLinkedin(TestSocialCommonAdvertisingLinkedin):
     """The stages LinkedIn writes back are module data that has to be there."""

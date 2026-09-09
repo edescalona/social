@@ -121,6 +121,22 @@ class TestSocialAdvertisingCampaign(TestSocialAdvertisingCommon):
             with self.env.cr.savepoint():
                 self.SocialAdvertisingCampaign.create(values)
 
+    def test_web_url_is_empty_without_a_connector(self):
+        self.assertFalse(self.campaign_id.web_url)
+        self.assertFalse(self.campaign_id.action_open_url())
+
+    def test_action_open_url(self):
+        with patch.object(
+            type(self.campaign_id),
+            "_get_web_url",
+            autospec=True,
+            return_value="https://example.test/campaign",
+        ):
+            action = self.campaign_id.action_open_url()
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertEqual(action["url"], "https://example.test/campaign")
+        self.assertEqual(action["target"], "new")
+
 
 @tagged("post_install", "-at_install")
 class TestSocialAdvertisingCampaignSecurity(TestSocialAdvertisingCommon):

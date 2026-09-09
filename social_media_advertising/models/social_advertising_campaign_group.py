@@ -8,7 +8,7 @@ class SocialAdvertisingCampaignGroup(models.Model):
     """Set of campaigns managed as a unit on the social media."""
 
     _name = "social.advertising.campaign.group"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "social.web.url.mixin"]
     _description = "Set of Campaigns Managed as a Unit on a Social Media"
     _order = "name"
 
@@ -96,6 +96,13 @@ class SocialAdvertisingCampaignGroup(models.Model):
         )
         for group in self:
             group.campaign_count = counts.get(group, 0)
+
+    @api.depends(
+        "remote_ref", "advertising_account_id.remote_ref", "media_id.media_type"
+    )
+    def _compute_web_url(self):
+        """Only declares what the address of a campaign group is built from."""
+        return super()._compute_web_url()
 
     def action_view_campaigns(self):
         """Open the campaigns linked to this campaign group."""

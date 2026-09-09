@@ -116,11 +116,6 @@ msgid ""
 msgstr ""
 
 #. module: social_media_linkedin_sync
-#: model:ir.model,name:social_media_linkedin_sync.model_social_media
-msgid "Social Media Supported by the System"
-msgstr ""
-
-#. module: social_media_linkedin_sync
 #: model:ir.model.fields,field_description:social_media_linkedin_sync.field_social_account__linkedin_statistics_checkpoint
 msgid "Statistics Checkpoint"
 msgstr ""

@@ -119,22 +119,31 @@ Mixins:
   `share_count` / `impression_count` and their sum. A connector counting something else
   (X: retweets, quotes) extends **the mixin**, not each model, and overrides
   `_interaction_count_fields()`.
+- `social.web.url.mixin` — the address a record has on its network: `web_url`, computed
+  and never stored, and the `action_open_url()` behind every "Open ..." smart button. A
+  connector only implements `_get_web_url()`, filtering on its own media type, and it
+  gets the button on every model that carries the mixin (`social.account`,
+  `social.advertising.account`, `social.advertising.campaign`,
+  `social.advertising.campaign.group`, `social.advertising.ad`). The model declares what
+  the address depends on by redeclaring `_compute_web_url` with its `@api.depends` and
+  chaining to `super()`.
 
 ## Connector contract
 
 Empty hooks in `social_media_base` that a connector fills:
 
-| Method                                                | On                    | Purpose                                                                                                      |
-| ----------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `social.media.action_open_account`                    | `social.media`        | return the association wizard action                                                                         |
-| `_action_post(post_id)`                               | `social.post.account` | publish on the network                                                                                       |
-| `validate_access_token`                               | `social.account`      | cheap token check from stored dates; `check_remote_token` in the context means the user asked for a real one |
-| `_refresh_credentials`                                | `social.account`      | renew the token                                                                                              |
-| `_snapshot_statistics(date_from, date_to)`            | `social.account`      | write daily rows, only if the API reports per-day figures                                                    |
-| `_refresh_statistics` / `_backfill_statistics(force)` | `social.account`      | rewrite the last days / fill the series as far back as the API goes                                          |
-| `_on_account_associated`                              | `social.account`      | base refreshes figures and backfills; `social_media_sync` extends it to queue the import                     |
-| `_run_check_media_updates`                            | `social.account`      | periodic check                                                                                               |
-| `_check_remote_post_exists`                           | `social.post.account` | whether the publication is still online; fail open — `False` only when the network said it is gone           |
+| Method                                                | On                                    | Purpose                                                                                                      |
+| ----------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `social.media.action_open_account`                    | `social.media`                        | return the association wizard action                                                                         |
+| `_action_post(post_id)`                               | `social.post.account`                 | publish on the network                                                                                       |
+| `validate_access_token`                               | `social.account`                      | cheap token check from stored dates; `check_remote_token` in the context means the user asked for a real one |
+| `_refresh_credentials`                                | `social.account`                      | renew the token                                                                                              |
+| `_snapshot_statistics(date_from, date_to)`            | `social.account`                      | write daily rows, only if the API reports per-day figures                                                    |
+| `_refresh_statistics` / `_backfill_statistics(force)` | `social.account`                      | rewrite the last days / fill the series as far back as the API goes                                          |
+| `_on_account_associated`                              | `social.account`                      | base refreshes figures and backfills; `social_media_sync` extends it to queue the import                     |
+| `_run_check_media_updates`                            | `social.account`                      | periodic check                                                                                               |
+| `_check_remote_post_exists`                           | `social.post.account`                 | whether the publication is still online; fail open — `False` only when the network said it is gone           |
+| `_get_web_url`                                        | any model with `social.web.url.mixin` | address of the record on the network, `""` when there is none                                                |
 
 `_write_statistics_rows()` is the **only** place the series is written (it does the
 upsert the `unique (account_id, date)` constraint needs, in `sudo()`); connectors hand

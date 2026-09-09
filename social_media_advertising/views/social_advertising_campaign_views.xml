@@ -43,6 +43,17 @@
                     />
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            type="object"
+                            name="action_open_url"
+                            class="oe_stat_button"
+                            icon="fa-external-link"
+                            string="Open campaign"
+                            invisible="not web_url"
+                            title="Open this campaign on the social media, in a new tab."
+                        />
+                    </div>
                     <div class="oe_title">
                         <label for="name" />
                         <h1>
@@ -74,6 +85,7 @@
                                 invisible="not advertising_account_id"
                             />
                             <field name="remote_ref" invisible="1" />
+                            <field name="web_url" invisible="1" />
                             <field name="active" invisible="1" />
                         </group>
                     </group>

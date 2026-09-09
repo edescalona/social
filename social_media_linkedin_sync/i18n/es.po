@@ -130,11 +130,6 @@ msgstr ""
 "y la acción planificada ya lo hace cada semana por su cuenta."
 
 #. module: social_media_linkedin_sync
-#: model:ir.model,name:social_media_linkedin_sync.model_social_media
-msgid "Social Media Supported by the System"
-msgstr "Red social admitida por el sistema"
-
-#. module: social_media_linkedin_sync
 #: model:ir.model.fields,field_description:social_media_linkedin_sync.field_social_account__linkedin_statistics_checkpoint
 msgid "Statistics Checkpoint"
 msgstr "Punto de control de estadísticas"
@@ -174,7 +169,11 @@ msgid ""
 "as of the last time the publications were imported. The check for updates "
 "compares the page against it instead of reading the statistics of every "
 "publication."
-msgstr "Cifras diarias que LinkedIn informó de toda la página durante los últimos días, tal como estaban la última vez que se importaron las publicaciones. La comprobación de novedades compara la página contra ellas en lugar de leer las estadísticas de cada publicación."
+msgstr ""
+"Cifras diarias que LinkedIn informó de toda la página durante los últimos "
+"días, tal como estaban la última vez que se importaron las publicaciones. La "
+"comprobación de novedades compara la página contra ellas en lugar de leer "
+"las estadísticas de cada publicación."
 
 #. module: social_media_linkedin_sync
 #. odoo-python
@@ -206,7 +205,11 @@ msgid ""
 "The scopes the token of this account was not granted and the import of its "
 "history needs. A token keeps the scopes it was issued with, so an account "
 "associated before this module was installed has to be authorized again."
-msgstr "Permisos que no se concedieron al token de esta cuenta y que necesita la importación de su historial. Un token conserva los permisos con los que se emitió, así que una cuenta asociada antes de instalar este módulo hay que autorizarla de nuevo."
+msgstr ""
+"Permisos que no se concedieron al token de esta cuenta y que necesita la "
+"importación de su historial. Un token conserva los permisos con los que se "
+"emitió, así que una cuenta asociada antes de instalar este módulo hay que "
+"autorizarla de nuevo."
 
 #. module: social_media_linkedin_sync
 #. odoo-python
@@ -255,7 +258,10 @@ msgid ""
 "Whether the responsible user was already told that this account has to be "
 "authorized again before its history can be imported. Kept so the check that "
 "runs every two hours warns once and not on every pass."
-msgstr "Indica si ya se avisó al usuario responsable de que hay que autorizar de nuevo esta cuenta para poder importar su historial. Se guarda para que la comprobación que corre cada dos horas avise una vez y no en cada pasada."
+msgstr ""
+"Indica si ya se avisó al usuario responsable de que hay que autorizar de "
+"nuevo esta cuenta para poder importar su historial. Se guarda para que la "
+"comprobación que corre cada dos horas avise una vez y no en cada pasada."
 
 #. module: social_media_linkedin_sync
 #. odoo-python
@@ -291,36 +297,3 @@ msgstr "Ya ha reaccionado a esta publicación."
 #, python-format
 msgid "history unavailable"
 msgstr "histórico no disponible"
-
-#~ msgid ""
-#~ "Technical field: the daily figures LinkedIn reported for the whole page "
-#~ "over the last days, as of the last time the publications were imported. "
-#~ "The check for updates compares the page against it instead of reading the "
-#~ "statistics of every publication."
-#~ msgstr ""
-#~ "Campo técnico: las cifras diarias que LinkedIn reportó para toda la "
-#~ "página durante los últimos días, en el momento de la última importación "
-#~ "de las publicaciones. La comprobación de novedades compara la página con "
-#~ "ellas en lugar de leer las estadísticas de cada publicación."
-
-#~ msgid ""
-#~ "Technical field: the scopes the token of this account was not granted and "
-#~ "the import of its history needs. A token keeps the scopes it was issued "
-#~ "with, so an account associated before this module was installed has to be "
-#~ "authorized again."
-#~ msgstr ""
-#~ "Campo técnico: los permisos que no se concedieron al token de esta cuenta "
-#~ "y que necesita la importación de su histórico. Un token conserva los "
-#~ "permisos con los que se emitió, por lo que una cuenta asociada antes de "
-#~ "instalar este módulo tiene que autorizarse de nuevo."
-
-#~ msgid ""
-#~ "Technical field: whether the responsible user was already told that this "
-#~ "account has to be authorized again before its history can be imported. "
-#~ "Kept so the check that runs every two hours warns once and not on every "
-#~ "pass."
-#~ msgstr ""
-#~ "Campo técnico: indica si ya se avisó al usuario responsable de que esta "
-#~ "cuenta tiene que autorizarse de nuevo antes de poder importar su "
-#~ "histórico. Se conserva para que la comprobación que se ejecuta cada dos "
-#~ "horas avise una sola vez y no en cada pasada."

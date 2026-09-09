@@ -128,11 +128,6 @@ msgid "Account Remote Reference"
 msgstr ""
 
 #. module: social_media_base
-#: model:ir.model.fields,field_description:social_media_base.field_social_account__account_url
-msgid "Account Url"
-msgstr ""
-
-#. module: social_media_base
 #: model:ir.actions.act_window,name:social_media_base.social_account_action
 #: model:ir.ui.menu,name:social_media_base.social_account_menu
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_account_statistics_view_search
@@ -195,6 +190,12 @@ msgstr ""
 #: code:addons/social_media_base/static/src/js/views/kanban/kanban_buttons.xml:0
 #, python-format
 msgid "Add account"
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model.fields,help:social_media_base.field_social_account__web_url
+#: model:ir.model.fields,help:social_media_base.field_social_web_url_mixin__web_url
+msgid "Address of this record on the social media."
 msgstr ""
 
 #. module: social_media_base
@@ -1149,8 +1150,18 @@ msgid "Only enable this field if your credentials have changed"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid "Open account"
+msgstr ""
+
+#. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form
 msgid "Open publication"
+msgstr ""
+
+#. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_account_view_form
+msgid "Open this account on the social media, in a new tab."
 msgstr ""
 
 #. module: social_media_base
@@ -1489,6 +1500,11 @@ msgstr ""
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_utm_campaign__social_link_click_count
 msgid "Social Media Tracked Clicks"
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model,name:social_media_base.model_social_web_url_mixin
+msgid "Social Media Web Address"
 msgstr ""
 
 #. module: social_media_base
@@ -2005,6 +2021,12 @@ msgstr ""
 #. module: social_media_base
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form
 msgid "Videos"
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model.fields,field_description:social_media_base.field_social_account__web_url
+#: model:ir.model.fields,field_description:social_media_base.field_social_web_url_mixin__web_url
+msgid "Web URL"
 msgstr ""
 
 #. module: social_media_base

@@ -8,7 +8,7 @@ class SocialAdvertisingCampaign(models.Model):
     """Campaign used to promote the posts of a social media account."""
 
     _name = "social.advertising.campaign"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "social.web.url.mixin"]
     _description = "Campaign Promoting the Posts of a Social Media Account"
     _order = "name"
 
@@ -109,6 +109,13 @@ class SocialAdvertisingCampaign(models.Model):
                 if media_type and campaign.name
                 else campaign.name
             )
+
+    @api.depends(
+        "remote_ref", "advertising_account_id.remote_ref", "media_id.media_type"
+    )
+    def _compute_web_url(self):
+        """Only declares what the address of a campaign is built from."""
+        return super()._compute_web_url()
 
     def _available_campaign(self):
         """Return the media types allowed on a campaign.

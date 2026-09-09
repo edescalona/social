@@ -6,6 +6,7 @@ from odoo.exceptions import UserError, ValidationError
 
 from ..social_advertising_linkedin_utils import (
     _ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN,
+    campaign_manager_url_linkedin,
     linkedin_urn_id,
     run_schedule_window_linkedin,
 )
@@ -112,6 +113,19 @@ class SocialAdvertisingCampaignGroup(models.Model):
                         total_budget=group.total_budget,
                     )
                 )
+
+    def _get_web_url(self):
+        self.ensure_one()
+        if self.media_type != "linkedin" or not (
+            self.remote_ref and self.advertising_account_id.remote_ref
+        ):
+            return super()._get_web_url()
+        return campaign_manager_url_linkedin(
+            self.advertising_account_id.remote_ref,
+            "campaign-groups",
+            "campaignGroupIds",
+            self.remote_ref,
+        )
 
     def _get_linkedin_account(self):
         """Return the social account used to call the LinkedIn API.

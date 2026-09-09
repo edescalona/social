@@ -1,6 +1,8 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from unittest.mock import patch
+
 import psycopg2
 
 from odoo.tools import mute_logger
@@ -111,3 +113,19 @@ class TestSocialAdvertisingCampaignGroup(TestSocialAdvertisingCommon):
                 []
             ),
         )
+
+    def test_web_url_is_empty_without_a_connector(self):
+        self.assertFalse(self.campaign_group_id.web_url)
+        self.assertFalse(self.campaign_group_id.action_open_url())
+
+    def test_action_open_url(self):
+        with patch.object(
+            type(self.campaign_group_id),
+            "_get_web_url",
+            autospec=True,
+            return_value="https://example.test/group",
+        ):
+            action = self.campaign_group_id.action_open_url()
+        self.assertEqual(action["type"], "ir.actions.act_url")
+        self.assertEqual(action["url"], "https://example.test/group")
+        self.assertEqual(action["target"], "new")
