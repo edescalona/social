@@ -621,24 +621,13 @@ class SocialPostAccount(models.Model):
             self._anchor_media_attachments()
         return res
 
-    def _anchor_media_attachments(self):
-        """Attach the downloaded medias to their publication.
+    def _media_attachments_to_skip(self):
+        """The medias shared with the post belong to the post.
 
-        They are created together with it, so they end up with an empty
-        ``res_id``: in that state only the administrators can read them and
-        everybody else gets a placeholder instead of the image.
+        The publication only owns what it downloaded from the social media
+        itself.
 
-        The medias shared with the post belong to the post and are left
-        alone: the publication only owns what it downloaded from the social
-        media itself.
+        :rtype: recordset of ``ir.attachment``
         """
-        for post_account in self:
-            shared = post_account.post_id.image_ids | post_account.post_id.video_ids
-            attachments = (post_account.image_ids | post_account.video_ids).filtered(
-                lambda attachment, shared=shared: not attachment.res_id
-                and attachment not in shared
-            )
-            if attachments:
-                attachments.sudo().write(
-                    {"res_model": post_account._name, "res_id": post_account.id}
-                )
+        self.ensure_one()
+        return self.post_id.image_ids | self.post_id.video_ids

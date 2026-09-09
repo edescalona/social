@@ -246,12 +246,9 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
         self.assertTrue(self.social_post_account_id.active)
 
     def test_compute_account_url(self):
-        fake_fields = [
-            (
-                "other_social",
-                "https://www.failed.com/company/id1234account/admin",
-            )
-        ]
+        fake_fields = {
+            "other_social": "https://www.failed.com/company/id1234account/admin"
+        }
         field = self.social_media_id._fields["media_type"]
         with patch.object(
             type(self.social_account_id),
@@ -270,24 +267,14 @@ class TestSocialAccountBase(TestSocialMediaBaseCommon):
             )
 
     def test_compute_account_url_failed(self):
-        fake_failed_fields = [
-            ("other_social", "https://www.failed.com/company/2333/admin")
-        ]
+        fake_failed_fields = {
+            "other_social": "https://www.failed.com/company/2333/admin"
+        }
         with patch.object(
             type(self.social_account_id),
             "_fields_account_url",
             autospec=True,
             return_value=fake_failed_fields,
-        ):
-            self.assertFalse(self.social_account_id.account_url)
-
-    def test_compute_account_url_failed_continue(self):
-        fake_failed_continue = ["Y"]
-        with patch.object(
-            type(self.social_account_id),
-            "_fields_account_url",
-            autospec=True,
-            return_value=fake_failed_continue,
         ):
             self.assertFalse(self.social_account_id.account_url)
 

@@ -25,22 +25,45 @@ export class SocialAccount extends Component {
             this._updateStateFromAccounts(nextProps.socialAccounts)
         );
         useBus(this.env.bus, "SOCIAL:NEED-UPDATE", async ({detail: data}) => {
-            // The message only speaks of the accounts it names: a user may be
-            // responsible for several, and one of them being authorized again
-            // says nothing about the others.
-            const named = data.accounts ?? [];
-            const kept = this.state.accountsNeedingUpdate.filter(
-                (item) => !named.some((account) => account.id === item.id)
-            );
-            this.state.accountsNeedingUpdate = data.needUpdate
-                ? kept.concat(named)
-                : kept;
+            this._mergeNotifiedAccounts("accountsNeedingUpdate", data);
         });
     }
 
     _updateStateFromAccounts(socialAccounts) {
-        this.state.accountsNeedingUpdate = socialAccounts
-            .filter((item) => item.need_update)
+        this.state.accountsNeedingUpdate = this._flaggedAccounts(
+            socialAccounts,
+            "need_update"
+        );
+    }
+
+    /**
+     * Merge into a notice the accounts a bus message names.
+     *
+     * The message only speaks of the accounts it names: a user may be
+     * responsible for several, and one of them being authorized again — or
+     * imported — says nothing about the others.
+     *
+     * @param {String} key entry of the state holding the notice.
+     * @param {Object} data payload of the bus message.
+     */
+    _mergeNotifiedAccounts(key, data) {
+        const named = data.accounts ?? [];
+        const kept = this.state[key].filter(
+            (item) => !named.some((account) => account.id === item.id)
+        );
+        this.state[key] = data.needUpdate ? kept.concat(named) : kept;
+    }
+
+    /**
+     * The accounts of the bar whose flag is set, as entries of a notice.
+     *
+     * @param {Object[]} socialAccounts the accounts the bar draws.
+     * @param {String} flag field the notice is raised on.
+     * @returns {Object[]}
+     */
+    _flaggedAccounts(socialAccounts, flag) {
+        return socialAccounts
+            .filter((item) => item[flag])
             .map((item) => ({
                 id: item.id,
                 name: item.name,
@@ -49,18 +72,22 @@ export class SocialAccount extends Component {
     }
 
     /**
-     * The flagged accounts as one readable list.
+     * The accounts of a notice as one readable list.
      *
      * A single warning naming all of them instead of one warning per account:
      * a user responsible for a dozen accounts would otherwise get a dozen
      * banners pushing the dashboard off the screen.
      *
+     * @param {String} key entry of the state holding the notice.
      * @returns {String}
      */
+    _accountsLabel(key) {
+        return this.state[key].map((item) => `[${item.media}] ${item.name}`).join(", ");
+    }
+
+    /** The accounts with expired credentials, as one readable list. */
     get accountsNeedingUpdateLabel() {
-        return this.state.accountsNeedingUpdate
-            .map((item) => `[${item.media}] ${item.name}`)
-            .join(", ");
+        return this._accountsLabel("accountsNeedingUpdate");
     }
 
     /**

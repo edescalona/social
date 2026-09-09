@@ -4,7 +4,7 @@ import {SocialCommentDialog} from "@social_media_sync/components/social_comment_
 import {SocialKanbanRecord} from "@social_media_base/js/views/kanban/social_kanban_record.esm";
 import {_t} from "@web/core/l10n/translation";
 import {patch} from "@web/core/utils/patch";
-import {useEffect} from "@odoo/owl";
+import {useDelegatedClick} from "@social_media_base/js/app/social_delegated_click.esm";
 import {useService} from "@web/core/utils/hooks";
 
 /**
@@ -32,30 +32,15 @@ patch(SocialKanbanRecord.prototype, {
             comments: [],
         };
 
-        useEffect(
-            (value) => {
-                if (value) {
-                    const listener = this.onLikePost.bind(this);
-                    value.addEventListener("click", listener);
-                    return () => {
-                        value.removeEventListener("click", listener);
-                    };
-                }
-            },
-            () => [this.rootRef.el.querySelector(".social-like-post")]
+        useDelegatedClick(
+            this.rootRef,
+            ".social-like-post",
+            this.onLikePost.bind(this)
         );
-
-        useEffect(
-            (value) => {
-                if (value) {
-                    const listener = this.onPostComment.bind(this);
-                    value.addEventListener("click", listener);
-                    return () => {
-                        value.removeEventListener("click", listener);
-                    };
-                }
-            },
-            () => [this.rootRef.el.querySelector(".social-post-comment")]
+        useDelegatedClick(
+            this.rootRef,
+            ".social-post-comment",
+            this.onPostComment.bind(this)
         );
     },
 
@@ -102,7 +87,7 @@ patch(SocialKanbanRecord.prototype, {
 
     onPostComment(ev) {
         ev.stopPropagation();
-        this.dialogService.add(SocialCommentDialog, {
+        this.dialog.add(SocialCommentDialog, {
             title: _t("Comments"),
             account: this.record.account_id,
             post: this.record,

@@ -9,8 +9,6 @@ export class SocialKanbanRecord extends SocialPostAccountMixin(KanbanRecord) {
     /** @override */
     setup() {
         super.setup();
-        this.record.countShowImage = 2;
-        this.dialogService = useService("dialog");
         this.orm = useService("orm");
         this.messageNotExistPost = _t("The post does not exist or has been deleted.");
         this.bindShowAllImages();

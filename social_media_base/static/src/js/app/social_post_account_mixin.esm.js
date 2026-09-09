@@ -1,7 +1,7 @@
 /** @odoo-module */
 import {SocialImageDialog} from "../../components/social_image_dialog/social_image_dialog.esm";
 import {_t} from "@web/core/l10n/translation";
-import {useEffect} from "@odoo/owl";
+import {useDelegatedClick} from "./social_delegated_click.esm";
 
 /**
  * The nodes of a card that open the gallery: the counter of the medias the
@@ -9,40 +9,35 @@ import {useEffect} from "@odoo/owl";
  */
 const SHOW_ALL_IMAGES_SELECTOR = ".social-all-images, .social-post-images";
 
+/** How many medias a card draws before offering the gallery. */
+export const SHOWN_IMAGE_COUNT = 2;
+
 export const SocialPostAccountMixin = (T) =>
     class extends T {
+        /** @override */
+        setup() {
+            super.setup();
+            // Written on the record and not read from the component: the
+            // arch of a kanban card is compiled without its members.
+            this.record.countShowImage = SHOWN_IMAGE_COUNT;
+        }
+
         /**
          * Open the gallery from every node of the card that offers it.
-         *
-         * A kanban card is compiled with a context of its own, where a
-         * `t-on-click` cannot reach the methods of the component, so the
-         * listener is bound by hand. It is bound on **all** the nodes and not
-         * on the first one found: a card with more medias than it draws has
-         * two, and binding only the first left the images themselves opening
-         * the publication on the social media instead of the gallery.
          *
          * Call it from `setup`: it installs a hook.
          */
         bindShowAllImages() {
-            useEffect(
-                (...elements) => {
-                    const listener = this.onShowAllImages.bind(this);
-                    for (const element of elements) {
-                        element.addEventListener("click", listener);
-                    }
-                    return () => {
-                        for (const element of elements) {
-                            element.removeEventListener("click", listener);
-                        }
-                    };
-                },
-                () => [...this.rootRef.el.querySelectorAll(SHOW_ALL_IMAGES_SELECTOR)]
+            useDelegatedClick(
+                this.rootRef,
+                SHOW_ALL_IMAGES_SELECTOR,
+                this.onShowAllImages.bind(this)
             );
         }
 
         onShowAllImages(ev) {
             ev.stopPropagation();
-            this.dialogService.add(SocialImageDialog, {
+            this.dialog.add(SocialImageDialog, {
                 title: _t("All Images"),
                 images: JSON.parse(this.record.image_urls.raw_value),
                 fullscreen: true,

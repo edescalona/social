@@ -25,16 +25,7 @@ patch(SocialAccount.prototype, {
             this.state.syncing = data.syncing;
         });
         useBus(this.env.bus, "SOCIAL:POSTS-NEED-IMPORT", async ({detail: data}) => {
-            // The message only speaks of the accounts it names: a user may be
-            // responsible for several, and one of them being imported says
-            // nothing about the others.
-            const named = data.accounts ?? [];
-            const kept = this.state.accountsNeedingImport.filter(
-                (item) => !named.some((account) => account.id === item.id)
-            );
-            this.state.accountsNeedingImport = data.needUpdate
-                ? kept.concat(named)
-                : kept;
+            this._mergeNotifiedAccounts("accountsNeedingImport", data);
         });
     },
 
@@ -42,27 +33,14 @@ patch(SocialAccount.prototype, {
     _updateStateFromAccounts(socialAccounts) {
         super._updateStateFromAccounts(socialAccounts);
         this.state.syncing = socialAccounts.some((item) => item.pending_initial_sync);
-        this.state.accountsNeedingImport = socialAccounts
-            .filter((item) => item.posts_need_import)
-            .map((item) => ({
-                id: item.id,
-                name: item.name,
-                media: item.media_id ? item.media_id[1] : "",
-            }));
+        this.state.accountsNeedingImport = this._flaggedAccounts(
+            socialAccounts,
+            "posts_need_import"
+        );
     },
 
-    /**
-     * The accounts with publications to import, as one readable list.
-     *
-     * The twin of `accountsNeedingUpdateLabel` in base, and it groups them
-     * for the same reason: a user responsible for a dozen accounts would
-     * otherwise get a dozen notices pushing the dashboard off the screen.
-     *
-     * @returns {String}
-     */
+    /** The accounts with publications to import, as one readable list. */
     get accountsNeedingImportLabel() {
-        return this.state.accountsNeedingImport
-            .map((item) => `[${item.media}] ${item.name}`)
-            .join(", ");
+        return this._accountsLabel("accountsNeedingImport");
     },
 });

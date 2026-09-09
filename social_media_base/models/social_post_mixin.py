@@ -51,6 +51,38 @@ class SocialPostMixin(models.AbstractModel):
         help="URL of each video of this record, in the order they were added.",
     )
 
+    def _media_attachments_to_skip(self):
+        """Return the medias this record must not claim as its own.
+
+        Empty here: a post owns every media it carries. A publication
+        overrides it with the ones it shares with its post.
+
+        :rtype: recordset of ``ir.attachment``
+        """
+        return self.env["ir.attachment"]
+
+    def _anchor_media_attachments(self):
+        """Attach the medias of these records to them.
+
+        The upload widget stores them while the record has no id yet, and the
+        import creates them together with the publication, so they end up
+        with an empty ``res_id``: in that state only the administrators can
+        read them and everybody else gets a placeholder instead of the image.
+
+        What the record does not own is left alone, which is what
+        :meth:`~._media_attachments_to_skip` answers.
+        """
+        for record in self:
+            shared = record._media_attachments_to_skip()
+            attachments = (record.image_ids | record.video_ids).filtered(
+                lambda attachment, shared=shared: not attachment.res_id
+                and attachment not in shared
+            )
+            if attachments:
+                attachments.sudo().write(
+                    {"res_model": record._name, "res_id": record.id}
+                )
+
     @staticmethod
     def _sorted_medias(attachments):
         """Return the attachments in the order the user added them.

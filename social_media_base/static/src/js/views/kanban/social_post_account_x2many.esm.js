@@ -6,15 +6,12 @@ import {KanbanRenderer} from "@web/views/kanban/kanban_renderer";
 import {SocialMessage} from "@social_media_base/components/social_message/social_message.esm";
 import {SocialPostAccountMixin} from "@social_media_base/js/app/social_post_account_mixin.esm";
 import {registry} from "@web/core/registry";
-import {useService} from "@web/core/utils/hooks";
 
 /** Read only card of a publication embedded in the post form. */
 export class SocialPostAccountRecord extends SocialPostAccountMixin(KanbanRecord) {
     /** @override */
     setup() {
         super.setup();
-        this.record.countShowImage = 2;
-        this.dialogService = useService("dialog");
         this.bindShowAllImages();
     }
 }

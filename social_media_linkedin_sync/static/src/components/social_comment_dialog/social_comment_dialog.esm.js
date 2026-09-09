@@ -4,11 +4,15 @@ import {SocialCommentDialog} from "@social_media_sync/components/social_comment_
 import {patch} from "@web/core/utils/patch";
 
 patch(SocialCommentDialog.prototype, {
-    _commentAllowUpload() {
-        const result = super._commentAllowUpload();
+    /**
+     * LinkedIn takes no image on a comment.
+     *
+     * @override
+     */
+    get commentAllowUpload() {
         if (this.props.media_type.raw_value === "linkedin") {
             return false;
         }
-        return result;
+        return super.commentAllowUpload;
     },
 });

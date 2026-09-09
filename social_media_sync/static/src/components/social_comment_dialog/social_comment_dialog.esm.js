@@ -290,12 +290,9 @@ export class SocialCommentDialog extends Component {
         return true;
     }
 
-    _commentAllowUpload() {
-        return true;
-    }
-
+    /** Whether the composer of this social media takes an attachment. */
     get commentAllowUpload() {
-        return this._commentAllowUpload();
+        return true;
     }
 
     /**

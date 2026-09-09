@@ -104,16 +104,44 @@ class SocialMediaBaseMixin(models.AbstractModel):
                 social_name=social_name,
                 account_name=account_name,
             )
+        message_type, message = self._prepare_user_notification(
+            notif_type,
+            notif_message,
+            media=media,
+            social_name=social_name,
+            account_name=account_name,
+        )
+        if message:
+            self._notify_user_session(message, message_type=message_type)
+
+    def _prepare_user_notification(
+        self,
+        notif_type,
+        notif_message,
+        media=False,
+        social_name=False,
+        account_name=False,
+    ):
+        """Return the type and the message the two channels send.
+
+        The bus and the session say the same thing; what differs is how it
+        travels.
+
+        :param notif_type: bus notification type, ``danger`` by default.
+        :param notif_message: the message to display to the user.
+        :param media: media type to prefix the message with.
+        :param social_name: social media name to append to the media type.
+        :param account_name: account name shown instead of the media name.
+        :rtype: tuple
+        """
         message_type = notif_type.split("_")[-1] if notif_type else "danger"
-        message = self._format_user_notification(
+        return message_type, self._format_user_notification(
             notif_message,
             media=media,
             social_name=social_name,
             account_name=account_name,
             message_type=message_type,
         )
-        if message:
-            self._notify_user_session(message, message_type=message_type)
 
     def _format_user_notification(
         self,
@@ -172,15 +200,13 @@ class SocialMediaBaseMixin(models.AbstractModel):
         :param social_name: social media name to append to the media type.
         :param account_name: account name shown instead of the media name.
         """
-        message_type = notif_type.split("_")[-1] if notif_type else "danger"
-        message = self._format_user_notification(
+        message_type, message = self._prepare_user_notification(
+            notif_type,
             notif_message,
             media=media,
             social_name=social_name,
             account_name=account_name,
-            message_type=message_type,
         )
-
         if message:
             self.env["bus.bus"]._sendone(
                 target or self.env.user.partner_id,

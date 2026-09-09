@@ -487,24 +487,20 @@ class SocialAccount(models.Model):
             )
 
     def _fields_account_url(self):
-        """Return the account URLs as ``(media_type, url)`` tuples.
+        """Return the account URL of each media type, keyed by media type.
 
-        Each connector module appends its own.
+        Each connector module adds its own.
 
-        :rtype: list
+        :rtype: dict
         """
-        return []
+        return {}
 
     @api.depends("media_type", "remote_ref", "username")
     def _compute_account_url(self):
         for account in self:
-            account.account_url = ""
-            for val_url in account._fields_account_url():
-                if len(val_url) < 2:
-                    continue
-                if account.media_type == val_url[0]:
-                    account.account_url = val_url[1]
-                    break
+            account.account_url = account._fields_account_url().get(
+                account.media_type, ""
+            )
 
     def compute_dashboard_statistics(self):
         """Recompute the figures the dashboard shows, without asking anybody.

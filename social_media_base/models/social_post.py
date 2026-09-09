@@ -218,21 +218,6 @@ class SocialPost(models.Model):
         lines.unlink()
         return super().unlink()
 
-    def _anchor_media_attachments(self):
-        """Attach the medias of the post to it.
-
-        The upload widget stores them while the post has no id yet, so they
-        end up with an empty ``res_id``: in that state only the administrators
-        can read them and everybody else gets a placeholder instead of the
-        image.
-        """
-        for post in self:
-            attachments = (post.image_ids | post.video_ids).filtered(
-                lambda attachment: not attachment.res_id
-            )
-            if attachments:
-                attachments.sudo().write({"res_model": post._name, "res_id": post.id})
-
     def _get_locked_content_fields(self):
         """Return the fields frozen once the post reached a social media.
 

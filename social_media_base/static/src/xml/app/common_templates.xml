@@ -77,26 +77,11 @@
         </div>
     </t>
 
+    <!-- The same gallery, drawn where the methods of the component *are*
+         reachable: the click is bound here instead of by hand. -->
     <t t-name="social_media_base.postDialogAccountImages">
-        <div
-            t-on-click="onShowAllImages"
-            t-if="images.length > record.countShowImage"
-            class="row h-auto social-all-images"
-        >
-            <span class="btn btn-md active" role="button">
-                                        +                <t
-                    t-esc="images.length - record.countShowImage"
-                />
-            </span>
-        </div>
-
-        <div class="row pt-2 h-auto">
-            <div
-                t-on-click="onShowAllImages"
-                t-attf-class="col-12 social-post-images cursor-pointer"
-            >
-                <t t-call="social_media_base.Images" />
-            </div>
+        <div t-on-click="onShowAllImages">
+            <t t-call="social_media_base.postAccountImages" />
         </div>
     </t>
 

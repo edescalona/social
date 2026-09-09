@@ -75,13 +75,13 @@ class SocialAccount(models.Model):
     )
 
     def _fields_account_url(self):
-        return super()._fields_account_url() + [
-            (
-                "linkedin",
+        return {
+            **super()._fields_account_url(),
+            "linkedin": (
                 "https://www.linkedin.com/company/"
-                f"{self.linkedin_account_id}/admin/dashboard/",
-            )
-        ]
+                f"{self.linkedin_account_id}/admin/dashboard/"
+            ),
+        }
 
     @api.depends("remote_ref", "media_type")
     def _compute_linkedin_account_id(self):

@@ -78,12 +78,7 @@ class SocialAccount(models.Model):
         )
 
     def _fields_account_url(self):
-        return super()._fields_account_url() + [
-            (
-                "x",
-                f"{_URL_X}{self.username}",
-            )
-        ]
+        return {**super()._fields_account_url(), "x": f"{_URL_X}{self.username}"}
 
     def _valid_time_request(self, endpoint):
         """Return whether the rate limit window of the endpoint is already over.
