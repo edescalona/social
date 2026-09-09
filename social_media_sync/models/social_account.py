@@ -3,9 +3,9 @@
 
 import json
 import logging
+from datetime import timedelta
 
 import psycopg2
-from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
@@ -255,7 +255,7 @@ class SocialAccount(models.Model):
         cron = self.env.ref("social_media_sync.initial_sync_account_job")
         cron.sudo()._trigger(
             at=fields.Datetime.now()
-            + relativedelta(seconds=INITIAL_SYNC_TRIGGER_DELAY_SECONDS)
+            + timedelta(seconds=INITIAL_SYNC_TRIGGER_DELAY_SECONDS)
         )
 
     @api.model
@@ -294,7 +294,7 @@ class SocialAccount(models.Model):
         )
         cron.sudo()._trigger(
             at=fields.Datetime.now()
-            + relativedelta(minutes=INITIAL_SYNC_RETRY_DELAY_MINUTES)
+            + timedelta(minutes=INITIAL_SYNC_RETRY_DELAY_MINUTES)
         )
 
     def _close_initial_sync(self, error=None):

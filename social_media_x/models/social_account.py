@@ -7,6 +7,7 @@ import itertools
 import logging
 import time
 from datetime import datetime
+from urllib.parse import parse_qsl
 
 import pytz
 import requests
@@ -91,18 +92,12 @@ class SocialAccount(models.Model):
             module knows only the ones it calls.
         :rtype: bool
         """
-        timezone = pytz.timezone(self.env.user.tz or "UTC")
-        now = datetime.now(timezone).replace(tzinfo=None)
         limit_reset = (
             self.rate_limit_endpoint.get(endpoint, {}).get("x-rate-limit-reset", False)
             if self.rate_limit_endpoint
             else None
         )
-        if (
-            limit_reset
-            and datetime.fromtimestamp(limit_reset, tz=timezone).replace(tzinfo=None)
-            >= now
-        ):
+        if limit_reset and limit_reset >= time.time():
             return self._get_message_many_requests(endpoint=endpoint)
         return True
 
@@ -295,7 +290,7 @@ class SocialAccount(models.Model):
                 _("Error getting X access token: %(error)s", error=response.text)
             )
         try:
-            access_tokens = dict(x.split("=") for x in response.text.split("&"))
+            access_tokens = dict(parse_qsl(response.text))
             return access_tokens["oauth_token"], access_tokens["oauth_token_secret"]
         except (ValueError, KeyError) as ex:
             raise UserError(

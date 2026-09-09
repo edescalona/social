@@ -60,3 +60,17 @@ def run_schedule_window_linkedin():
     start = fields.Datetime.now()
     end = date_utils.add(start, days=_RUN_SCHEDULE_DAYS_LINKEDIN)
     return epoch_milliseconds(start), epoch_milliseconds(end)
+
+
+def linkedin_date_struct(value):
+    """Return one bound of an adAnalytics date range, as the API writes it.
+
+    The finder takes its window as a Rest.li structure and not as a string,
+    so every bound travels spelled out into its three numbers.
+
+    :param value: the day to send, in any form ``fields.Date`` reads.
+    :return: the ``(year:Y,month:M,day:D)`` literal of that day.
+    :rtype: str
+    """
+    day = fields.Date.to_date(value)
+    return f"(year:{day.year},month:{day.month},day:{day.day})"

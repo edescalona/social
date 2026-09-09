@@ -3,15 +3,13 @@
 
 import itertools
 import logging
-from datetime import datetime
 from urllib.parse import quote
-
-import pytz
 
 from odoo import Command, _, models
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _URN_COMMENT_LINKEDIN,
+    datetime_from_epoch_milliseconds,
     linkedin_reaction_id,
 )
 
@@ -378,9 +376,10 @@ class SocialPostAccount(models.Model):
         belongs here: the generic side takes a moment from every connector and
         turns it into the same sentence for all of them.
 
-        The epoch is read in UTC, which is what the API answers. An element
-        LinkedIn stamped with nothing answers nothing, so the comment is drawn
-        without a date instead of one written in 1970.
+        The epoch is read in UTC, which is what the API answers, and the
+        moment comes back naive, the way a ``Datetime`` field holds it. An
+        element LinkedIn stamped with nothing answers nothing, so the
+        comment is drawn without a date instead of one written in 1970.
 
         :param element: one comment as LinkedIn answered it.
         :return: the moment it was written, or ``False`` when it is not
@@ -390,7 +389,7 @@ class SocialPostAccount(models.Model):
         milliseconds = self._linkedin_comment_stamp(element).get("time")
         if not milliseconds:
             return False
-        return datetime.fromtimestamp(milliseconds / 1000, tz=pytz.utc)
+        return datetime_from_epoch_milliseconds(milliseconds)
 
     def _linkedin_comment_values(self, element):
         """Map one comment as LinkedIn answers it to what the client draws.

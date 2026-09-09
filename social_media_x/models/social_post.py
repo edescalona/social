@@ -1,8 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import itertools
-
 from odoo import _, api, models
 from odoo.exceptions import ValidationError
 from odoo.tools import human_size
@@ -41,9 +39,7 @@ class SocialPost(models.Model):
                 ("company_id", "=", self.env.company.id),
             ]
         )
-        if account_ids:
-            return list(itertools.chain(account_ids.ids, res))
-        return res
+        return account_ids.ids + res
 
     @api.constrains("account_ids", "message", "image_ids", "video_ids")
     def _check_account_ids(self):

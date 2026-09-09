@@ -582,7 +582,7 @@ class SocialAccount(models.Model):
             self.env["social.advertising.ad"]
             .sudo()
             .with_context(active_test=False)
-            .search([("account_id", "=", self.id)])
+            .search_fetch([("account_id", "=", self.id)], ["remote_ref"])
             .mapped("remote_ref")
         )
         if remote_refs <= known:

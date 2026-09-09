@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import logging
-from urllib.parse import urlencode
+from urllib.parse import parse_qsl, urlencode
 
 import requests
 from requests_oauthlib import OAuth1
@@ -38,7 +38,7 @@ class WizardSocialAccount(models.TransientModel):
                 # The body is kept as the message because it is what tells a
                 # plain rejection apart from an App without a paid plan.
                 raise requests.HTTPError(response.text, response=response)
-            tokens = dict(x.split("=") for x in response.text.split("&"))
+            tokens = dict(parse_qsl(response.text))
             params = {"oauth_token": tokens["oauth_token"]}
             self.oauth_token = tokens["oauth_token"]
             url_aut = f"{_URL_OAUTH_X}/authorize?{urlencode(params)}"
@@ -92,7 +92,8 @@ class WizardSocialAccount(models.TransientModel):
                         ("media_type", "=", "x"),
                         ("x_api_key", "=", self.x_api_key),
                         ("x_api_secret", "=", self.x_api_secret),
-                    ]
+                    ],
+                    limit=1,
                 )
                 > 0
             ):

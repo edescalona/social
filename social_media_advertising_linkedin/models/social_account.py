@@ -2,16 +2,14 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import logging
-from datetime import datetime
 from urllib.parse import quote
-
-import pytz
 
 from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT
+from odoo.tools import split_every
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    datetime_from_epoch_milliseconds,
     default_statistics_window,
 )
 
@@ -27,6 +25,7 @@ from ..social_advertising_linkedin_utils import (
     _PAGE_SIZE_LINKEDIN,
     _SCOPE_ADS_LINKEDIN,
     _URL_CAMPAIGN_MANAGER_LINKEDIN,
+    linkedin_date_struct,
 )
 from .social_advertising_campaign import LINKEDIN_DELETED_CODES
 
@@ -710,23 +709,8 @@ class SocialAccount(models.Model):
     def _get_linkedin_statistics(self, ads_ids=None, start_date=None, end_date=None):
         self._check_linkedin_scopes(["r_ads_reporting"])
         start_date, end_date = default_statistics_window(start_date, end_date)
-        start_date = (
-            start_date.strftime(DEFAULT_SERVER_DATE_FORMAT).split("-")
-            if not isinstance(start_date, str)
-            else start_date
-        )
-        parse_start_date = (
-            f"(year:{start_date[0]},month:{int(start_date[1])},"
-            f"day:{int(start_date[2])})"
-        )
-        end_date = (
-            end_date.strftime(DEFAULT_SERVER_DATE_FORMAT).split("-")
-            if not isinstance(end_date, str)
-            else end_date
-        )
-        parse_end_date = (
-            f"(year:{end_date[0]},month:{int(end_date[1])},day:{int(end_date[2])})"
-        )
+        parse_start_date = linkedin_date_struct(start_date)
+        parse_end_date = linkedin_date_struct(end_date)
         date_statistics_range = f"(start:{parse_start_date},end:{parse_end_date})"
 
         params_fields = [
@@ -780,11 +764,10 @@ class SocialAccount(models.Model):
 
         :rtype: list
         """
-        ads_ids = list(ads_ids)
         statistics = []
-        for index in range(0, len(ads_ids), _CHUNK_SIZE_ANALYTICS_LINKEDIN):
+        for batch in split_every(_CHUNK_SIZE_ANALYTICS_LINKEDIN, ads_ids, list):
             statistics += self._get_linkedin_statistics(
-                ads_ids=ads_ids[index : index + _CHUNK_SIZE_ANALYTICS_LINKEDIN],
+                ads_ids=batch,
                 start_date=start_date,
                 end_date=end_date,
             )
@@ -914,9 +897,9 @@ class SocialAccount(models.Model):
                     # The creation moment is stored in UTC, so every user
                     # reads it in his own time zone instead of the one of
                     # the process running the synchronization.
-                    "created_date": datetime.fromtimestamp(
-                        creative["createdAt"] / 1000, tz=pytz.UTC
-                    ).replace(tzinfo=None),
+                    "created_date": datetime_from_epoch_milliseconds(
+                        creative["createdAt"]
+                    ),
                     "impression_count": statistic.get("impressions", 0),
                     "click_count": statistic.get("clicks", 0),
                     "action_click_count": statistic.get("actionClicks", 0),

@@ -5,7 +5,7 @@ import base64
 import logging
 import time
 from contextlib import contextmanager
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from urllib.parse import quote, urljoin
 
 import psycopg2
@@ -16,6 +16,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.tools import split_every
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
@@ -114,7 +115,8 @@ class SocialAccount(models.Model):
                     "=",
                     linkedin_secret or account_sudo.linkedin_secret,
                 ),
-            ]
+            ],
+            limit=1,
         )
         if account_count > 0:
             raise UserError(
@@ -303,10 +305,10 @@ class SocialAccount(models.Model):
         values = {
             "access_token": token.get("access_token", False),
             "refresh_access_token": token.get("refresh_token", False),
-            "expire_access_token_date": date.today()
-            + timedelta(days=token.get("expires_in", 0) / 86400),
-            "refresh_token_expires_in": date.today()
-            + timedelta(days=token.get("refresh_token_expires_in", 0) / 86400),
+            "expire_access_token_date": fields.Date.today()
+            + timedelta(seconds=token.get("expires_in", 0)),
+            "refresh_token_expires_in": fields.Date.today()
+            + timedelta(seconds=token.get("refresh_token_expires_in", 0)),
         }
         scopes = self._linkedin_normalize_scopes(token.get("scope"))
         if scopes:
@@ -327,7 +329,7 @@ class SocialAccount(models.Model):
         account_sudo = self.sudo()
         if not account_sudo.refresh_access_token or (
             self.refresh_token_expires_in
-            and self.refresh_token_expires_in < date.today()
+            and self.refresh_token_expires_in < fields.Date.today()
         ):
             return False
         try:
@@ -384,7 +386,7 @@ class SocialAccount(models.Model):
                 headers=self.media_id._get_linkedin_headers(
                     self.sudo().access_token, content_type="application/octet-stream"
                 ),
-                data=base64.b64decode(image.datas),
+                data=image.raw,
                 return_json=False,
             )
             if upload_image.status_code not in (200, 201):
@@ -565,7 +567,7 @@ class SocialAccount(models.Model):
         """
         videos_upload = {}
         for video in video_ids or []:
-            video_data = base64.b64decode(video.datas)
+            video_data = video.raw
             (
                 video_urn,
                 upload_instructions,
@@ -860,8 +862,10 @@ class SocialAccount(models.Model):
             if wizards
             else self._get_account_linkedin(access_token)
         )
-        expire_token = date.today() + timedelta(days=token.get("expires_in", 0) / 86400)
-        expire_refresh_token = date.today() + timedelta(
+        expire_token = fields.Date.today() + timedelta(
+            seconds=token.get("expires_in", 0)
+        )
+        expire_refresh_token = fields.Date.today() + timedelta(
             seconds=token.get("refresh_token_expires_in", 0)
         )
         accounts = self.browse()
@@ -1135,15 +1139,13 @@ class SocialAccount(models.Model):
         :return: The download URL by image URN.
         :rtype: dict
         """
-        urns = list(image_urns)
-        if not urns:
+        if not image_urns:
             return {}
         headers = self.media_id._get_linkedin_headers(
             self.sudo().access_token, x_restli_method="BATCH_GET"
         )
         download_urls = {}
-        for index in range(0, len(urns), _BATCH_GET_MAX_IDS_LINKEDIN):
-            batch = urns[index : index + _BATCH_GET_MAX_IDS_LINKEDIN]
+        for batch in split_every(_BATCH_GET_MAX_IDS_LINKEDIN, image_urns, list):
             response = self._request_linkedin(
                 endpoint="/images",
                 headers=headers,

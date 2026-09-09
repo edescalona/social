@@ -6,7 +6,6 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 from urllib.parse import quote
 
-import pytz
 from freezegun import freeze_time
 
 from odoo import Command
@@ -1023,7 +1022,8 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
         element = {"created": {"actor": "urn:li:person:wrote", "time": 1756000000000}}
         self.assertEqual(
             self.SocialPostAccountLinkedin._linkedin_comment_time(element),
-            datetime(2025, 8, 24, 1, 46, 40, tzinfo=pytz.utc),
+            datetime(2025, 8, 24, 1, 46, 40),
+            msg="The moment comes back naive and read as UTC.",
         )
 
     def test_linkedin_comment_time_without_a_stamp(self):

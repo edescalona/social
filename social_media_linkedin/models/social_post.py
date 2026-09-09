@@ -1,8 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import itertools
-
 from odoo import _, models
 from odoo.tools import human_size
 
@@ -39,9 +37,7 @@ class SocialPost(models.Model):
                 ("company_id", "=", self.env.company.id),
             ]
         )
-        if account_ids:
-            return list(itertools.chain(account_ids.ids, res))
-        return res
+        return account_ids.ids + res
 
     def _render_values_preview(self, media):
         """Drop the images LinkedIn will not publish from its preview.

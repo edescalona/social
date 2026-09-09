@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 
+import base64
 from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, Mock, patch
 
@@ -51,8 +52,14 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.video_mock = type("Video", (), {"datas": cls.video_data, "id": 21})()
-        cls.image_mock = type("Image", (), {"datas": cls.image_base64, "id": 11})()
+        # The uploads read the bytes of the attachment, which is what
+        # ``ir.attachment.raw`` holds and ``datas`` answers encoded.
+        cls.video_mock = type(
+            "Video", (), {"raw": base64.b64decode(cls.video_data), "id": 21}
+        )()
+        cls.image_mock = type(
+            "Image", (), {"raw": base64.b64decode(cls.image_base64), "id": 11}
+        )()
         cls.media_image = "urn:li:image:{}"
         cls.media_video = "urn:li:video:{}"
 
