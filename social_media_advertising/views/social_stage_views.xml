@@ -72,21 +72,4 @@
         </field>
     </record>
 
-    <record id="social_stage_action" model="ir.actions.act_window">
-        <field name="name">Stages</field>
-        <field name="res_model">social.stage</field>
-        <field name="view_mode">tree,form</field>
-        <field name="search_view_id" ref="social_stage_view_search" />
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create your first stage
-            </p>
-            <p>
-                Stages mirror the statuses a social media gives to a campaign,
-                a campaign group or an ad. Each social media module declares its
-                own, and the code is the value returned by the social media.
-            </p>
-        </field>
-    </record>
-
 </odoo>

@@ -16,7 +16,6 @@ class SocialAdvertisingCampaignGroup(models.Model):
 
     _inherit = "social.advertising.campaign.group"
 
-    media_type = fields.Selection(related="media_id.media_type")
     currency_id = fields.Many2one(
         "res.currency",
         help="Currency of the total budget, sent to LinkedIn as the currency "

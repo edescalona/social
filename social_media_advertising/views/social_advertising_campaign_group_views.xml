@@ -102,23 +102,4 @@
         </field>
     </record>
 
-    <record id="social_advertising_campaign_group_action" model="ir.actions.act_window">
-        <field name="name">Campaign Groups</field>
-        <field name="res_model">social.advertising.campaign.group</field>
-        <field name="view_mode">tree,form</field>
-        <field
-            name="search_view_id"
-            ref="social_advertising_campaign_group_view_search"
-        />
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create your first campaign group
-            </p>
-            <p>
-                Campaign groups let you share a total budget across several
-                campaigns and manage them as a unit.
-            </p>
-        </field>
-    </record>
-
 </odoo>

@@ -36,6 +36,7 @@ class SocialAdvertisingCampaignGroup(models.Model):
         help="Status of this campaign group on the social media.",
     )
     stage_level = fields.Selection(related="stage_id.level")
+    media_type = fields.Selection(related="media_id.media_type")
     remote_ref = fields.Char(
         string="Remote Reference",
         copy=False,

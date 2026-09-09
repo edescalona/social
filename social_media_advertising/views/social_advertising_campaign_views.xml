@@ -139,20 +139,4 @@
         </field>
     </record>
 
-    <record id="social_advertising_campaign_action" model="ir.actions.act_window">
-        <field name="name">Campaigns</field>
-        <field name="res_model">social.advertising.campaign</field>
-        <field name="view_mode">tree,form</field>
-        <field name="search_view_id" ref="social_advertising_campaign_view_search" />
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create your first campaign
-            </p>
-            <p>
-                Campaigns hold the budget and bidding settings used to promote
-                your posts on social media.
-            </p>
-        </field>
-    </record>
-
 </odoo>

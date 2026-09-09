@@ -28,7 +28,6 @@
                 </div>
             </xpath>
             <xpath expr="//group[@name='social_account_data']" position="inside">
-                <field name="media_type" invisible="1" />
                 <field
                     name="x_api_key"
                     required="media_type == 'x'"

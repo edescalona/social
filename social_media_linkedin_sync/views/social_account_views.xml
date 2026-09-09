@@ -6,7 +6,10 @@
     <record id="social_account_view_form_inherit_sync_linkedin" model="ir.ui.view">
         <field name="name">social.account.view.form.inherit.sync.linkedin</field>
         <field name="model">social.account</field>
-        <field name="inherit_id" ref="social_media_base.social_account_view_form" />
+        <field
+            name="inherit_id"
+            ref="social_media_linkedin.social_account_view_form_inherit"
+        />
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="before">
                 <div

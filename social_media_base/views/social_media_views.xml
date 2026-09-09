@@ -47,8 +47,6 @@
         <field name="name">Social Media</field>
         <field name="res_model">social.media</field>
         <field name="view_mode">kanban</field>
-        <field name="domain">[]</field>
-        <field name="context">{}</field>
     </record>
 
 </odoo>

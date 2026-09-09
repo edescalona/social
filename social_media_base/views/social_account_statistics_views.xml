@@ -89,14 +89,12 @@
         <field name="res_model">social.account.statistics</field>
         <field name="view_mode">graph,pivot</field>
         <field name="search_view_id" ref="social_account_statistics_view_search" />
-        <field name="domain">[]</field>
         <!-- No ``search_default`` group by on purpose. A group by activated
              from the search panel REPLACES the one of the arch instead of
              adding to it (``graph_model.js`` ``_buildMetaData``), so a
              default on the account alone would drop the date and draw the
              accounts on the axis instead of the days. The grouping the view
              opens on is the one its arch declares. -->
-        <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No statistics yet

@@ -12,7 +12,6 @@
     "maintainers": ["edescalona"],
     "depends": ["social_media_sync", "social_media_linkedin"],
     "data": [
-        "security/ir.model.access.csv",
         "views/social_account_views.xml",
     ],
     "assets": {
