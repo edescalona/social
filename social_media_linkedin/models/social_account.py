@@ -1527,6 +1527,71 @@ class SocialAccount(models.Model):
             "impression_count": impressions,
         }
 
+    def _refresh_post_statistics(self, post_accounts):
+        """Read the figures LinkedIn reports for these publications.
+
+        Nothing here walks the feed: Odoo already knows the URN of every
+        publication it is handed, so three calls answer a whole page of them
+        however much the page has published. That is what lets the connector
+        keep the figures of a publication up to date with no synchronization
+        module installed.
+
+        Each account goes in its own savepoint, and its responsible user is
+        told when LinkedIn refuses it: the pass writes as it goes, so what was
+        already written for the accounts before must stay written. An account
+        without an organization cannot even be asked, since the finder is
+        addressed by organization.
+
+        :param post_accounts: the lines to read, every one with a
+            ``remote_ref``.
+        :return: the lines LinkedIn answered for, plus whatever the other
+            connectors answered for their own.
+        """
+        linkedin = post_accounts.filtered(
+            lambda line: line.account_id.media_type == "linkedin"
+        )
+        refreshed = super()._refresh_post_statistics(post_accounts - linkedin)
+        for account, lines in linkedin.grouped("account_id").items():
+            if not account.linkedin_account_id:
+                continue
+            with account._statistics_guard():
+                refreshed |= account._linkedin_write_post_statistics(lines)
+        return refreshed
+
+    def _linkedin_write_post_statistics(self, post_accounts):
+        """Ask LinkedIn for these publications and write what it answers.
+
+        A URN missing from the answer is a publication nobody interacted with
+        and not a publication that could not be read:
+        ``organizationalEntityShareStatistics`` leaves out the entities with no
+        activity at all, so its silence about one of them is a figure of zero.
+        Which is why the whole batch either answers -- and every line of it is
+        written, with the date it was read on -- or raises, and the guard above
+        rolls the account back.
+
+        The lines are written with ``sudo()`` for the same reason the daily
+        series is: they mirror what LinkedIn reported and belong to the
+        responsible of the account, and the *Update* button of a regular user
+        has to work all the same.
+
+        :param post_accounts: the lines of this account to read.
+        :return: those same lines.
+        :rtype: recordset
+        """
+        self.ensure_one()
+        figures = self._get_entity_statistics(
+            posts=[{"id": urn} for urn in post_accounts.mapped("remote_ref")]
+        )
+        read_on = fields.Datetime.now()
+        for line in post_accounts:
+            line.sudo().write(
+                {
+                    **self._linkedin_statistics_values(figures.get(line.remote_ref)),
+                    "statistics_date": read_on,
+                }
+            )
+        return post_accounts
+
     def _filter_urns(self, posts, urn_prefix):
         """Return the URNs of the posts of one kind, in the order given.
 

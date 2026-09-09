@@ -3,11 +3,15 @@
 
 from unittest.mock import MagicMock, patch
 
+from odoo import _
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
+from odoo.tools import mute_logger
 
 from ..social_linkedin_utils import _QUERY_STRING_MAX_BYTES_LINKEDIN
 from .test_common_linkedin import PATCH_ACCOUNT_LINKEDIN, TestSocialCommonLinkedin
+
+LOGGER_ACCOUNT_LINKEDIN = "odoo.addons.social_media_linkedin.models.social_account"
 
 
 @tagged("post_install", "-at_install")
@@ -337,3 +341,166 @@ class TestLinkedinPostStatistics(TestSocialCommonLinkedin):
             msg="socialActions takes neither the finder nor the organization.",
         )
         self.assertEqual(mock_social_actions.call_args.kwargs["params_values"], {})
+
+    def _linkedin_publication(self, urn, account=None, **values):
+        """Create a publication of a LinkedIn account, online and referenced."""
+        return self.SocialPostAccount.create(
+            dict(
+                {
+                    "message": "Test Message",
+                    "account_id": (account or self.SocialAccountLinkedin).id,
+                    "post_id": self.SocialPostLinkedin.id,
+                    "remote_ref": urn,
+                    "state": "posted",
+                },
+                **values,
+            )
+        )
+
+    def test_refresh_post_statistics_writes_what_linkedin_answered(self):
+        """The figures of the answer land on the line, with the date read."""
+        line = self._linkedin_publication("urn:li:share:1")
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"),
+            autospec=True,
+            return_value={"urn:li:share:1": (3, 5, 7, 9, 0.5, 100)},
+        ):
+            refreshed = self.SocialAccountLinkedin._refresh_post_statistics(line)
+        self.assertEqual(refreshed, line)
+        self.assertEqual(line.click_count, 3)
+        self.assertEqual(line.like_count, 5)
+        self.assertEqual(line.comment_count, 7)
+        self.assertEqual(line.share_count, 9)
+        self.assertEqual(line.engagement, 0.5)
+        self.assertEqual(line.impression_count, 100)
+        self.assertTrue(line.statistics_date)
+
+    def test_refresh_post_statistics_spends_three_calls(self):
+        """A whole page of publications costs three calls.
+
+        Two of ``organizationalEntityShareStatistics``, one per kind of
+        publication, and one of ``socialActions`` for the likes and the
+        comments of the UGC posts. Nothing walks the feed: Odoo already knows
+        the URNs, so the page is answered whatever the account has published.
+        """
+        urns = self._fake_urns("urn:li:share:", 25) + self._fake_urns(
+            "urn:li:ugcPost:", 25
+        )
+        lines = self.SocialPostAccount.union(
+            *[self._linkedin_publication(urn) for urn in urns]
+        )
+        answered = MagicMock()
+        answered.status_code = 200
+        answered.json.return_value = {"elements": [], "results": {}}
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"),
+            autospec=True,
+            return_value=answered,
+        ) as mock_request:
+            self.SocialAccountLinkedin._refresh_post_statistics(lines)
+        self.assertEqual(mock_request.call_count, 3)
+
+    def test_a_page_longer_than_the_query_string_is_split(self):
+        """What decides the calls is the query string, not the publications.
+
+        The URNs travel in the query string of a finder LinkedIn documents as
+        not paginated, so a page whose URNs do not fit in
+        ``_QUERY_STRING_MAX_BYTES_LINKEDIN`` is asked for in as many calls as
+        it takes. It is the only thing that adds a call to the three.
+        """
+        urns = self._fake_urns("urn:li:ugcPost:", 200)
+        lines = self.SocialPostAccount.union(
+            *[self._linkedin_publication(urn) for urn in urns]
+        )
+        answered = MagicMock()
+        answered.status_code = 200
+        answered.json.return_value = {"elements": [], "results": {}}
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"),
+            autospec=True,
+            return_value=answered,
+        ) as mock_request:
+            self.SocialAccountLinkedin._refresh_post_statistics(lines)
+        for call in mock_request.call_args_list:
+            self.assertLess(
+                len(self._linkedin_query_string(call).encode()),
+                _QUERY_STRING_MAX_BYTES_LINKEDIN,
+            )
+        # No call of the shares: none of these URNs is one.
+        self.assertGreater(mock_request.call_count, 3)
+
+    def test_a_publication_linkedin_left_out_stays_at_zero(self):
+        """Silence about a URN is a figure of zero, not a reading that failed.
+
+        ``organizationalEntityShareStatistics`` leaves out the entities with no
+        activity at all, so the publication nobody interacted with is the one
+        missing from the answer.
+        """
+        quiet = self._linkedin_publication("urn:li:share:1", like_count=4)
+        busy = self._linkedin_publication("urn:li:share:2")
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"),
+            autospec=True,
+            return_value={"urn:li:share:2": (0, 8, 0, 0, 0, 0)},
+        ):
+            refreshed = self.SocialAccountLinkedin._refresh_post_statistics(
+                quiet + busy
+            )
+        self.assertEqual(refreshed, quiet + busy)
+        self.assertEqual(quiet.like_count, 0)
+        self.assertEqual(busy.like_count, 8)
+        self.assertTrue(quiet.statistics_date)
+
+    def test_refresh_post_statistics_leaves_another_media_alone(self):
+        """A line of another social media is handed to the next connector."""
+        linkedin = self._linkedin_publication("urn:li:share:1")
+        other = self.social_post_account_id
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"),
+            autospec=True,
+            return_value={},
+        ) as mock_statistics:
+            refreshed = self.SocialAccountLinkedin._refresh_post_statistics(
+                linkedin + other
+            )
+        self.assertEqual(refreshed, linkedin)
+        self.assertNotIn(other, refreshed)
+        self.assertEqual(
+            [{"id": "urn:li:share:1"}], mock_statistics.call_args.kwargs["posts"]
+        )
+        self.assertFalse(other.statistics_date)
+
+    def test_an_account_without_an_organization_is_not_asked(self):
+        """The finder is addressed by organization, so there is nothing to ask."""
+        self.SocialAccountLinkedin.remote_ref = False
+        line = self._linkedin_publication("urn:li:share:1")
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"), autospec=True
+        ) as mock_statistics:
+            refreshed = self.SocialAccountLinkedin._refresh_post_statistics(line)
+        mock_statistics.assert_not_called()
+        self.assertFalse(refreshed)
+
+    @mute_logger(LOGGER_ACCOUNT_LINKEDIN)
+    def test_an_account_linkedin_refuses_does_not_stop_the_next(self):
+        """Each account is read in its own savepoint and its user is told."""
+        refused = self._linkedin_publication("urn:li:share:1")
+        answered = self._linkedin_publication(
+            "urn:li:share:2", account=self.SocialAccountLinkedinData
+        )
+
+        def statistics(account, posts=None, **kwargs):
+            if account == self.SocialAccountLinkedin:
+                raise UserError(_("LinkedIn refused the statistics"))
+            return {"urn:li:share:2": (0, 2, 0, 0, 0, 0)}
+
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"),
+            autospec=True,
+            side_effect=statistics,
+        ):
+            accounts = self.SocialAccountLinkedin + self.SocialAccountLinkedinData
+            refreshed = accounts._refresh_post_statistics(refused + answered)
+        self.assertEqual(refreshed, answered)
+        self.assertFalse(refused.statistics_date)
+        self.assertEqual(answered.like_count, 2)

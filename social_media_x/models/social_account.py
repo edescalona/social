@@ -17,10 +17,13 @@ from tweepy.errors import Forbidden, TooManyRequests, Unauthorized
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
+from odoo.tools import split_every
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
 from ..social_x_utils import (
+    _GET_POSTS_MAX_IDS_X,
+    _POST_FIELDS_METRICS_X,
     _URL_OAUTH2_TOKEN_X,
     _URL_OAUTH_X,
     _URL_PRICING_X,
@@ -547,6 +550,133 @@ class SocialAccount(models.Model):
         :rtype: bool
         """
         return False
+
+    def _get_public_metrics(self, val_x):
+        """Return the like, impression, reply, retweet and quote counts.
+
+        :rtype: tuple
+        """
+        public_metrics = val_x.public_metrics
+        return public_metrics.get("like_count", 0), public_metrics.get(
+            "impression_count", 0
+        ), public_metrics.get("reply_count", 0), public_metrics.get(
+            "retweet_count", 0
+        ), public_metrics.get("quote_count", 0)
+
+    @api.model
+    def _x_statistics_values(self, public_metrics):
+        """Return the metrics of a post as the statistics fields holding them.
+
+        Shared by the refresh of the figures and by the import of
+        ``social_media_x_sync``: both read the same ``public_metrics`` block,
+        so a second copy of this mapping is what would let them stop speaking
+        the same language.
+
+        :param public_metrics: the five figures ``_get_public_metrics`` builds.
+        :rtype: dict
+        """
+        likes, impressions, replies, retweets, quotes = public_metrics
+        return {
+            "like_count": likes,
+            "impression_count": impressions,
+            "comment_count": replies,
+            "retweet_count": retweets,
+            "quote_count": quotes,
+        }
+
+    def _get_posts_metrics(self, refs):
+        """Read the public metrics of these posts, by batches of ids.
+
+        The cheap half of what X answers about a publication: the ids are
+        already known, so nothing walks the timeline and one call answers a
+        hundred posts.
+
+        Its own rate limit key, ``get_posts``: the quota of X is counted per
+        endpoint, and this is neither the timeline the import reads
+        (``get_tweets``) nor the single post the check for a deletion reads
+        (``get_post``).
+
+        A post missing from the answer is a post X did not report — deleted,
+        or hidden — and not one whose figures are zero, so it is simply absent
+        from the result and the caller leaves its line alone.
+
+        :param refs: the identifiers of the posts to read.
+        :return: the metrics tuple by post identifier, empty when the window
+            of the rate limit is not over yet.
+        :rtype: dict
+        """
+        self.ensure_one()
+        metrics = {}
+        if not refs or not self._valid_time_request(endpoint="get_posts"):
+            return metrics
+        client_api = self.get_client_api(bearer_token=self.sudo().x_access_token_oauth2)
+        for batch in split_every(_GET_POSTS_MAX_IDS_X, refs, list):
+            try:
+                response = client_api.get_tweets(
+                    ids=batch, tweet_fields=_POST_FIELDS_METRICS_X
+                )
+            except TooManyRequests as exManyRequest:
+                # What was read before the limit is kept: the calls are spent
+                # and the figures they brought are as good as the others.
+                self._get_message_many_requests(exManyRequest, endpoint="get_posts")
+                return metrics
+            for val_x in response.data or []:
+                metrics[str(val_x.id)] = self._get_public_metrics(val_x)
+        return metrics
+
+    def _refresh_post_statistics(self, post_accounts):
+        """Read the figures X reports for these publications.
+
+        Each account in its own savepoint: the pass writes as it goes, so an
+        account X refuses must neither undo what was written for the previous
+        ones nor stop the ones still to come.
+
+        :param post_accounts: the lines to read, every one with a
+            ``remote_ref``.
+        :return: the lines X answered for, plus whatever the other connectors
+            answered for their own.
+        """
+        posts_x = post_accounts.filtered(lambda line: line.account_id.media_type == "x")
+        refreshed = super()._refresh_post_statistics(post_accounts - posts_x)
+        for account, lines in posts_x.grouped("account_id").items():
+            with account._account_guard(
+                "Error refreshing the statistics of the posts of the X account %s"
+            ):
+                refreshed |= account._write_posts_metrics(lines)
+        return refreshed
+
+    def _write_posts_metrics(self, post_accounts):
+        """Ask X for these posts and write the figures it reported.
+
+        Only the lines X answered for are written, and only they carry the
+        date: a post it did not report is one whose figures could not be read,
+        so its line keeps the last ones it had instead of dropping to zero.
+
+        The lines are written with ``sudo()`` for the same reason the figures
+        of the account are: they mirror what X reported and belong to the
+        responsible of the account, and the *Update* button of a regular user
+        has to work all the same.
+
+        :param post_accounts: the lines of this account to read.
+        :return: the lines X answered for.
+        :rtype: recordset
+        """
+        self.ensure_one()
+        metrics = self._get_posts_metrics(post_accounts.mapped("remote_ref"))
+        read_on = fields.Datetime.now()
+        answered = post_accounts.browse()
+        for line in post_accounts:
+            public_metrics = metrics.get(line.remote_ref)
+            if public_metrics is None:
+                continue
+            line.sudo().write(
+                {
+                    **self._x_statistics_values(public_metrics),
+                    "statistics_date": read_on,
+                }
+            )
+            answered |= line
+        return answered
 
     def action_update_account(self):
         res = super().action_update_account()

@@ -8,9 +8,9 @@ class SocialStatisticsMixin(models.AbstractModel):
     """Counters X reports on top of the generic ones.
 
     The mixin is extended instead of each model because X counts retweets and
-    quotes both on the account and on the publication. Both figures are filled
-    in by a synchronization module, which is what reads them back from X, and
-    stay at zero without one.
+    quotes both on the account and on the publication. The connector fills them
+    in for the publications inside the window its refresh reads; the older ones
+    are the business of a synchronization module.
     """
 
     _inherit = "social.statistics.mixin"

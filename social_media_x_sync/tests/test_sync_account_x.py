@@ -38,22 +38,6 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertEqual(kwargs["id"], self.SocialAccountX.remote_ref)
         self.assertEqual(kwargs["max_results"], 100)
 
-    def test_get_public_metrics(self):
-        mock_public_metrics = MagicMock()
-        mock_public_metrics.public_metrics = {
-            "like_count": 5,
-            "reply_count": 10,
-            "retweet_count": 15,
-            "quote_count": 20,
-            "impression_count": 40,
-        }
-        res = self.SocialAccountX._get_public_metrics(mock_public_metrics)
-        self.assertEqual(res[0], 5)
-        self.assertEqual(res[1], 40)
-        self.assertEqual(res[2], 10)
-        self.assertEqual(res[3], 15)
-        self.assertEqual(res[4], 20)
-
     def test_get_x_statistics(self):
         statistics = ["Test", 1, 1, 10, 11, 12, 13]
         rows = [{"id": self.SocialAccountX.id, "name": "X Account"}]

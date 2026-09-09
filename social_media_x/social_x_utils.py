@@ -21,6 +21,15 @@ _MAX_VIDEOS_X = 1
 # The Media API takes WEBP as well, which LinkedIn does not.
 _IMAGE_MIMETYPES_X = ("image/jpeg", "image/png", "image/webp", "image/gif")
 _VIDEO_MIMETYPES_X = ("video/mp4",)
+# Posts a single ``get_tweets`` answers for, which is what X documents for the
+# batch read by ids. The refresh of the figures asks in as many calls as the
+# publications it was handed need.
+_GET_POSTS_MAX_IDS_X = 100
+
+# The only field the refresh of the figures asks for. The identifier always
+# travels in the answer, so nothing else is needed to tell the posts apart.
+_POST_FIELDS_METRICS_X = ["public_metrics"]
+
 # A GIF is uploaded as an image but carries its own, larger limit.
 _MAX_IMAGE_SIZE_X = 5 * 1024 * 1024
 _MAX_GIF_SIZE_X = 15 * 1024 * 1024

@@ -417,9 +417,6 @@ class SocialAccount(models.Model):
                 )
             )
         refreshed_urns = discovered + stale_lines.mapped("remote_ref")
-        post_reactions = self._get_entity_statistics(
-            posts=[{"id": urn} for urn in refreshed_urns]
-        )
         # Whether the account itself reacted is not part of the figures: it is
         # what the *Recommend* entry of the dashboard draws, and one batch
         # answers it for the whole page.
@@ -450,7 +447,6 @@ class SocialAccount(models.Model):
                     _URN_VIDEO_LINKEDIN
                 ),
                 "state": "posted",
-                **self._linkedin_statistics_values(post_reactions.get(ugc_post_urn)),
                 **self._linkedin_reaction_values(ugc_post_urn, own_reactions),
             }
             attach_images, media_refs = post_account._get_assets_save(
@@ -465,14 +461,7 @@ class SocialAccount(models.Model):
             post_accounts.append(
                 Command.update(
                     line.id,
-                    {
-                        **self._linkedin_statistics_values(
-                            post_reactions.get(line.remote_ref)
-                        ),
-                        **self._linkedin_reaction_values(
-                            line.remote_ref, own_reactions
-                        ),
-                    },
+                    self._linkedin_reaction_values(line.remote_ref, own_reactions),
                 )
             )
         update_account_data = {
@@ -491,6 +480,22 @@ class SocialAccount(models.Model):
                 "linkedin_statistics_checkpoint"
             ] = self._linkedin_statistics_checkpoint(buckets)
         self.write(update_account_data)
+        # The figures are asked to the connector, in one batch for the whole
+        # page plus the publications it did not bring: reading them by URN is
+        # not this module's, and a second way of reading them is a second way
+        # of drifting. It goes after the write because the publications the
+        # page discovered do not exist in Odoo until then.
+        self._refresh_post_statistics(
+            PostAccount.sudo()
+            .with_context(active_test=False)
+            .search(
+                [
+                    ("account_id", "=", self.id),
+                    ("remote_ref", "in", refreshed_urns),
+                    ("state", "!=", "deleted"),
+                ]
+            )
+        )
         # Through the method of the flag and not as one more key of the write:
         # it is what pushes the notice down on the dashboards already open,
         # and this import is also reached from the full resync, which never

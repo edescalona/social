@@ -111,18 +111,6 @@ class SocialAccount(models.Model):
             since_id=since_id,
         )
 
-    def _get_public_metrics(self, val_x):
-        """Return the like, impression, reply, retweet and quote counts.
-
-        :rtype: tuple
-        """
-        public_metrics = val_x.public_metrics
-        return public_metrics.get("like_count", 0), public_metrics.get(
-            "impression_count", 0
-        ), public_metrics.get("reply_count", 0), public_metrics.get(
-            "retweet_count", 0
-        ), public_metrics.get("quote_count", 0)
-
     def _notify_tweets_error(self, account, errors):
         """Report the errors X answered instead of a timeline.
 
@@ -253,11 +241,7 @@ class SocialAccount(models.Model):
                                 "published_date": val_x.created_at.astimezone(
                                     pytz.utc
                                 ).replace(tzinfo=None),
-                                "like_count": public_metrics[0],
-                                "impression_count": public_metrics[1],
-                                "comment_count": public_metrics[2],
-                                "retweet_count": public_metrics[3],
-                                "quote_count": public_metrics[4],
+                                **account._x_statistics_values(public_metrics),
                                 "actor_urn": val_x.author_id,
                                 "state": "posted",
                                 "author": author.username,
