@@ -129,8 +129,18 @@ msgid "Quote Count"
 msgstr ""
 
 #. module: social_media_x
+#: model_terms:ir.ui.view,arch_db:social_media_x.social_post_account_view_form_statistics_inherit
+msgid "Quotes"
+msgstr ""
+
+#. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__rate_limit_endpoint
 msgid "Rate Limit Endpoint"
+msgstr ""
+
+#. module: social_media_x
+#: model_terms:ir.ui.view,arch_db:social_media_x.social_post_account_view_form_statistics_inherit
+msgid "Reposts"
 msgstr ""
 
 #. module: social_media_x

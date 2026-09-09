@@ -35,9 +35,10 @@ comments.
 It is the X half of *Social Media Sync*, split from *Social Media X*
 along the same line: what a call costs. The connector asks X for a fixed
 number of things per account — link it, refresh its card, publish,
-delete — and that number does not change whether the account published
-once or ten thousand times. Everything whose cost grows with the history
-of the account lives here: the timeline that answers up to a hundred
+delete, read the figures of the publications of the last 30 days — and
+that number does not change whether the account published once or ten
+thousand times. Everything whose cost grows with the history of the
+account lives here: the timeline that answers up to a hundred
 publications and one download per media not stored yet, one call per
 publication whose comments are read, and one call per publication that
 is verified.
@@ -195,10 +196,12 @@ Importing the publications
 - The *Update* button of the dashboard card runs the same import on
   demand.
 - With *Enable since* the import only asks for what was published after
-  the stored publication, so the figures of the older publications are
-  no longer updated. The card of the account is unaffected either way:
-  the import writes the figures of each tweet on its publication, and
-  the card adds up every publication stored.
+  the stored publication, so the older publications are no longer read
+  by this import. The ones published in the last 30 days are refreshed
+  all the same by *Social Media X*, which reads their figures by
+  identifier. The card of the account is unaffected either way: the
+  figures are written on each publication, and the card adds up every
+  publication stored.
 
 Comments
 --------

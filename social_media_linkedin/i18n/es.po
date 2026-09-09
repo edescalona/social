@@ -18,6 +18,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_linkedin/models/social_account.py:0
 #, python-format
+msgid "%(label)s: %(error)s"
+msgstr "%(label)s: %(error)s"
+
+#. module: social_media_linkedin
+#. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
 msgid "%(prefix)s: %(error)s"
 msgstr "%(prefix)s: %(error)s"
 
@@ -51,7 +58,10 @@ msgid ""
 "Ask LinkedIn whether the token still works. The automatic check answers from "
 "the stored dates, this one calls LinkedIn, so it also notices a token "
 "revoked there and renews it when it can."
-msgstr "Pregunta a LinkedIn si el token sigue funcionando. La comprobación automática responde con las fechas almacenadas; esta llama a LinkedIn, así que también detecta un token revocado allí y lo renueva cuando puede."
+msgstr ""
+"Pregunta a LinkedIn si el token sigue funcionando. La comprobación "
+"automática responde con las fechas almacenadas; esta llama a LinkedIn, así "
+"que también detecta un token revocado allí y lo renueva cuando puede."
 
 #. module: social_media_linkedin
 #: model_terms:ir.ui.view,arch_db:social_media_linkedin.social_account_view_form_inherit
@@ -429,6 +439,16 @@ msgstr "No se pudo subir la imagen a LinkedIn"
 
 #. module: social_media_linkedin
 #. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
+msgid ""
+"The likes and the comments of the publications could not be read: %(error)s"
+msgstr ""
+"No se han podido leer los me gusta y los comentarios de las publicaciones: "
+"%(error)s"
+
+#. module: social_media_linkedin
+#. odoo-python
 #: code:addons/social_media_linkedin/tests/test_account_linkedin.py:0
 #, python-format
 msgid "The page role was lost"
@@ -454,6 +474,21 @@ msgstr "No se pudo publicar la publicación en LinkedIn"
 #, python-format
 msgid "The publications could not be read from LinkedIn: %(error)s"
 msgstr "No se pudieron leer las publicaciones de LinkedIn: %(error)s"
+
+#. module: social_media_linkedin
+#. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
+msgid "The statistics of the publications could not be read"
+msgstr "No se han podido leer las estadísticas de las publicaciones"
+
+#. module: social_media_linkedin
+#. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
+msgid "The statistics of the shared publications could not be read"
+msgstr ""
+"No se han podido leer las estadísticas de las publicaciones compartidas"
 
 #. module: social_media_linkedin
 #. odoo-python
@@ -494,10 +529,3 @@ msgstr "Validar token"
 #, python-format
 msgid "the account has no access token"
 msgstr "la cuenta no tiene token de acceso"
-
-#, python-format
-#~ msgid ""
-#~ "The account could not be associated. Check the server log for details."
-#~ msgstr ""
-#~ "No se ha podido asociar la cuenta. Consulte el registro del servidor para "
-#~ "más detalles."

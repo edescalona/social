@@ -415,17 +415,18 @@ figures live on the account form, which is where they mean something.</p>
 <li><a class="reference internal" href="#archive-account-x" id="toc-entry-9">Archive Account X</a></li>
 <li><a class="reference internal" href="#x-limits-and-validations" id="toc-entry-10">X limits and validations</a></li>
 <li><a class="reference internal" href="#rate-limits" id="toc-entry-11">Rate limits</a></li>
-<li><a class="reference internal" href="#dashboard-actions" id="toc-entry-12">Dashboard actions</a></li>
-<li><a class="reference internal" href="#x-credentials" id="toc-entry-13">X credentials</a></li>
-<li><a class="reference internal" href="#uninstalling-the-module" id="toc-entry-14">Uninstalling the module</a></li>
+<li><a class="reference internal" href="#figures-of-a-publication" id="toc-entry-12">Figures of a publication</a></li>
+<li><a class="reference internal" href="#dashboard-actions" id="toc-entry-13">Dashboard actions</a></li>
+<li><a class="reference internal" href="#x-credentials" id="toc-entry-14">X credentials</a></li>
+<li><a class="reference internal" href="#uninstalling-the-module" id="toc-entry-15">Uninstalling the module</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-15">Known issues / Roadmap</a></li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-16">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-17">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-18">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-19">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-20">Maintainers</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-16">Known issues / Roadmap</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-17">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-18">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-19">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-20">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-21">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -708,12 +709,13 @@ post is stopped in Odoo instead of failing halfway through.</li>
 <ul class="simple">
 <li>The <a class="reference external" href="https://docs.x.com/x-api/fundamentals/rate-limits">rate limit</a>
 is tracked per endpoint. The ones this module spends are linking the
-account, publishing and deleting; a synchronization module adds its
-own to the same record. When X answers that it is exhausted, Odoo
-stores the window it returns and does not call that endpoint again
-until it expires: a notice is shown with the limit of the plan, the
-remaining requests and the time of the next attempt. If X does not say
-when the window resets, 60 seconds are assumed.</li>
+account, publishing, deleting, reading a single post and reading the
+figures of the recent ones (<tt class="docutils literal">get_posts</tt>); a synchronization module
+adds its own to the same record. When X answers that it is exhausted,
+Odoo stores the window it returns and does not call that endpoint
+again until it expires: a notice is shown with the limit of the plan,
+the remaining requests and the time of the next attempt. If X does not
+say when the window resets, 60 seconds are assumed.</li>
 <li>If X refuses a publication because the requests of the plan are
 exhausted, the line is left as <em>Failed</em> with the message <em>X did not
 accept the post. The account may have reached the limit of requests of
@@ -740,8 +742,34 @@ hands the accounts over to whoever synchronizes them. Without a
 synchronization module installed nothing happens on that pass.</li>
 </ul>
 </div>
+<div class="section" id="figures-of-a-publication">
+<h2><a class="toc-backref" href="#toc-entry-12">Figures of a publication</a></h2>
+<ul class="simple">
+<li>The figures of the posts published in the last 30 days — likes,
+replies, impressions, retweets and quotes — are read back from X once
+a day, by the <em>Social: Refresh the statistics of the recent
+publications</em> scheduled action, and on the spot by the <em>Update</em> button
+of the dashboard and <em>Update statistics</em> of the account form.</li>
+<li>Nothing walks the timeline to do it: Odoo already knows the identifier
+of every post it asks about, so they are read by batches of <strong>100 ids
+per request</strong> on its own <tt class="docutils literal">get_posts</tt> endpoint. Reading the timeline
+is what imports what Odoo did not publish, and that is a
+synchronization module.</li>
+<li>Daily and not every two hours because what has to be watched on X is
+not the volume but the 15 minute window of the plan. For the same
+reason the buttons read the same bounded window and never the whole
+account.</li>
+<li>While the window of <tt class="docutils literal">get_posts</tt> is exhausted the pass asks X for
+nothing and the publications keep the figures they have, with the date
+of the reading they come from. What was read before the limit was
+reached is kept: those requests are spent either way.</li>
+<li>A post missing from the answer is left untouched. X does not report a
+post that was deleted or hidden, which is not the same as a post whose
+figures are zero, so its line keeps its last figures and its date.</li>
+</ul>
+</div>
 <div class="section" id="dashboard-actions">
-<h2><a class="toc-backref" href="#toc-entry-12">Dashboard actions</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-13">Dashboard actions</a></h2>
 <ul class="simple">
 <li>Deleting a publication from the dashboard deletes the post on X first.
 If X refuses the deletion, the operation is cancelled with the error
@@ -754,7 +782,7 @@ repeated.</li>
 </ul>
 </div>
 <div class="section" id="x-credentials">
-<h2><a class="toc-backref" href="#toc-entry-13">X credentials</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-14">X credentials</a></h2>
 <p>The <a class="reference external" href="https://docs.x.com/resources/fundamentals/authentication/oauth-1-0a/api-key-and-secret">OAuth
 1.0a</a>
 tokens of X do not expire, so there is nothing to renew: they only stop
@@ -765,7 +793,7 @@ update. Odoo cannot renew it by itself: associate the account again from
 <em>Update account</em>.</p>
 </div>
 <div class="section" id="uninstalling-the-module">
-<h2><a class="toc-backref" href="#toc-entry-14">Uninstalling the module</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-15">Uninstalling the module</a></h2>
 <p>Uninstalling <em>Social Media X</em> does not delete the accounts nor their
 publication history:</p>
 <ul class="simple">
@@ -783,7 +811,7 @@ everything as duplicated records.</li>
 </div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-15">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-16">Known issues / Roadmap</a></h1>
 <ul class="simple">
 <li>The message of a post is checked against <strong>280 characters</strong>, the limit
 of an account without X Premium. Premium raises it to 25 000, so an
@@ -799,7 +827,7 @@ post is still written, and what is refused is its publication on X.</li>
 </ul>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-16">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-17">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -807,15 +835,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-17">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-18">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-18">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-19">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-19">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-20">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -824,7 +852,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-20">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-21">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

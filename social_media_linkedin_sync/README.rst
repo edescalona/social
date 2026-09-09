@@ -126,8 +126,10 @@ Importing what a page already published.
 ----------------------------------------
 
 - The *Update* button of the dashboard card imports the publications of
-  the page and their statistics. Without this module that button only
-  refreshes the daily series of the page; with it, it does both.
+  the page. Without this module that button refreshes the daily series
+  of the page and the figures of the publications of the last 30 days;
+  with it, it also brings in the publications Odoo does not have yet and
+  the figures of the ones older than that window.
 - The import discovers the publications three ways: one publication by
   its reference, the whole feed page by page, or — the ordinary path —
   the first page of the feed sorted by last modification, which is what
@@ -223,10 +225,15 @@ so what matters is not the total number of calls but how they spread.
   edited on LinkedIn. That is one call instead of one per hundred
   publications.
 
-- The statistics of the publications are asked in as many calls as the 4
-  KB limit of the query string needs, since those endpoints take every
-  identifier in the URL and none of them paginates. Around a hundred
-  publications fit in one call, so a full feed takes several.
+- The figures of the publications are not read here: the import hands
+  the identifiers to *Social Media Linkedin*, which is where that
+  reading lives, so the same three calls answer the page whether they
+  are asked for by this import or by the daily refresh of the connector.
+
+- Those figures are asked in as many calls as the 4 KB limit of the
+  query string needs, since those endpoints take every identifier in the
+  URL and none of them paginates. Around a hundred publications fit in
+  one call, so a full feed takes several.
 
   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/share-statistics
 
@@ -283,12 +290,18 @@ One definition per symbol
 
 The calls of this module cross towards *Social Media Linkedin*, never
 the other way around: ``_request_linkedin``, ``_get_posts``,
-``_linkedin_statistics_values``, ``_get_linkedin_daily_statistics`` and
-the constants of ``social_linkedin_utils.py`` are asked for where the
-connector defines them. Copying one of them here would be the failure
-that shows in nothing: the two copies drift apart with the first change,
-and the daily series and the import mark stop speaking the same
-language.
+``_linkedin_statistics_values``, ``_get_linkedin_daily_statistics``,
+``_refresh_post_statistics`` with the reading by URN behind it —
+``_get_entity_statistics``, ``_get_entity_share_statistics``,
+``_get_ugc_posts_statistics``, ``_parse_share_statistics``,
+``_filter_urns`` — and the constants of ``social_linkedin_utils.py`` are
+asked for where the connector defines them. The import does not read the
+figures of a publication either: it hands the page it discovered, plus
+the publications the page did not bring, to ``_refresh_post_statistics``
+and lets the connector spend the calls. Copying one of them here would
+be the failure that shows in nothing: the two copies drift apart with
+the first change, and the daily series and the import mark stop speaking
+the same language.
 
 Where the connector needs something only this module knows how to do, it
 declares an empty hook — ``_linkedin_check_updates`` — and this module

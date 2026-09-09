@@ -22,15 +22,21 @@ side: a limit stricter than the one the account really has warns too much,
 never too little, and it never blocks saving.
 
 
-Figures of a card without a synchronization module
+Figures older than the window
 ---------------
 
-The views of a publication only draw what this module counts, so a counter no
-import fills is no longer shown at zero. Two places still add up to zero on
-their own: the likes and the comments printed on every card of the dashboard,
-and the card of an account whose social media reports no daily figures. It is
-accurate — nobody asked the social media — but it reads like a broken
-dashboard, and there is no way from here to tell the two apart.
+The daily refresh reads back the publications of the last 30 days, which is
+what keeps its cost independent of the history of the account. A publication
+that was already older than that when the module was installed therefore stays
+at zero for good: nothing brings it inside the window again. It is accurate —
+nobody ever asked the social media about it — but on a card it reads like a
+figure that failed to arrive, and there is no way from here to tell the two
+apart. Reading the history of an account is what *Social Media Sync* is for.
+
+The list, the search filters and the form of a publication are drawn by that
+module for the same reason: they span the whole history, where a figure inside
+the window sits next to one that was never read. The *Statistics* dialog of a
+card does not, and it draws them all.
 
 
 Storage of the medias of a post

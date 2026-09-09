@@ -462,22 +462,23 @@ go out as usual.</li>
 <li><a class="reference internal" href="#partial-failures" id="toc-entry-15">Partial failures.</a></li>
 <li><a class="reference internal" href="#expired-credentials" id="toc-entry-16">Expired credentials.</a></li>
 <li><a class="reference internal" href="#statistics-of-the-accounts" id="toc-entry-17">Statistics of the accounts.</a></li>
-<li><a class="reference internal" href="#account-ownership" id="toc-entry-18">Account ownership.</a></li>
-<li><a class="reference internal" href="#notifications-you-may-never-see" id="toc-entry-19">Notifications you may never see.</a></li>
+<li><a class="reference internal" href="#figures-of-a-publication" id="toc-entry-18">Figures of a publication.</a></li>
+<li><a class="reference internal" href="#account-ownership" id="toc-entry-19">Account ownership.</a></li>
+<li><a class="reference internal" href="#notifications-you-may-never-see" id="toc-entry-20">Notifications you may never see.</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-20">Known issues / Roadmap</a><ul>
-<li><a class="reference internal" href="#multi-company-scope-of-the-posts" id="toc-entry-21">Multi-company scope of the posts.</a></li>
-<li><a class="reference internal" href="#limits-of-the-social-media-not-of-the-account" id="toc-entry-22">Limits of the social media, not of the account</a></li>
-<li><a class="reference internal" href="#figures-of-a-card-without-a-synchronization-module" id="toc-entry-23">Figures of a card without a synchronization module</a></li>
-<li><a class="reference internal" href="#storage-of-the-medias-of-a-post" id="toc-entry-24">Storage of the medias of a post</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-21">Known issues / Roadmap</a><ul>
+<li><a class="reference internal" href="#multi-company-scope-of-the-posts" id="toc-entry-22">Multi-company scope of the posts.</a></li>
+<li><a class="reference internal" href="#limits-of-the-social-media-not-of-the-account" id="toc-entry-23">Limits of the social media, not of the account</a></li>
+<li><a class="reference internal" href="#figures-older-than-the-window" id="toc-entry-24">Figures older than the window</a></li>
+<li><a class="reference internal" href="#storage-of-the-medias-of-a-post" id="toc-entry-25">Storage of the medias of a post</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-25">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-26">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-27">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-28">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-29">Maintainers</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-26">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-27">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-28">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-29">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-30">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -585,16 +586,19 @@ weight as a day with thirty thousand. What counts as an interaction is
 what the social media counts: X adds its retweets and quotes to the
 clicks, likes, comments and shares.</p>
 </li>
-<li><p class="first">Of the counters of a <strong>publication</strong>, only the tracked clicks are
-counted here: they are the clicks of the link tracker, which Odoo
-owns. The figures a social media reports — impressions, likes,
-comments, shares, engagement — are written by an import, which is
-<em>Social Media Sync</em>, and are shown in the list, in the form and in the
-<em>Statistics</em> dialog of a card only with that module installed.</p>
+<li><p class="first">Of the counters of a <strong>publication</strong>, the tracked clicks are the ones
+Odoo counts by itself: they are the clicks of the link tracker. The
+figures the social media reports — impressions, clicks, likes,
+comments, shares, engagement — are read back from it for the
+publications of the last 30 days, as described in <em>Figures of a
+publication</em> below, and shown in the <em>Statistics</em> dialog of the card.
+The list, the search filters and the form of a publication draw them
+only with <em>Social Media Sync</em> installed, because those views span the
+whole history.</p>
 </li>
-<li><p class="first">An account whose social media reports no daily figures still has an
-empty card without that module. That is the truth rather than a bug:
-nobody ever asked the social media about it.</p>
+<li><p class="first">An account whose social media reports no daily figures shows on its
+card the totals of the publications inside that window, which is as
+much as can be known about it without importing its history.</p>
 <p><img alt="DASHBOARD" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/DASHBOARD.png" /></p>
 <p><img alt="POSTS_KANBAN" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/POSTS_KANBAN.png" /></p>
 </li>
@@ -972,16 +976,54 @@ day, it says there is nothing to bring in rather than announcing an
 update that did not happen.</li>
 <li>Opening the dashboard costs nothing at all. There is no throttle on
 the button for that reason: there is nothing to protect.</li>
-<li>Importing the publications an account already has, filling the series
-backwards as far as the social media answers, and sweeping the feed
-for the publications deleted there are <strong>not</strong> part of this module.
-They cost one call per page or per publication, so they grow with the
-history of the account and come with <em>Social Media Sync</em>, together
-with the scheduled actions that run them.</li>
+<li>Importing the publications an account already has and sweeping the
+feed for the publications deleted there are <strong>not</strong> part of this
+module. They cost one call per page or per publication, so they grow
+with the history of the account and come with <em>Social Media Sync</em>,
+together with the scheduled actions that run them.</li>
+</ul>
+</div>
+<div class="section" id="figures-of-a-publication">
+<h2><a class="toc-backref" href="#toc-entry-18">Figures of a publication.</a></h2>
+<ul class="simple">
+<li>The scheduled action <em>Social: Refresh the statistics of the recent
+publications</em> asks each social media, once a day, for the figures of
+the publications published in the <strong>last 30 days</strong>: impressions,
+clicks, likes, comments, shares and the engagement derived from them.
+What it costs does not grow with the account — it is the days of that
+window and not the history of the page that decide the calls — which
+is why it is here and not in <em>Social Media Sync</em>.</li>
+<li>Only the publications that are online are asked about. One marked as
+<em>Deleted on &lt;media&gt;</em> has nothing left to ask, and one without a
+reference on the social media was never published.</li>
+<li>The window is not configurable, on purpose: it is what keeps the cost
+of the pass bounded, and widening it would turn this module into the
+import it is meant to stay out of.</li>
+<li>The <em>Statistics</em> dialog of a card shows, under the figures, the moment
+they were read from the social media. Empty means they were never
+read: it is what tells a zero nobody asked about from a zero the
+social media reported.</li>
+<li>Once a day and not every two hours because the figures of a
+publication move slowly and the quotas are counted per day. The
+<em>Update</em> button of the dashboard and <em>Update statistics</em> on the
+account form read exactly the same window on the spot, so there is a
+single set to explain wherever the user presses.</li>
+<li>An account waiting to be authorized again spends no call in the pass:
+it could only answer a refusal.</li>
+<li>A publication older than the window keeps the last figures that were
+read for it, and the date says which reading they are. <strong>A publication
+that was already older than the window when the module was installed
+stays at zero</strong>: nothing ever brings it inside. Importing what an
+account published before Odoo knew it is what <em>Social Media Sync</em> is
+for.</li>
+<li>Each account is read on its own: the social media refusing one of them
+neither undoes the figures already written for the others nor stops
+the ones still to read. What each connector spends per pass, and the
+rate limits it has to respect, is documented in that connector.</li>
 </ul>
 </div>
 <div class="section" id="account-ownership">
-<h2><a class="toc-backref" href="#toc-entry-18">Account ownership.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-19">Account ownership.</a></h2>
 <ul class="simple">
 <li>Every account has a <em>Responsible</em> user, set to whoever linked it. A
 regular user of the <em>Social Media / User: Own Accounts</em> group only
@@ -1016,7 +1058,7 @@ them.</li>
 </ul>
 </div>
 <div class="section" id="notifications-you-may-never-see">
-<h2><a class="toc-backref" href="#toc-entry-19">Notifications you may never see.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-20">Notifications you may never see.</a></h2>
 <ul class="simple">
 <li><em>Update statistics</em> answers one of two notices: that the daily figures
 were refreshed, or that the social media reports no figures by day and
@@ -1028,9 +1070,9 @@ always answers the first one.</li>
 </div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-20">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-21">Known issues / Roadmap</a></h1>
 <div class="section" id="multi-company-scope-of-the-posts">
-<h2><a class="toc-backref" href="#toc-entry-21">Multi-company scope of the posts.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-22">Multi-company scope of the posts.</a></h2>
 <p>The accounts (<tt class="docutils literal">social.account</tt>) and their daily statistics
 (<tt class="docutils literal">social.account.statistics</tt>) are the multi-company records: they
 carry a company and a record rule that filters them. The posts and their
@@ -1040,7 +1082,7 @@ database a social media administrator therefore sees the posts of every
 company.</p>
 </div>
 <div class="section" id="limits-of-the-social-media-not-of-the-account">
-<h2><a class="toc-backref" href="#toc-entry-22">Limits of the social media, not of the account</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Limits of the social media, not of the account</a></h2>
 <p>The limits a post is checked against are those of the social media, not
 those of the account. A paid plan can raise them — X Premium takes the
 message from 280 to 25 000 characters — and an account on such a plan is
@@ -1051,18 +1093,23 @@ plan apart. Until then the checks err on the safe side: a limit stricter
 than the one the account really has warns too much, never too little,
 and it never blocks saving.</p>
 </div>
-<div class="section" id="figures-of-a-card-without-a-synchronization-module">
-<h2><a class="toc-backref" href="#toc-entry-23">Figures of a card without a synchronization module</a></h2>
-<p>The views of a publication only draw what this module counts, so a
-counter no import fills is no longer shown at zero. Two places still add
-up to zero on their own: the likes and the comments printed on every
-card of the dashboard, and the card of an account whose social media
-reports no daily figures. It is accurate — nobody asked the social media
-— but it reads like a broken dashboard, and there is no way from here to
-tell the two apart.</p>
+<div class="section" id="figures-older-than-the-window">
+<h2><a class="toc-backref" href="#toc-entry-24">Figures older than the window</a></h2>
+<p>The daily refresh reads back the publications of the last 30 days, which
+is what keeps its cost independent of the history of the account. A
+publication that was already older than that when the module was
+installed therefore stays at zero for good: nothing brings it inside the
+window again. It is accurate — nobody ever asked the social media about
+it — but on a card it reads like a figure that failed to arrive, and
+there is no way from here to tell the two apart. Reading the history of
+an account is what <em>Social Media Sync</em> is for.</p>
+<p>The list, the search filters and the form of a publication are drawn by
+that module for the same reason: they span the whole history, where a
+figure inside the window sits next to one that was never read. The
+<em>Statistics</em> dialog of a card does not, and it draws them all.</p>
 </div>
 <div class="section" id="storage-of-the-medias-of-a-post">
-<h2><a class="toc-backref" href="#toc-entry-24">Storage of the medias of a post</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-25">Storage of the medias of a post</a></h2>
 <p>The images and videos of a post and of its publications are ordinary
 <tt class="docutils literal">ir.attachment</tt> records, kept for as long as the record that owns
 them. A post published on several accounts stores each media once,
@@ -1081,7 +1128,7 @@ database.</p>
 </div>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-25">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-26">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -1089,15 +1136,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-26">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-27">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-27">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-28">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-28">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-29">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -1106,7 +1153,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-29">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-30">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

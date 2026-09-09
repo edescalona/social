@@ -418,6 +418,7 @@ msgstr ""
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__count_post_comments
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
 msgid "Comments"
 msgstr ""
 
@@ -586,6 +587,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:social_media_base.field_social_account_statistics__engagement
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__count_post_engagement
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__engagement
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
 #: model_terms:ir.ui.view,arch_db:social_media_base.utm_campaign_view_form
 msgid "Engagement"
 msgstr ""
@@ -804,12 +806,18 @@ msgid "Impression Count"
 msgstr ""
 
 #. module: social_media_base
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
+msgid "Impressions"
+msgstr ""
+
+#. module: social_media_base
 #: model:ir.model.fields,help:social_media_base.field_social_post_account__has_video
 msgid "Indicates that the published post has at least one video attached."
 msgstr ""
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__count_post_interactions
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
 msgid "Interactions"
 msgstr ""
 
@@ -874,6 +882,7 @@ msgstr ""
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__count_post_likes
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
 msgid "Likes"
 msgstr ""
 
@@ -1404,6 +1413,7 @@ msgstr ""
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post__count_post_shares
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
 msgid "Shares"
 msgstr ""
 
@@ -1430,6 +1440,7 @@ msgstr ""
 
 #. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_utm_campaign__social_click_count
+#: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_form_statistics
 msgid "Social Media Clicks"
 msgstr ""
 
@@ -1537,6 +1548,11 @@ msgid "Social: Checking social media updates"
 msgstr ""
 
 #. module: social_media_base
+#: model:ir.actions.server,name:social_media_base.refresh_post_statistics_job_ir_actions_server
+msgid "Social: Refresh the statistics of the recent publications"
+msgstr ""
+
+#. module: social_media_base
 #: model:ir.model.fields,field_description:social_media_base.field_social_post_account__source_id
 msgid "Source"
 msgstr ""
@@ -1558,6 +1574,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:social_media_base.social_post_account_view_kanban
 #, python-format
 msgid "Statistics"
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model.fields,field_description:social_media_base.field_social_post_account__statistics_date
+msgid "Statistics Read On"
 msgstr ""
 
 #. module: social_media_base
@@ -2043,6 +2064,13 @@ msgid ""
 "What no social media of the post will be able to publish as the post stands."
 " It does not block saving, so the post can be finished later, but the "
 "publication is refused until it is fixed."
+msgstr ""
+
+#. module: social_media_base
+#: model:ir.model.fields,help:social_media_base.field_social_post_account__statistics_date
+msgid ""
+"When the figures of this publication were last read back from the social "
+"media. Empty means they were never read."
 msgstr ""
 
 #. module: social_media_base

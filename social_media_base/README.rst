@@ -211,16 +211,19 @@ Posts on the dashboard.
   what the social media counts: X adds its retweets and quotes to the
   clicks, likes, comments and shares.
 
-- Of the counters of a **publication**, only the tracked clicks are
-  counted here: they are the clicks of the link tracker, which Odoo
-  owns. The figures a social media reports — impressions, likes,
-  comments, shares, engagement — are written by an import, which is
-  *Social Media Sync*, and are shown in the list, in the form and in the
-  *Statistics* dialog of a card only with that module installed.
+- Of the counters of a **publication**, the tracked clicks are the ones
+  Odoo counts by itself: they are the clicks of the link tracker. The
+  figures the social media reports — impressions, clicks, likes,
+  comments, shares, engagement — are read back from it for the
+  publications of the last 30 days, as described in *Figures of a
+  publication* below, and shown in the *Statistics* dialog of the card.
+  The list, the search filters and the form of a publication draw them
+  only with *Social Media Sync* installed, because those views span the
+  whole history.
 
-- An account whose social media reports no daily figures still has an
-  empty card without that module. That is the truth rather than a bug:
-  nobody ever asked the social media about it.
+- An account whose social media reports no daily figures shows on its
+  card the totals of the publications inside that window, which is as
+  much as can be known about it without importing its history.
 
   |DASHBOARD|
 
@@ -588,12 +591,49 @@ Statistics of the accounts.
   update that did not happen.
 - Opening the dashboard costs nothing at all. There is no throttle on
   the button for that reason: there is nothing to protect.
-- Importing the publications an account already has, filling the series
-  backwards as far as the social media answers, and sweeping the feed
-  for the publications deleted there are **not** part of this module.
-  They cost one call per page or per publication, so they grow with the
-  history of the account and come with *Social Media Sync*, together
-  with the scheduled actions that run them.
+- Importing the publications an account already has and sweeping the
+  feed for the publications deleted there are **not** part of this
+  module. They cost one call per page or per publication, so they grow
+  with the history of the account and come with *Social Media Sync*,
+  together with the scheduled actions that run them.
+
+Figures of a publication.
+-------------------------
+
+- The scheduled action *Social: Refresh the statistics of the recent
+  publications* asks each social media, once a day, for the figures of
+  the publications published in the **last 30 days**: impressions,
+  clicks, likes, comments, shares and the engagement derived from them.
+  What it costs does not grow with the account — it is the days of that
+  window and not the history of the page that decide the calls — which
+  is why it is here and not in *Social Media Sync*.
+- Only the publications that are online are asked about. One marked as
+  *Deleted on <media>* has nothing left to ask, and one without a
+  reference on the social media was never published.
+- The window is not configurable, on purpose: it is what keeps the cost
+  of the pass bounded, and widening it would turn this module into the
+  import it is meant to stay out of.
+- The *Statistics* dialog of a card shows, under the figures, the moment
+  they were read from the social media. Empty means they were never
+  read: it is what tells a zero nobody asked about from a zero the
+  social media reported.
+- Once a day and not every two hours because the figures of a
+  publication move slowly and the quotas are counted per day. The
+  *Update* button of the dashboard and *Update statistics* on the
+  account form read exactly the same window on the spot, so there is a
+  single set to explain wherever the user presses.
+- An account waiting to be authorized again spends no call in the pass:
+  it could only answer a refusal.
+- A publication older than the window keeps the last figures that were
+  read for it, and the date says which reading they are. **A publication
+  that was already older than the window when the module was installed
+  stays at zero**: nothing ever brings it inside. Importing what an
+  account published before Odoo knew it is what *Social Media Sync* is
+  for.
+- Each account is read on its own: the social media refusing one of them
+  neither undoes the figures already written for the others nor stops
+  the ones still to read. What each connector spends per pass, and the
+  rate limits it has to respect, is documented in that connector.
 
 Account ownership.
 ------------------
@@ -671,16 +711,22 @@ plan apart. Until then the checks err on the safe side: a limit stricter
 than the one the account really has warns too much, never too little,
 and it never blocks saving.
 
-Figures of a card without a synchronization module
---------------------------------------------------
+Figures older than the window
+-----------------------------
 
-The views of a publication only draw what this module counts, so a
-counter no import fills is no longer shown at zero. Two places still add
-up to zero on their own: the likes and the comments printed on every
-card of the dashboard, and the card of an account whose social media
-reports no daily figures. It is accurate — nobody asked the social media
-— but it reads like a broken dashboard, and there is no way from here to
-tell the two apart.
+The daily refresh reads back the publications of the last 30 days, which
+is what keeps its cost independent of the history of the account. A
+publication that was already older than that when the module was
+installed therefore stays at zero for good: nothing brings it inside the
+window again. It is accurate — nobody ever asked the social media about
+it — but on a card it reads like a figure that failed to arrive, and
+there is no way from here to tell the two apart. Reading the history of
+an account is what *Social Media Sync* is for.
+
+The list, the search filters and the form of a publication are drawn by
+that module for the same reason: they span the whole history, where a
+figure inside the window sits next to one that was never read. The
+*Statistics* dialog of a card does not, and it draws them all.
 
 Storage of the medias of a post
 -------------------------------

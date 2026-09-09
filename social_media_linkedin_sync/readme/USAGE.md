@@ -2,8 +2,10 @@ Importing what a page already published.
 ----------------------------------------
 
 - The *Update* button of the dashboard card imports the publications of the
-  page and their statistics. Without this module that button only refreshes
-  the daily series of the page; with it, it does both.
+  page. Without this module that button refreshes the daily series of the page
+  and the figures of the publications of the last 30 days; with it, it also
+  brings in the publications Odoo does not have yet and the figures of the ones
+  older than that window.
 - The import discovers the publications three ways: one publication by its
   reference, the whole feed page by page, or — the ordinary path — the first
   page of the feed sorted by last modification, which is what catches what
@@ -92,10 +94,14 @@ what matters is not the total number of calls but how they spread.
   so one page of the feed is enough: the one sorted by last modification, which
   is what brings the publications created or edited on LinkedIn. That is one
   call instead of one per hundred publications.
-- The statistics of the publications are asked in as many calls as the 4 KB
-  limit of the query string needs, since those endpoints take every identifier
-  in the URL and none of them paginates. Around a hundred publications fit in
-  one call, so a full feed takes several.
+- The figures of the publications are not read here: the import hands the
+  identifiers to *Social Media Linkedin*, which is where that reading lives, so
+  the same three calls answer the page whether they are asked for by this
+  import or by the daily refresh of the connector.
+- Those figures are asked in as many calls as the 4 KB limit of the query
+  string needs, since those endpoints take every identifier in the URL and none
+  of them paginates. Around a hundred publications fit in one call, so a full
+  feed takes several.
 
   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/share-statistics
 

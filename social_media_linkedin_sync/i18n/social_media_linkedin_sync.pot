@@ -14,13 +14,6 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: social_media_linkedin_sync
-#. odoo-python
-#: code:addons/social_media_linkedin_sync/models/social_account.py:0
-#, python-format
-msgid "%(label)s: %(error)s"
-msgstr ""
-
-#. module: social_media_linkedin_sync
 #: model_terms:ir.ui.view,arch_db:social_media_linkedin_sync.social_account_view_form_inherit_sync_linkedin
 msgid ""
 "), so it refuses to serve its publications. Enable the\n"
@@ -160,14 +153,6 @@ msgstr ""
 
 #. module: social_media_linkedin_sync
 #. odoo-python
-#: code:addons/social_media_linkedin_sync/models/social_account.py:0
-#, python-format
-msgid ""
-"The likes and the comments of the publications could not be read: %(error)s"
-msgstr ""
-
-#. module: social_media_linkedin_sync
-#. odoo-python
 #: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
 #: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
 #: code:addons/social_media_linkedin_sync/models/social_post_account.py:0
@@ -190,20 +175,6 @@ msgid ""
 "The scopes the token of this account was not granted and the import of its "
 "history needs. A token keeps the scopes it was issued with, so an account "
 "associated before this module was installed has to be authorized again."
-msgstr ""
-
-#. module: social_media_linkedin_sync
-#. odoo-python
-#: code:addons/social_media_linkedin_sync/models/social_account.py:0
-#, python-format
-msgid "The statistics of the publications could not be read"
-msgstr ""
-
-#. module: social_media_linkedin_sync
-#. odoo-python
-#: code:addons/social_media_linkedin_sync/models/social_account.py:0
-#, python-format
-msgid "The statistics of the shared publications could not be read"
 msgstr ""
 
 #. module: social_media_linkedin_sync

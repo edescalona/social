@@ -4,12 +4,12 @@ their comments and reactions.
 
 It is separate from *Social Media Base* because of what it costs. Base asks
 the social media for a fixed number of things per account — publish, delete,
-the daily series of the page — and that number does not change whether the
-account published once or ten thousand times. Everything whose cost grows
-with the history of the account lives here: one call per page of posts, one
-call per publication to check it is still there, one call per comment thread.
-An installation that only writes and publishes does not have to pay for any
-of it.
+the daily series of the page, the figures of the publications of the last 30
+days — and that number does not change whether the account published once or
+ten thousand times. Everything whose cost grows with the history of the account
+lives here: one call per page of posts, one call per publication to check it is
+still there, one call per comment thread. An installation that only writes and
+publishes does not have to pay for any of it.
 
 *Social Media Base* never names this module. Where base needs something only
 the synchronization knows how to do, it declares an empty hook and carries
@@ -17,9 +17,12 @@ on, so base works installed alone.
 
 Main features:
 
-- Import of the posts an account already published, and of the statistics
-  each of them collected, which this module also adds to the views of a
-  publication: base draws only the figure it counts itself.
+- Import of the posts an account already published, and of the figures each of
+  them collected however old it is. Base reads back the publications of the
+  last 30 days on its own and draws them in the *Statistics* dialog; what this
+  module adds are the views that span the whole history — the list of
+  publications, its search filters and the ordinary form — where a publication
+  older than that window only carries figures once this import has run.
 - Initial synchronization right after an account is linked, which also fills
   the daily statistics series of the account backwards as far as the social
   media answers. A monthly cron picks up the accounts still waiting for it.

@@ -3,9 +3,14 @@ One definition per symbol
 
 The calls of this module cross towards *Social Media Linkedin*, never the
 other way around: `_request_linkedin`, `_get_posts`,
-`_linkedin_statistics_values`, `_get_linkedin_daily_statistics` and the
+`_linkedin_statistics_values`, `_get_linkedin_daily_statistics`,
+`_refresh_post_statistics` with the reading by URN behind it —
+`_get_entity_statistics`, `_get_entity_share_statistics`,
+`_get_ugc_posts_statistics`, `_parse_share_statistics`, `_filter_urns` — and the
 constants of `social_linkedin_utils.py` are asked for where the connector
-defines them. Copying one of them here would be the failure that shows in
+defines them. The import does not read the figures of a publication either: it
+hands the page it discovered, plus the publications the page did not bring, to
+`_refresh_post_statistics` and lets the connector spend the calls. Copying one of them here would be the failure that shows in
 nothing: the two copies drift apart with the first change, and the daily
 series and the import mark stop speaking the same language.
 

@@ -375,3 +375,33 @@ class TestSocialPostAccountSync(TestSocialMediaSyncCommon):
             "The medias already downloaded must be found whoever runs the "
             "synchronization, otherwise every run creates a duplicate",
         )
+
+    def test_the_statistics_dialog_belongs_to_the_base(self):
+        """This module no longer draws the figures of a publication.
+
+        They are read back by the connectors for the recent publications, so
+        the dialog is drawn by ``social_media_base`` alone. What this module
+        still adds are the views that span the whole history.
+        """
+        self.assertFalse(
+            self.env.ref(
+                "social_media_sync.social_post_account_view_form_statistics_inherit",
+                raise_if_not_found=False,
+            )
+        )
+        arch = self.SocialPostAccount.get_view(
+            self.env.ref(
+                "social_media_base.social_post_account_view_form_statistics"
+            ).id
+        )["arch"]
+        for field_name in (
+            "impression_count",
+            "click_count",
+            "share_count",
+            "like_count",
+            "comment_count",
+            "interactions_count",
+            "engagement",
+            "statistics_date",
+        ):
+            self.assertIn(f'name="{field_name}"', arch)

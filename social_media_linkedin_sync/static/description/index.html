@@ -488,8 +488,10 @@ permission instead of the bare error LinkedIn answers.</p>
 <h2><a class="toc-backref" href="#toc-entry-5">Importing what a page already published.</a></h2>
 <ul class="simple">
 <li>The <em>Update</em> button of the dashboard card imports the publications of
-the page and their statistics. Without this module that button only
-refreshes the daily series of the page; with it, it does both.</li>
+the page. Without this module that button refreshes the daily series
+of the page and the figures of the publications of the last 30 days;
+with it, it also brings in the publications Odoo does not have yet and
+the figures of the ones older than that window.</li>
 <li>The import discovers the publications three ways: one publication by
 its reference, the whole feed page by page, or — the ordinary path —
 the first page of the feed sorted by last modification, which is what
@@ -588,10 +590,15 @@ last modification, which is what brings the publications created or
 edited on LinkedIn. That is one call instead of one per hundred
 publications.</p>
 </li>
-<li><p class="first">The statistics of the publications are asked in as many calls as the 4
-KB limit of the query string needs, since those endpoints take every
-identifier in the URL and none of them paginates. Around a hundred
-publications fit in one call, so a full feed takes several.</p>
+<li><p class="first">The figures of the publications are not read here: the import hands
+the identifiers to <em>Social Media Linkedin</em>, which is where that
+reading lives, so the same three calls answer the page whether they
+are asked for by this import or by the daily refresh of the connector.</p>
+</li>
+<li><p class="first">Those figures are asked in as many calls as the 4 KB limit of the
+query string needs, since those endpoints take every identifier in the
+URL and none of them paginates. Around a hundred publications fit in
+one call, so a full feed takes several.</p>
 <p><a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/share-statistics">https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/share-statistics</a></p>
 </li>
 <li><p class="first"><em>Full resync</em> is the expensive pass, one call per hundred
@@ -649,12 +656,18 @@ once when that happens and the next import reconciles it.</li>
 <h2><a class="toc-backref" href="#toc-entry-12">One definition per symbol</a></h2>
 <p>The calls of this module cross towards <em>Social Media Linkedin</em>, never
 the other way around: <tt class="docutils literal">_request_linkedin</tt>, <tt class="docutils literal">_get_posts</tt>,
-<tt class="docutils literal">_linkedin_statistics_values</tt>, <tt class="docutils literal">_get_linkedin_daily_statistics</tt> and
-the constants of <tt class="docutils literal">social_linkedin_utils.py</tt> are asked for where the
-connector defines them. Copying one of them here would be the failure
-that shows in nothing: the two copies drift apart with the first change,
-and the daily series and the import mark stop speaking the same
-language.</p>
+<tt class="docutils literal">_linkedin_statistics_values</tt>, <tt class="docutils literal">_get_linkedin_daily_statistics</tt>,
+<tt class="docutils literal">_refresh_post_statistics</tt> with the reading by URN behind it —
+<tt class="docutils literal">_get_entity_statistics</tt>, <tt class="docutils literal">_get_entity_share_statistics</tt>,
+<tt class="docutils literal">_get_ugc_posts_statistics</tt>, <tt class="docutils literal">_parse_share_statistics</tt>,
+<tt class="docutils literal">_filter_urns</tt> — and the constants of <tt class="docutils literal">social_linkedin_utils.py</tt> are
+asked for where the connector defines them. The import does not read the
+figures of a publication either: it hands the page it discovered, plus
+the publications the page did not bring, to <tt class="docutils literal">_refresh_post_statistics</tt>
+and lets the connector spend the calls. Copying one of them here would
+be the failure that shows in nothing: the two copies drift apart with
+the first change, and the daily series and the import mark stop speaking
+the same language.</p>
 <p>Where the connector needs something only this module knows how to do, it
 declares an empty hook — <tt class="docutils literal">_linkedin_check_updates</tt> — and this module
 overrides it.</p>

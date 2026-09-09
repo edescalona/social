@@ -18,6 +18,7 @@
     "data": [
         "data/social_media_data.xml",
         "views/social_account_views.xml",
+        "views/social_post_account_views.xml",
         "wizards/wizard_social_account.xml",
     ],
     "external_dependencies": {

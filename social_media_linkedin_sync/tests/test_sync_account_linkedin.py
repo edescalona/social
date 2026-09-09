@@ -19,6 +19,7 @@ from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     RECENT_STATISTICS_LINKEDIN,
 )
 
+from ..models.social_account import SocialAccount as SocialAccountLinkedinSync
 from .test_sync_linkedin_common import (
     PATCH_SYNC_ACCOUNT_LINKEDIN,
     PATCH_SYNC_POST_ACCOUNT_LINKEDIN,
@@ -828,3 +829,80 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             {},
             msg="Nothing is written when LinkedIn did not answer.",
         )
+
+    def test_the_import_does_not_duplicate_what_the_refresh_wrote(self):
+        """Installing this module over an already refreshed base loses nothing.
+
+        The daily refresh of ``social_media_base`` and this import write the
+        same line, by remote reference: the second reading overwrites the first
+        with the same values instead of creating a publication of its own.
+        """
+        post_account = self.SocialPostAccountLinkedin
+        statistics = {post_account.remote_ref: (1, 7, 2, 0, 0.5, 42)}
+        patch_entity = patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"),
+            autospec=True,
+            return_value=statistics,
+        )
+        with patch_entity:
+            self.SocialAccountLinkedin._refresh_post_statistics(post_account)
+        refreshed_on = post_account.statistics_date
+        self.assertEqual(post_account.like_count, 7)
+        lines_before = self.SocialPostAccount.search_count(
+            [
+                ("account_id", "=", self.SocialAccountLinkedin.id),
+                ("remote_ref", "=", post_account.remote_ref),
+            ]
+        )
+        ugc_posts = [
+            {
+                "id": post_account.remote_ref,
+                "commentary": "Test Message",
+                "content": {},
+                "publishedAt": 1735689600000,
+                "author": "urn:li:organization:123456",
+            }
+        ]
+        (
+            patch_validate,
+            patch_get_posts,
+            patch_all_posts,
+            __,
+            patch_assets,
+            patch_page,
+            patch_reactions,
+        ) = self._generate_update_posts_statistics_patches(ugc_posts)
+        with patch_validate, patch_get_posts, patch_all_posts, patch_entity, (
+            patch_assets
+        ), patch_page, patch_reactions:
+            self.SocialAccountLinkedin._update_posts_statistics(False, None)
+        self.assertEqual(
+            self.SocialPostAccount.search_count(
+                [
+                    ("account_id", "=", self.SocialAccountLinkedin.id),
+                    ("remote_ref", "=", post_account.remote_ref),
+                ]
+            ),
+            lines_before,
+            msg="The import writes on the line the refresh already wrote on.",
+        )
+        self.assertEqual(post_account.like_count, 7)
+        self.assertEqual(post_account.impression_count, 42)
+        self.assertGreaterEqual(post_account.statistics_date, refreshed_on)
+
+    def test_the_bridge_does_not_read_the_figures_itself(self):
+        """The reading by URN belongs to the connector.
+
+        The rule this module already writes down in its ROADMAP: the calls
+        cross towards *Social Media Linkedin*, never the other way around. Two
+        definitions of the same reading drift apart with the first change.
+        """
+        for method in (
+            "_filter_urns",
+            "_parse_share_statistics",
+            "_get_entity_share_statistics",
+            "_get_ugc_posts_statistics",
+            "_get_entity_statistics",
+        ):
+            self.assertNotIn(method, SocialAccountLinkedinSync.__dict__)
+            self.assertTrue(hasattr(self.SocialAccountLinkedin, method))

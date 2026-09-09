@@ -680,9 +680,11 @@ class SocialAccount(models.Model):
         """Add up the counters already stored on the publications.
 
         The fallback for a social media that reports nothing by day. It asks
-        for nothing: whatever was last imported into the publications is what
-        is added up, and with nothing importing them the figures stay at zero,
-        which is the truth — base never learned them.
+        for nothing: whatever the last refresh left on the publications is what
+        is added up. That refresh only reaches the recent ones, so the total of
+        such an account is the total of its window and not of its history,
+        which is as far as an account with no daily series can be known from
+        here.
 
         :param list counters: counter fields to add up.
         :rtype: dict or None

@@ -237,3 +237,18 @@ class TestXPostStatistics(TestSocialCommonX):
         self.assertEqual(refreshed, working)
         self.assertFalse(broken.statistics_date)
         self.assertEqual(working.like_count, 6)
+
+    def test_the_dialog_draws_the_reposts_and_the_quotes(self):
+        """The two figures only X reports are drawn by its connector.
+
+        The refresh fills them for the recent publications, so they are numbers
+        with no synchronization module installed, and the dialog has to show
+        them.
+        """
+        arch = self.SocialPostAccount.get_view(
+            self.env.ref(
+                "social_media_base.social_post_account_view_form_statistics"
+            ).id
+        )["arch"]
+        self.assertIn('name="retweet_count"', arch)
+        self.assertIn('name="quote_count"', arch)

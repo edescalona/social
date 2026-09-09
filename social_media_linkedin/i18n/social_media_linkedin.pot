@@ -17,6 +17,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_linkedin/models/social_account.py:0
 #, python-format
+msgid "%(label)s: %(error)s"
+msgstr ""
+
+#. module: social_media_linkedin
+#. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
 msgid "%(prefix)s: %(error)s"
 msgstr ""
 
@@ -366,6 +373,14 @@ msgstr ""
 
 #. module: social_media_linkedin
 #. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
+msgid ""
+"The likes and the comments of the publications could not be read: %(error)s"
+msgstr ""
+
+#. module: social_media_linkedin
+#. odoo-python
 #: code:addons/social_media_linkedin/tests/test_account_linkedin.py:0
 #: code:addons/social_media_linkedin/tests/test_account_linkedin.py:0
 #, python-format
@@ -391,6 +406,20 @@ msgstr ""
 #: code:addons/social_media_linkedin/models/social_account.py:0
 #, python-format
 msgid "The publications could not be read from LinkedIn: %(error)s"
+msgstr ""
+
+#. module: social_media_linkedin
+#. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
+msgid "The statistics of the publications could not be read"
+msgstr ""
+
+#. module: social_media_linkedin
+#. odoo-python
+#: code:addons/social_media_linkedin/models/social_account.py:0
+#, python-format
+msgid "The statistics of the shared publications could not be read"
 msgstr ""
 
 #. module: social_media_linkedin

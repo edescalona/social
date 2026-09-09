@@ -368,12 +368,13 @@ Rate limits
 
 - The `rate limit <https://docs.x.com/x-api/fundamentals/rate-limits>`__
   is tracked per endpoint. The ones this module spends are linking the
-  account, publishing and deleting; a synchronization module adds its
-  own to the same record. When X answers that it is exhausted, Odoo
-  stores the window it returns and does not call that endpoint again
-  until it expires: a notice is shown with the limit of the plan, the
-  remaining requests and the time of the next attempt. If X does not say
-  when the window resets, 60 seconds are assumed.
+  account, publishing, deleting, reading a single post and reading the
+  figures of the recent ones (``get_posts``); a synchronization module
+  adds its own to the same record. When X answers that it is exhausted,
+  Odoo stores the window it returns and does not call that endpoint
+  again until it expires: a notice is shown with the limit of the plan,
+  the remaining requests and the time of the next attempt. If X does not
+  say when the window resets, 60 seconds are assumed.
 - If X refuses a publication because the requests of the plan are
   exhausted, the line is left as *Failed* with the message *X did not
   accept the post. The account may have reached the limit of requests of
@@ -398,6 +399,31 @@ Rate limits
   not expire and its API reports no figures by day, so the pass only
   hands the accounts over to whoever synchronizes them. Without a
   synchronization module installed nothing happens on that pass.
+
+Figures of a publication
+------------------------
+
+- The figures of the posts published in the last 30 days — likes,
+  replies, impressions, retweets and quotes — are read back from X once
+  a day, by the *Social: Refresh the statistics of the recent
+  publications* scheduled action, and on the spot by the *Update* button
+  of the dashboard and *Update statistics* of the account form.
+- Nothing walks the timeline to do it: Odoo already knows the identifier
+  of every post it asks about, so they are read by batches of **100 ids
+  per request** on its own ``get_posts`` endpoint. Reading the timeline
+  is what imports what Odoo did not publish, and that is a
+  synchronization module.
+- Daily and not every two hours because what has to be watched on X is
+  not the volume but the 15 minute window of the plan. For the same
+  reason the buttons read the same bounded window and never the whole
+  account.
+- While the window of ``get_posts`` is exhausted the pass asks X for
+  nothing and the publications keep the figures they have, with the date
+  of the reading they come from. What was read before the limit was
+  reached is kept: those requests are spent either way.
+- A post missing from the answer is left untouched. X does not report a
+  post that was deleted or hidden, which is not the same as a post whose
+  figures are zero, so its line keeps its last figures and its date.
 
 Dashboard actions
 -----------------

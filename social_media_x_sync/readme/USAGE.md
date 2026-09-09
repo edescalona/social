@@ -11,10 +11,11 @@ Importing the publications
   attachment. A media already stored is not asked for again.
 - The *Update* button of the dashboard card runs the same import on demand.
 - With *Enable since* the import only asks for what was published after the
-  stored publication, so the figures of the older publications are no longer
-  updated. The card of the account is unaffected either way: the import writes
-  the figures of each tweet on its publication, and the card adds up every
-  publication stored.
+  stored publication, so the older publications are no longer read by this
+  import. The ones published in the last 30 days are refreshed all the same by
+  *Social Media X*, which reads their figures by identifier. The card of the
+  account is unaffected either way: the figures are written on each
+  publication, and the card adds up every publication stored.
 
 Comments
 ------------------------

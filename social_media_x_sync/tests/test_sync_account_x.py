@@ -16,6 +16,7 @@ from odoo.addons.social_media_sync.tests.test_social_sync_common import (
     PATCH_SYNC_ACCOUNT,
 )
 
+from ..models.social_account import SocialAccount as SocialAccountXSync
 from .test_sync_x_common import LOGGER_ACCOUNT_X_SYNC, TestSocialSyncCommonX
 
 
@@ -798,3 +799,12 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
             side_effect=ConcurrencyError("serialization conflict"),
         ), self.assertRaises(psycopg2.OperationalError):
             self.SocialAccountX._x_check_updates()
+
+    def test_the_bridge_does_not_read_the_metrics_itself(self):
+        """The reading of the metrics belongs to the connector.
+
+        Two definitions of it are two readings that drift apart with the first
+        change, so this module asks for the one of ``social_media_x``.
+        """
+        self.assertNotIn("_get_public_metrics", SocialAccountXSync.__dict__)
+        self.assertTrue(hasattr(self.SocialAccountX, "_get_public_metrics"))

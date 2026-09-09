@@ -88,7 +88,6 @@ msgstr "Comentario eliminado"
 #. module: social_media_sync
 #. odoo-javascript
 #: code:addons/social_media_sync/static/src/js/views/kanban/social_kanban_record.esm.js:0
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 #, python-format
 msgid "Comments"
@@ -110,7 +109,6 @@ msgid "Delete comment"
 msgstr "Eliminar comentario"
 
 #. module: social_media_sync
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Engagement"
 msgstr "Interacción"
@@ -142,13 +140,11 @@ msgid "Hide replies ("
 msgstr "Ocultar respuestas ("
 
 #. module: social_media_sync
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Impressions"
 msgstr "Impresiones"
 
 #. module: social_media_sync
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Interactions"
 msgstr "Interacciones"
@@ -159,7 +155,6 @@ msgid "Interactions:"
 msgstr "Interacciones:"
 
 #. module: social_media_sync
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Likes"
 msgstr "Me gusta"
@@ -201,7 +196,9 @@ msgstr "Recomendar"
 msgid ""
 "Recommend this comment on the social media, as the account that owns the "
 "publication. Pressing it again withdraws the reaction."
-msgstr "Recomienda este comentario en la red social, como la cuenta propietaria de la publicación. Al pulsarlo otra vez se retira la reacción."
+msgstr ""
+"Recomienda este comentario en la red social, como la cuenta propietaria de "
+"la publicación. Al pulsarlo otra vez se retira la reacción."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -219,7 +216,11 @@ msgid ""
 "import read it. It is what the social media answers about whoever published, "
 "which is not always the account that imported it: a page publishes as the "
 "page and a person as the person."
-msgstr "Referencia del autor de la publicación en la red social, tal como la leyó la importación. Es lo que la red social responde sobre quien publicó, que no siempre es la cuenta que la importó: una página publica como la página y una persona como la persona."
+msgstr ""
+"Referencia del autor de la publicación en la red social, tal como la leyó la "
+"importación. Es lo que la red social responde sobre quien publicó, que no "
+"siempre es la cuenta que la importó: una página publica como la página y una "
+"persona como la persona."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -236,7 +237,6 @@ msgid "Replying"
 msgstr "Respondiendo"
 
 #. module: social_media_sync
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Shares"
 msgstr "Comparticiones"
@@ -248,11 +248,12 @@ msgstr "Comparticiones"
 msgid ""
 "Show or hide the replies to this comment, asking the social media for them "
 "the first time."
-msgstr "Muestra u oculta las respuestas a este comentario, pidiéndoselas a la red social la primera vez."
+msgstr ""
+"Muestra u oculta las respuestas a este comentario, pidiéndoselas a la red "
+"social la primera vez."
 
 #. module: social_media_sync
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_inherit
-#: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_statistics_inherit
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Social Media Clicks"
 msgstr "Clics en redes sociales"
@@ -279,7 +280,9 @@ msgstr "La cuenta"
 msgid ""
 "The account was just associated and its posts still have to be imported by "
 "the initial sync cron."
-msgstr "La cuenta se acaba de asociar y sus publicaciones todavía las tiene que importar el cron de sincronización inicial."
+msgstr ""
+"La cuenta se acaba de asociar y sus publicaciones todavía las tiene que "
+"importar el cron de sincronización inicial."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -300,7 +303,9 @@ msgstr "Se han actualizado los datos. No hay publicaciones nuevas."
 msgid ""
 "The periodic check found publications on the social media that Odoo has not "
 "imported yet."
-msgstr "La comprobación periódica ha encontrado en la red social publicaciones que Odoo todavía no ha importado."
+msgstr ""
+"La comprobación periódica ha encontrado en la red social publicaciones que "
+"Odoo todavía no ha importado."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -404,7 +409,9 @@ msgstr "Con comparticiones"
 msgid ""
 "Write a reply to this comment. It is published on the social media as the "
 "account that owns the publication."
-msgstr "Escribe una respuesta a este comentario. Se publica en la red social como la cuenta propietaria de la publicación."
+msgstr ""
+"Escribe una respuesta a este comentario. Se publica en la red social como la "
+"cuenta propietaria de la publicación."
 
 #. module: social_media_sync
 #. odoo-javascript
@@ -463,10 +470,3 @@ msgstr "tiene publicaciones nuevas. Pulsa Actualizar para importarlas."
 #, python-format
 msgid "have new publications. Press Update to import them."
 msgstr "tienen publicaciones nuevas. Pulsa Actualizar para importarlas."
-
-#~ msgid ""
-#~ "Technical field: the account was just associated and its posts still have "
-#~ "to be imported by the initial sync cron."
-#~ msgstr ""
-#~ "Campo técnico: la cuenta acaba de asociarse y sus publicaciones todavía "
-#~ "tienen que importarse mediante el cron de sincronización inicial."

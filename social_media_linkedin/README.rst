@@ -466,6 +466,32 @@ Time series of the account
   of it. The figures are therefore not the sum of what Odoo imported and
   are not meant to be compared against it.
 
+Figures of a publication
+------------------------
+
+- The figures of the publications of the last 30 days are read back from
+  LinkedIn once a day, by the *Social: Refresh the statistics of the
+  recent publications* scheduled action, and on the spot by the *Update*
+  button of the dashboard and *Update statistics* of the account form.
+- Nothing walks the feed to do it: Odoo already knows the URN of every
+  publication it is asking about, so a whole page of them is answered by
+  **three calls** — ``organizationalEntityShareStatistics`` once for the
+  shares and once for the UGC posts, and ``socialActions`` for the likes
+  and the comments, which LinkedIn documents as the up-to-date ones.
+- Those URNs travel in the query string of a finder LinkedIn documents
+  as not paginated, so a page whose URNs do not fit in 4 KB is asked for
+  in as many calls as it takes, around 95 publications each. That is the
+  only thing that adds a call to the three.
+- A publication missing from the answer is one nobody interacted with:
+  the finder leaves out the entities with no activity at all, so its
+  figures are written as zeros and its date as read all the same.
+- No new permission is needed. It is ``r_organization_social``, the same
+  one that reads a single publication, so an account already associated
+  is not asked to authorize anything again.
+- Reading the publications LinkedIn has and Odoo does not is another
+  matter, and it stays in *Social Media LinkedIn Sync*: that one costs
+  one call per page of the feed.
+
 LinkedIn tokens
 ---------------
 

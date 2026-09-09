@@ -3,9 +3,9 @@ posts of its timeline, the figures each of them collected, and their comments.
 
 It is the X half of *Social Media Sync*, split from *Social Media X* along the
 same line: what a call costs. The connector asks X for a fixed number of
-things per account — link it, refresh its card, publish, delete — and that
-number does not change whether the account published once or ten thousand
-times. Everything whose cost grows with the history of the account lives here:
+things per account — link it, refresh its card, publish, delete, read the
+figures of the publications of the last 30 days — and that number does not
+change whether the account published once or ten thousand times. Everything whose cost grows with the history of the account lives here:
 the timeline that answers up to a hundred publications and one download per
 media not stored yet, one call per publication whose comments are read, and
 one call per publication that is verified.
