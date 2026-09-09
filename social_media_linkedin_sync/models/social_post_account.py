@@ -1,7 +1,6 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-import itertools
 import logging
 from urllib.parse import quote
 
@@ -575,7 +574,7 @@ class SocialPostAccount(models.Model):
                 }
         return {
             "success": True,
-            "data": list(itertools.chain(data.get("data", []), comments)),
+            "data": data.get("data", []) + comments,
         }
 
     def get_comment_replies(self, comment_ref):

@@ -3,7 +3,6 @@
 
 import base64
 import io
-import itertools
 import logging
 import time
 from datetime import datetime
@@ -453,7 +452,7 @@ class SocialAccount(models.Model):
         """
         media_refs = {}
         api = self.get_client_api(client_api=False)
-        for media_post in list(itertools.chain(image_ids or [], video_ids or [])):
+        for media_post in [*(image_ids or []), *(video_ids or [])]:
             image_file = io.BytesIO(base64.b64decode(media_post.datas))
             media = api.media_upload(
                 filename=media_post.name or False,
