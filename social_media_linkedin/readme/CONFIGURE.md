@@ -31,11 +31,12 @@ besides the module itself.
 - Within the app, in the *Settings* tab, verify your company. You will see a button that says Verify. Click it, and in the window that appears in the lower left corner, click the *Generate URL* button. Copy the generated URL into your browser and accept.
 - Then go to the *Products* tab and request access to the products granting
   the scopes the installed modules ask for:
-  * Community Management API, which grants `rw_organization_admin` and
-    `w_organization_social`, the two this connector needs, and
-    `r_organization_social`, the one *Social Media LinkedIn Sync* adds when it
-    is installed. It is not self-serve: LinkedIn reviews the request, and
-    until it is approved the authorization cannot be completed.
+  * Community Management API, which grants the three scopes this connector
+    needs: `rw_organization_admin`, `w_organization_social` and
+    `r_organization_social`. It is not self-serve: LinkedIn reviews the
+    request, and until it is approved **no account can be associated at
+    all** — the consent screen is all or nothing, so a scope the App was not
+    granted fails the whole authorization, not only the calls that need it.
   * Advertising API, only if *Social Media Advertising LinkedIn* is
     installed, for `r_ads`, `rw_ads` and `r_ads_reporting`. It is not
     self-serve either.
@@ -57,7 +58,8 @@ besides the module itself.
   | --- | --- | --- |
   | *Social Media LinkedIn* | `rw_organization_admin` | Listing the organizations the member administers, and the figures of the page |
   | | `w_organization_social` | Publishing and deleting a post, and uploading its images and videos |
-  | *Social Media LinkedIn Sync* | `r_organization_social` | Reading the publications of the page, their comments and their reactions |
+  | | `r_organization_social` | Reading a publication back, which is what tells one deleted on LinkedIn from one still online |
+  | *Social Media LinkedIn Sync* | `r_organization_social` | Reading the feed of the page, the comments and the reactions |
   | *Social Media Advertising LinkedIn* | `r_ads`, `rw_ads`, `r_ads_reporting` | The advertising accounts, their campaigns and their figures |
 
   All of them have to appear enabled in the *Auth* tab of your App; if one is

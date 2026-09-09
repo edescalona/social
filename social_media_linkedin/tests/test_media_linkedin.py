@@ -74,7 +74,11 @@ class TestSocialMediaLinkedin(TestSocialCommonLinkedin):
         """
         self.assertEqual(
             self.media_linkedin_id._get_linkedin_scopes(),
-            ["rw_organization_admin", "w_organization_social"],
+            [
+                "rw_organization_admin",
+                "w_organization_social",
+                "r_organization_social",
+            ],
         )
 
     def test_get_linkedin_scopes_leaves_the_optional_ones_out(self):

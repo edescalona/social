@@ -165,18 +165,6 @@ msgstr ""
 
 #. module: social_media_linkedin_sync
 #. odoo-python
-#: code:addons/social_media_linkedin_sync/hooks.py:0
-#, python-format
-msgid ""
-"The import of the LinkedIn history was installed. The token of this account "
-"was not granted %(scopes)s, so LinkedIn refuses to serve its publications. "
-"Enable the matching product on the LinkedIn application, then press Update "
-"account with Update keys checked to authorize this account again: refreshing"
-" the token alone keeps the scopes it already has."
-msgstr ""
-
-#. module: social_media_linkedin_sync
-#. odoo-python
 #: code:addons/social_media_linkedin_sync/models/social_account.py:0
 #, python-format
 msgid ""

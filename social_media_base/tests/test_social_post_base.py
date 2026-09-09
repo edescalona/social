@@ -1810,3 +1810,65 @@ class TestSocialPostBaseUsers(TestSocialMediaBaseCommon):
         post_account = self.social_post_account_id
         post_account.write({"post_account_url": False})
         self.assertFalse(post_account.action_open_post_account_url())
+
+    def test_action_open_post_account_url_gone(self):
+        """A publication gone from the social media is not opened."""
+        post_account = self.social_post_account_id
+        post_account.write(
+            {
+                "post_account_url": "https://example.test/post/1",
+                "remote_ref": "urn:li:share:gone",
+                "state": "posted",
+            }
+        )
+        with patch.object(
+            type(post_account), "_check_remote_post_exists", return_value=False
+        ):
+            action = post_account.action_open_post_account_url()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertEqual(action["params"]["type"], "warning")
+        self.assertEqual(action["params"]["next"]["tag"], "reload")
+
+    def test_check_post_exists_without_remote_ref(self):
+        """Without a remote reference there is nothing to look for."""
+        post_account = self.social_post_account_id
+        post_account.write({"remote_ref": False})
+        self.assertFalse(post_account.check_post_exists())
+
+    def test_remote_post_gone_on_action(self):
+        """The publication is asked about before an action marks it gone."""
+        post_account = self.social_post_account_id
+        with patch.object(
+            type(post_account), "_check_remote_post_exists", return_value=False
+        ):
+            self.assertTrue(post_account._remote_post_gone_on_action())
+        with patch.object(
+            type(post_account), "_check_remote_post_exists", return_value=True
+        ):
+            self.assertFalse(post_account._remote_post_gone_on_action())
+
+    @mute_logger(LOGGER_POST_ACCOUNT)
+    def test_remote_post_gone_on_action_unreachable(self):
+        """A check that fails answers no deletion instead of raising."""
+        post_account = self.social_post_account_id
+        with patch.object(
+            type(post_account),
+            "_check_remote_post_exists",
+            side_effect=ValueError("unreachable"),
+        ):
+            self.assertFalse(post_account._remote_post_gone_on_action())
+
+    def test_register_remote_post_gone_keeps_the_reference(self):
+        """The reference survives the deletion: detection is not infallible."""
+        post_account = self.social_post_account_id
+        post_account.write(
+            {
+                "remote_ref": "urn:li:share:kept",
+                "post_account_url": "https://example.test/post/1",
+                "state": "posted",
+            }
+        )
+        post_account._register_remote_post_gone()
+        self.assertEqual(post_account.state, "deleted")
+        self.assertFalse(post_account.post_account_url)
+        self.assertEqual(post_account.remote_ref, "urn:li:share:kept")

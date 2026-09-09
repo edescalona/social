@@ -10,8 +10,8 @@ import {useService} from "@web/core/utils/hooks";
 /**
  * The card is patched instead of moved: it is one class that also draws the
  * images and the renderer is what registers it, so base has to keep owning
- * it. What comes back here is only what talks to the social media — reacting,
- * commenting, and checking the publication is still there.
+ * it. What comes back here is only what talks to the social media — reacting
+ * and commenting.
  */
 patch(SocialKanbanRecord.prototype, {
     /** @override */
@@ -94,23 +94,5 @@ patch(SocialKanbanRecord.prototype, {
             media_type: this.record.media_type,
             images: JSON.parse(this.record.image_urls.raw_value),
         });
-    },
-
-    /**
-     * Ask the server whether the publication is still on the social media.
-     * The check lives in Python so this card and the form button answer the
-     * same thing.
-     *
-     * @override
-     * @returns {Promise<Boolean>}
-     */
-    async validPostExist() {
-        const postAccountId = this.record.id.raw_value;
-        if (!postAccountId) {
-            return false;
-        }
-        return await this.orm.call("social.post.account", "check_post_exists", [
-            postAccountId,
-        ]);
     },
 });

@@ -4,6 +4,12 @@ List of posts generated from Odoo.
 Only posts generated using Odoo are displayed.
 
 - Go to *Social Media* > Posts
+- Opening a publication, from its form or from its card on the dashboard,
+  reads it on LinkedIn first. One that was deleted there is reported as *The
+  post does not exist or has been deleted.* and marked as *Deleted* on the
+  spot, keeping its reference. Only a `404` counts as a deletion: a lost page
+  role or a throttled application leaves the publication alone, because a
+  publication is not gone just because Odoo could not read it.
 
 Generate a post.
 ---------------

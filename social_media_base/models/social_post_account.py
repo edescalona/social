@@ -369,17 +369,20 @@ class SocialPostAccount(models.Model):
                 post_account.message = message
 
     def action_open_post_account_url(self):
-        """Open this publication on the social media.
+        """Ask the social media, then open this publication on it.
 
         The address is only known for a publication that made it to the social
-        media, so the button showing it is hidden otherwise. Base opens it as
-        it is: the address survives a deletion made on the social media, but
-        finding that out costs a call per publication and is somebody else's
-        job, which is what overrides this to ask first.
+        media, so the button showing it is hidden otherwise. The address alone
+        is not proof that the publication is still online: it survives a
+        deletion made on the social media until something asks. Asking costs
+        one call, for the one publication the user is opening, which is what
+        makes it worth making here.
         """
         self.ensure_one()
         if not self.post_account_url:
             return False
+        if not self.check_post_exists():
+            return self._notify_remote_post_gone()
         return {
             "type": "ir.actions.act_url",
             "url": self.post_account_url,
@@ -597,6 +600,80 @@ class SocialPostAccount(models.Model):
                     error=str(error),
                 ),
                 "sticky": True,
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
+
+    def check_post_exists(self):
+        """Ask the social media whether this publication is still online.
+
+        Public entry point shared by the form button and by the dashboard, so
+        both answer the same thing from the same code.
+
+        :rtype: bool
+        """
+        self.ensure_one()
+        return self._check_remote_post_exists()
+
+    def _check_remote_post_exists(self):
+        """Whether the publication still exists, implemented by each connector.
+
+        The contract is to fail open: ``False`` is only answered when the
+        social media positively reported the publication as gone. A lost
+        permission, a rate limit or a connection error must answer ``True`` and
+        leave the record untouched, because a publication is not deleted just
+        because Odoo could not read it.
+
+        :rtype: bool
+        """
+        return bool(self.remote_ref)
+
+    def _register_remote_post_gone(self):
+        """Record that the publication no longer exists on the social media.
+
+        ``remote_ref`` is kept on purpose: it is the only handle left on the
+        publication, and detection is not infallible, so a line wrongly marked
+        can be recognised and restored by the next full refresh.
+        """
+        self.write({"state": "deleted", "post_account_url": False})
+
+    def _remote_post_gone_on_action(self):
+        """Whether an action failed because the publication no longer exists.
+
+        A ``404`` on a reaction or on a comment is not proof on its own: the
+        social media answers the same for a reference it does not recognise or
+        for a lost permission, and marking a live publication as deleted is
+        worse than one extra request. The publication itself is asked about
+        instead, which is also what registers the deletion once it is
+        confirmed.
+
+        The check runs from paths that are already handling a failure, so it
+        answers ``False`` instead of raising: an action that could not be
+        completed must report its own error, not the one of the check made
+        to explain it.
+
+        :rtype: bool
+        """
+        self.ensure_one()
+        try:
+            return not self._check_remote_post_exists()
+        except Exception:  # noqa: BLE001 - a failed check is not a deletion
+            _logger.exception(
+                "Error checking whether the post %s still exists, it is left "
+                "untouched",
+                self.remote_ref,
+            )
+            return False
+
+    def _notify_remote_post_gone(self):
+        """Tell the user the publication is gone and refresh what is shown."""
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Post deleted [%(account)s]", account=self.account_id.name),
+                "type": "warning",
+                "message": _("The post does not exist or has been deleted."),
                 "next": {"type": "ir.actions.client", "tag": "reload"},
             },
         }

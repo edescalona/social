@@ -22,6 +22,7 @@ from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
 from ..social_linkedin_utils import (
     _BATCH_GET_MAX_IDS_LINKEDIN,
+    _ENDPOINT_POSTS_LINKEDIN,
     _POSTS_PAGE_SIZE_LINKEDIN,
     _STATISTICS_HISTORY_MONTHS_LINKEDIN,
     _STATISTICS_MAX_BUCKETS_LINKEDIN,
@@ -638,7 +639,7 @@ class SocialAccount(models.Model):
             }
         response = self._request_linkedin(
             method="POST",
-            endpoint="/posts",
+            endpoint=_ENDPOINT_POSTS_LINKEDIN,
             headers=self.media_id._get_linkedin_headers(
                 self.sudo().access_token, content_type="application/json"
             ),
@@ -1107,7 +1108,7 @@ class SocialAccount(models.Model):
             params_values = params_value_default
         is_batch_get = "ids" in params_fields
         response = self._request_linkedin(
-            endpoint="/posts",
+            endpoint=_ENDPOINT_POSTS_LINKEDIN,
             headers=self.media_id._get_linkedin_headers(
                 self.sudo().access_token,
                 x_restli_method="BATCH_GET" if is_batch_get else "FINDER",

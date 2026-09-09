@@ -7,15 +7,13 @@ from urllib.parse import quote
 from odoo import Command, _, models
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    _SCOPE_READ_POSTS_LINKEDIN,
     _URN_COMMENT_LINKEDIN,
     datetime_from_epoch_milliseconds,
     linkedin_reaction_id,
 )
 
-from ..social_linkedin_sync_utils import (
-    _SCOPE_SYNC_LINKEDIN,
-    _URN_PERSON_LINKEDIN,
-)
+from ..social_linkedin_sync_utils import _URN_PERSON_LINKEDIN
 
 _logger = logging.getLogger(__name__)
 
@@ -107,19 +105,6 @@ class SocialPostAccount(models.Model):
             )
             owned.sudo().unlink()
         return removed
-
-    def _linkedin_headers(self, **kwargs):
-        """Return the headers of a call about this publication.
-
-        Every call of this module travels on the token of the account the
-        publication belongs to, so the token is filled in here instead of at
-        each call site. Anything else the call needs goes through as it is.
-
-        :rtype: dict
-        """
-        return self.account_id.media_id._get_linkedin_headers(
-            self.account_id.sudo().access_token, **kwargs
-        )
 
     def _react_linkedin(self, root, author_urn):
         """Create a LIKE reaction on a LinkedIn entity.
@@ -550,7 +535,7 @@ class SocialPostAccount(models.Model):
             # media has to say about its own publications is not this
             # connector's to overwrite.
             return data
-        self.account_id._check_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
+        self.account_id._check_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
         comments = []
         if self.remote_ref:
             response = self._read_linkedin_comments(self.remote_ref)
@@ -579,7 +564,7 @@ class SocialPostAccount(models.Model):
 
     def get_comment_replies(self, comment_ref):
         if self.account_id.media_type == "linkedin":
-            self.account_id._check_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
+            self.account_id._check_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
             response = self._read_linkedin_comments(comment_ref)
             if response.status_code != 200:
                 return_message = _(
@@ -740,41 +725,3 @@ class SocialPostAccount(models.Model):
         return {
             "success": True,
         }
-
-    def _check_remote_post_exists(self):
-        """Read the post on LinkedIn to know whether it is still online.
-
-        Only a ``404`` is treated as a deletion. Any other answer means
-        LinkedIn could not be asked, not that the publication is gone: a
-        ``403`` is a lost page role, a ``429`` a throttled application, and
-        acting on them would mark a live publication as deleted.
-        """
-        if self.account_id.media_type != "linkedin" or not self.remote_ref:
-            return super()._check_remote_post_exists()
-        self.account_id._check_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
-        try:
-            response = self.account_id._request_linkedin(
-                endpoint=f"/posts/{quote(self.remote_ref)}",
-                headers=self._linkedin_headers(),
-                return_json=False,
-            )
-        except Exception:  # noqa: BLE001 - unreachable is not deleted
-            _logger.exception(
-                "Error checking the LinkedIn post %s, it is left untouched",
-                self.remote_ref,
-            )
-            return True
-        if response.status_code == 404:
-            self._register_remote_post_gone()
-            return False
-        if response.status_code != 200:
-            _logger.warning(
-                "LinkedIn answered %(code)s while checking the post %(post)s, "
-                "it is left untouched: %(error)s",
-                {
-                    "code": response.status_code,
-                    "post": self.remote_ref,
-                    "error": self.account_id._linkedin_error_message(response),
-                },
-            )
-        return True

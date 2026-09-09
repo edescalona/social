@@ -8,7 +8,7 @@ from datetime import datetime
 import pytz
 import requests
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 from odoo.tools.misc import _format_time_ago
 
 _logger = logging.getLogger(__name__)
@@ -17,10 +17,10 @@ _logger = logging.getLogger(__name__)
 class SocialPostAccount(models.Model):
     """What the publication reads back from its social media.
 
-    Asking whether a publication is still there costs one call per
-    publication, and reading a thread costs one per thread: both grow with
-    what the account has published, which is why neither is in
-    ``social_media_base``.
+    Reading a thread costs one call per thread, and one more per thread of
+    replies: a cost that grows with what the account has published, which is
+    why it is not in ``social_media_base``. Asking whether one publication is
+    still online costs a single call and stays there.
     """
 
     _inherit = "social.post.account"
@@ -41,95 +41,6 @@ class SocialPostAccount(models.Model):
         "whoever published, which is not always the account that imported it: "
         "a page publishes as the page and a person as the person.",
     )
-
-    def action_open_post_account_url(self):
-        """Ask the social media before opening the address.
-
-        The address alone is not proof that the publication is still online:
-        it survives a deletion made on the social media until a pass notices.
-        Base opens it without asking because asking costs a call per
-        publication; here the call is what this module is for.
-        """
-        result = super().action_open_post_account_url()
-        if not result:
-            return result
-        if not self.check_post_exists():
-            return self._notify_remote_post_gone()
-        return result
-
-    def check_post_exists(self):
-        """Ask the social media whether this publication is still online.
-
-        Public entry point shared by the form button and by the dashboard, so
-        both answer the same thing from the same code.
-
-        :rtype: bool
-        """
-        self.ensure_one()
-        return self._check_remote_post_exists()
-
-    def _check_remote_post_exists(self):
-        """Whether the publication still exists, implemented by each connector.
-
-        The contract is to fail open: ``False`` is only answered when the
-        social media positively reported the publication as gone. A lost
-        permission, a rate limit or a connection error must answer ``True`` and
-        leave the record untouched, because a publication is not deleted just
-        because Odoo could not read it.
-
-        :rtype: bool
-        """
-        return bool(self.remote_ref)
-
-    def _register_remote_post_gone(self):
-        """Record that the publication no longer exists on the social media.
-
-        ``remote_ref`` is kept on purpose: it is the only handle left on the
-        publication, and detection is not infallible, so a line wrongly marked
-        can be recognised and restored by the next full refresh.
-        """
-        self.write({"state": "deleted", "post_account_url": False})
-
-    def _remote_post_gone_on_action(self):
-        """Whether an action failed because the publication no longer exists.
-
-        A ``404`` on a reaction or on a comment is not proof on its own: the
-        social media answers the same for a reference it does not recognise or
-        for a lost permission, and marking a live publication as deleted is
-        worse than one extra request. The publication itself is asked about
-        instead, which is also what registers the deletion once it is
-        confirmed.
-
-        The check runs from paths that are already handling a failure, so it
-        answers ``False`` instead of raising: an action that could not be
-        completed must report its own error, not the one of the check made
-        to explain it.
-
-        :rtype: bool
-        """
-        self.ensure_one()
-        try:
-            return not self._check_remote_post_exists()
-        except Exception:  # noqa: BLE001 - a failed check is not a deletion
-            _logger.exception(
-                "Error checking whether the post %s still exists, it is left "
-                "untouched",
-                self.remote_ref,
-            )
-            return False
-
-    def _notify_remote_post_gone(self):
-        """Tell the user the publication is gone and refresh what is shown."""
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "title": _("Post deleted [%(account)s]", account=self.account_id.name),
-                "type": "warning",
-                "message": _("The post does not exist or has been deleted."),
-                "next": {"type": "ir.actions.client", "tag": "reload"},
-            },
-        }
 
     def action_like_post(self, author_urn=None):
         """Recommend the publication on the social media.

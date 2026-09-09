@@ -36,19 +36,33 @@ _HEADERS_LINKEDIN = {
     "LinkedIn-Version": _VERSION_STRING_LINKEDIN,
 }
 
+# The Posts API: the collection publishes, and one member is read back or
+# deleted. The member takes the URN of the publication, url-encoded.
+_ENDPOINT_POSTS_LINKEDIN = "/posts"
+_ENDPOINT_POST_LINKEDIN = "/posts/%s"
+
+# The permission that reads a publication back, ``GET /posts/{urn}``, which
+# is what tells a publication deleted on LinkedIn from one that is still
+# online. It is named apart because the guards that ask whether a token was
+# issued with it need something to point at.
+_SCOPE_READ_POSTS_LINKEDIN = ["r_organization_social"]
+
 # The permissions the calls of this module consume: ``/organizationAcls`` and
 # the organization reads that associate an account need
-# ``rw_organization_admin``, and everything that writes a post, an image or a
-# video needs ``w_organization_social``. Every one of them has to be granted
-# by the products enabled on the LinkedIn App, or the authorization comes back
-# without it and the calls that need it fail one by one instead of failing at
-# association time. Refreshing a token keeps the scopes it was issued with, so
-# widening this list only reaches the accounts authorized again from scratch.
+# ``rw_organization_admin``, everything that writes a post, an image or a
+# video needs ``w_organization_social``, and reading a publication back needs
+# ``r_organization_social``, granted by the Community Management product.
+# Every one of them has to be granted by the products enabled on the LinkedIn
+# App, or the authorization comes back without it and the calls that need it
+# fail one by one instead of failing at association time. Refreshing a token
+# keeps the scopes it was issued with, so widening this list only reaches the
+# accounts authorized again from scratch.
 # Extension point ``social.media._get_linkedin_scopes``: a module adding
 # LinkedIn calls appends the permissions those calls need.
 _SCOPE_LINKEDIN = [
     "rw_organization_admin",
     "w_organization_social",
+    *_SCOPE_READ_POSTS_LINKEDIN,
 ]
 
 # Scopes no call of the connector requires. They are kept here so that which

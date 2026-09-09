@@ -201,12 +201,9 @@ Noticing what was deleted on the social media.
 - A publication found gone is marked as *Deleted* and keeps its
   reference on the social media: detection is not infallible, so a line
   wrongly marked can be recognised and restored by the next full pass.
-- Opening a publication, from its form or from its card on the
-  dashboard, asks the social media first. A publication deleted there is
-  reported as *The post does not exist or has been deleted.* and marked
-  right away, instead of waiting for the weekly pass. A check that fails
-  to reach the social media answers *not deleted*: a publication is not
-  gone just because Odoo could not read it.
+- Opening a publication already asks the social media without this
+  module, so a deletion the user runs into is marked right away either
+  way. What this module adds is noticing the ones nobody opens.
 
 Comments and reactions.
 -----------------------

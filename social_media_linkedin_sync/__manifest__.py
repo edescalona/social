@@ -23,7 +23,6 @@
             "social_media_linkedin_sync/static/src/js/views/**/*.js",
         ],
     },
-    "post_init_hook": "post_init_hook",
     "auto_install": True,
     "installable": True,
 }

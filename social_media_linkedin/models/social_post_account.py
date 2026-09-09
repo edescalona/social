@@ -11,6 +11,8 @@ from odoo.exceptions import UserError
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
 
 from ..social_linkedin_utils import (
+    _ENDPOINT_POST_LINKEDIN,
+    _SCOPE_READ_POSTS_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
     _URN_IMAGE_LINKEDIN,
 )
@@ -19,11 +21,13 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialPostAccount(models.Model):
-    """Publish, enrich and delete a post on a LinkedIn account.
+    """Publish, delete and verify a post on a LinkedIn account.
 
     A fixed number of calls per publication, whatever the history of the
-    page. Reading it back — its comments, its reactions, whether it is still
-    online — costs one call per publication or per thread and lives in
+    page: publishing it, deleting it, and the single call that answers
+    whether the publication the user is opening is still online. Walking
+    what the page has published — its comments, its reactions, the whole
+    feed — costs one call per publication or per thread and lives in
     ``social_media_linkedin_sync``.
     """
 
@@ -124,15 +128,64 @@ class SocialPostAccount(models.Model):
         if values:
             self.write(values)
 
+    def _linkedin_headers(self, **kwargs):
+        """Return the headers of a call about this publication.
+
+        Every call about a publication travels on the token of the account it
+        belongs to, so the token is filled in here instead of at each call
+        site. Anything else the call needs goes through as it is.
+
+        :rtype: dict
+        """
+        return self.account_id.media_id._get_linkedin_headers(
+            self.account_id.sudo().access_token, **kwargs
+        )
+
+    def _check_remote_post_exists(self):
+        """Read the post on LinkedIn to know whether it is still online.
+
+        Only a ``404`` is treated as a deletion. Any other answer means
+        LinkedIn could not be asked, not that the publication is gone: a
+        ``403`` is a lost page role, a ``429`` a throttled application, and
+        acting on them would mark a live publication as deleted.
+        """
+        if self.account_id.media_type != "linkedin" or not self.remote_ref:
+            return super()._check_remote_post_exists()
+        self.account_id._check_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
+        try:
+            response = self.account_id._request_linkedin(
+                endpoint=_ENDPOINT_POST_LINKEDIN % quote(self.remote_ref),
+                headers=self._linkedin_headers(),
+                return_json=False,
+            )
+        except Exception:  # noqa: BLE001 - unreachable is not deleted
+            _logger.exception(
+                "Error checking the LinkedIn post %s, it is left untouched",
+                self.remote_ref,
+            )
+            return True
+        if response.status_code == 404:
+            self._register_remote_post_gone()
+            return False
+        if response.status_code != 200:
+            _logger.warning(
+                "LinkedIn answered %(code)s while checking the post %(post)s, "
+                "it is left untouched: %(error)s",
+                {
+                    "code": response.status_code,
+                    "post": self.remote_ref,
+                    "error": self.account_id._linkedin_error_message(response),
+                },
+            )
+        return True
+
     def _delete_post_account(self):
         if self.media_id.media_type == "linkedin" and self.remote_ref:
             self.account_id.with_context(not_notify=True).validate_access_token()
             delete_post = self.account_id._request_linkedin(
                 method="DELETE",
-                endpoint=f"/posts/{quote(self.remote_ref)}",
-                headers=self.media_id._get_linkedin_headers(
-                    self.account_id.sudo().access_token
-                ),
+                endpoint=_ENDPOINT_POST_LINKEDIN % quote(self.remote_ref),
+                headers=self._linkedin_headers(),
                 return_json=False,
             )
             if delete_post.status_code != 204:

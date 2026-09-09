@@ -330,3 +330,83 @@ class TestSocialPostAccountX(TestSocialCommonX):
                 "quote_count",
             ],
         )
+
+    def test_check_remote_post_exists(self):
+        fake_response = MagicMock()
+        fake_response.errors = False
+        fake_client = MagicMock()
+        fake_client.get_tweet.return_value = fake_response
+        mock_get_client_api, mock_valid_time_request = self.get_patch_exceptions_x(
+            fake_client
+        )
+        with mock_get_client_api, mock_valid_time_request:
+            self.assertTrue(self.SocialPostAccountX.check_post_exists())
+
+    def test_check_remote_post_exists_deleted(self):
+        """Only the ``Not Found`` answer of X marks the post as deleted."""
+        post_account = self.SocialPostAccountX
+        remote_ref = post_account.remote_ref
+        fake_response = MagicMock()
+        fake_response.errors = [
+            {"type": "https://api.twitter.com/2/problems/resource-not-found"}
+        ]
+        fake_client = MagicMock()
+        fake_client.get_tweet.return_value = fake_response
+        mock_get_client_api, mock_valid_time_request = self.get_patch_exceptions_x(
+            fake_client
+        )
+        with mock_get_client_api, mock_valid_time_request:
+            self.assertFalse(post_account.check_post_exists())
+        self.assertEqual(post_account.state, "deleted")
+        self.assertFalse(post_account.post_account_url)
+        self.assertEqual(post_account.remote_ref, remote_ref)
+
+    @mute_logger(LOGGER_POST_ACCOUNT_X)
+    def test_check_remote_post_exists_errors(self):
+        """Any other error leaves the publication alone."""
+        post_account = self.SocialPostAccountX
+        post_account.write({"state": "posted"})
+        fake_response = MagicMock()
+        fake_response.errors = ["Error 1", "Error 2"]
+        fake_client = MagicMock()
+        fake_client.get_tweet.return_value = fake_response
+        mock_get_client_api, mock_valid_time_request = self.get_patch_exceptions_x(
+            fake_client
+        )
+        with mock_get_client_api, mock_valid_time_request:
+            self.assertTrue(post_account.check_post_exists())
+        self.assertEqual(post_account.state, "posted")
+
+    @mute_logger(LOGGER_POST_ACCOUNT_X)
+    def test_check_remote_post_exists_exception(self):
+        post_account = self.SocialPostAccountX
+        post_account.write({"state": "posted"})
+        fake_client = MagicMock()
+        fake_client.get_tweet.side_effect = Exception("Error Get Comment")
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            self.assertTrue(post_account.check_post_exists())
+        self.assertEqual(post_account.state, "posted")
+
+    def test_check_remote_post_exists_manyrequests(self):
+        post_account = self.SocialPostAccountX
+        post_account.write({"state": "posted"})
+        fake_client = MagicMock()
+        fake_client.get_tweet.return_value = False
+        fake_client.get_tweet.side_effect = self.get_exception_manyrequests()
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+            mock_many_requests,
+        ) = self.get_patch_exceptions_x(fake_client, True)
+        with (
+            mock_get_client_api,
+            mock_valid_time_request,
+            mock_many_requests as many_requests,
+        ):
+            self.assertTrue(post_account.check_post_exists())
+        many_requests.assert_called_once()
+        self.assertEqual(post_account.state, "posted")

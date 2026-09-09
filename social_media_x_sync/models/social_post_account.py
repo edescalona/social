@@ -313,61 +313,6 @@ class SocialPostAccount(models.Model):
         else:
             return super().create_comment(post_data, context)
 
-    def _check_remote_post_exists(self):
-        """Read the post on X to know whether it is still online.
-
-        Only the ``Not Found`` answer of X is treated as a deletion. A
-        throttled application or any other failure means the post could not
-        be read, not that it is gone, so the record is left untouched.
-        """
-        if self.account_id.media_type != "x" or not self.remote_ref:
-            return super()._check_remote_post_exists()
-        try:
-            if not self.account_id._valid_time_request(endpoint="get_post"):
-                return True
-            client_api = self.account_id.get_client_api(
-                bearer_token=self.account_id.sudo().x_access_token_oauth2
-            )
-            response = client_api.get_tweet(self.remote_ref, tweet_fields=["id"])
-        except TooManyRequests as exManyRequest:
-            self.account_id._get_message_many_requests(
-                exManyRequest, endpoint="get_post"
-            )
-            return True
-        except Exception:  # noqa: BLE001 - unreachable is not deleted
-            _logger.exception(
-                "Error checking the X post %s, it is left untouched",
-                self.remote_ref,
-            )
-            return True
-        if self._is_x_not_found(response):
-            self._register_remote_post_gone()
-            return False
-        if response.errors:
-            _logger.warning(
-                "X answered with errors while checking the post %(post)s, it "
-                "is left untouched: %(errors)s",
-                {"post": self.remote_ref, "errors": response.errors},
-            )
-        return True
-
-    def _is_x_not_found(self, response):
-        """Whether X answered that the post does not exist any more.
-
-        X reports a deleted post as a partial error carrying the
-        ``resource-not-found`` type instead of raising, so the answer has to
-        be read rather than the exception caught.
-
-        :param response: the ``tweepy.Response`` of a tweet read.
-        :rtype: bool
-        """
-        return any(
-            "resource-not-found" in str(error.get("type", ""))
-            or "Not Found" in str(error.get("title", ""))
-            for error in response.errors or []
-            if isinstance(error, dict)
-        )
-
     def _get_assets_save_x(self, media_keys, media_map):
         """Download the media of a tweet that are not stored yet.
 

@@ -9,7 +9,6 @@ from urllib.parse import quote
 from freezegun import freeze_time
 
 from odoo import Command
-from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
@@ -1091,51 +1090,6 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
             self.SocialPostAccountLinkedin.delete_comment(
                 "123456", "urn:li:person:somebody-else"
             )
-
-    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
-    def test_check_remote_post_exists(self, mock_request):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_request.return_value = mock_response
-        self.assertTrue(self.SocialPostAccountLinkedin.check_post_exists())
-
-    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
-    def test_check_remote_post_exists_deleted(self, mock_request):
-        """A 404 is the only answer that means the post is gone."""
-        remote_ref = self.SocialPostAccountLinkedin.remote_ref
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_request.return_value = mock_response
-        self.assertFalse(self.SocialPostAccountLinkedin.check_post_exists())
-        self.assertEqual(self.SocialPostAccountLinkedin.state, "deleted")
-        self.assertFalse(self.SocialPostAccountLinkedin.post_account_url)
-        self.assertEqual(self.SocialPostAccountLinkedin.remote_ref, remote_ref)
-
-    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
-    def test_check_remote_post_exists_forbidden(self, mock_request):
-        """A lost permission is not a deletion: nothing may be written."""
-        post_account = self.SocialPostAccountLinkedin
-        post_account.write({"state": "posted"})
-        remote_ref = post_account.remote_ref
-        post_account_url = post_account.post_account_url
-        mock_response = MagicMock()
-        mock_response.status_code = 403
-        mock_request.return_value = mock_response
-        with mute_logger(LOGGER_POST_ACCOUNT_SYNC_LINKEDIN):
-            self.assertTrue(post_account.check_post_exists())
-        self.assertEqual(post_account.state, "posted")
-        self.assertEqual(post_account.remote_ref, remote_ref)
-        self.assertEqual(post_account.post_account_url, post_account_url)
-
-    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
-    def test_check_remote_post_exists_unreachable(self, mock_request):
-        """LinkedIn out of reach leaves the publication untouched."""
-        post_account = self.SocialPostAccountLinkedin
-        post_account.write({"state": "posted"})
-        mock_request.side_effect = UserError("boom")
-        with mute_logger(LOGGER_POST_ACCOUNT_SYNC_LINKEDIN):
-            self.assertTrue(post_account.check_post_exists())
-        self.assertEqual(post_account.state, "posted")
 
     @patch(PATCH_SYNC_POST_ACCOUNT_LINKEDIN.format("_create_linkedin_comment"))
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))

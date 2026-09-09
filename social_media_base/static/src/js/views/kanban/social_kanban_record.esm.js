@@ -17,15 +17,21 @@ export class SocialKanbanRecord extends SocialPostAccountMixin(KanbanRecord) {
     /**
      * Whether the publication is still worth opening.
      *
-     * Base answers yes without asking anybody: verifying costs one call per
-     * publication, which is the kind of cost that grows with the history of
-     * the account and does not belong here. A synchronization module is what
-     * turns this into a real check.
+     * One call for the one publication the user clicked, which is a cost
+     * that does not grow with the history of the account. What the answer is
+     * worth depends on the connector: one that does not implement the check
+     * answers from the remote reference alone.
      *
      * @returns {Promise<Boolean>}
      */
     async validPostExist() {
-        return true;
+        const postAccountId = this.record.id.raw_value;
+        if (!postAccountId) {
+            return false;
+        }
+        return await this.orm.call("social.post.account", "check_post_exists", [
+            postAccountId,
+        ]);
     }
 
     messagePostNotExist() {

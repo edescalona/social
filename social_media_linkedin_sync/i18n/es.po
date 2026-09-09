@@ -178,24 +178,6 @@ msgstr "Cifras diarias que LinkedIn informó de toda la página durante los últ
 
 #. module: social_media_linkedin_sync
 #. odoo-python
-#: code:addons/social_media_linkedin_sync/hooks.py:0
-#, python-format
-msgid ""
-"The import of the LinkedIn history was installed. The token of this account "
-"was not granted %(scopes)s, so LinkedIn refuses to serve its publications. "
-"Enable the matching product on the LinkedIn application, then press Update "
-"account with Update keys checked to authorize this account again: refreshing "
-"the token alone keeps the scopes it already has."
-msgstr ""
-"Se ha instalado la importación del histórico de LinkedIn. El token de esta "
-"cuenta no obtuvo %(scopes)s, por lo que LinkedIn se niega a servir sus "
-"publicaciones. Active el producto correspondiente en la aplicación de "
-"LinkedIn y pulse Actualizar cuenta con Actualizar claves marcado para "
-"autorizar de nuevo esta cuenta: renovar solo el token mantiene los permisos "
-"que ya tiene."
-
-#. module: social_media_linkedin_sync
-#. odoo-python
 #: code:addons/social_media_linkedin_sync/models/social_account.py:0
 #, python-format
 msgid ""

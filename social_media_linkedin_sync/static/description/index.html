@@ -465,42 +465,22 @@ of them at once.</p>
 <p>Nothing has to be configured for this module to work: it uses the
 LinkedIn accounts and credentials of <em>Social Media Linkedin</em>, and the
 scheduled actions of <em>Social Media Sync</em>.</p>
-<p>It does add one permission to what LinkedIn is asked for:
-<tt class="docutils literal">r_organization_social</tt>, which is what reading the publications of a
-page requires. It is granted by the same Community Management API
-product the connector already needs, so nothing new has to be requested
-from LinkedIn.</p>
+<p>It asks LinkedIn for nothing the connector does not already ask for.
+Reading the feed of a page, its comments and its reactions travels on
+<tt class="docutils literal">r_organization_social</tt>, which <em>Social Media Linkedin</em> requests on its
+own, granted by the Community Management API product that connector
+already needs.</p>
 <p>What does not follow on its own is the accounts already associated. <strong>An
 access token keeps the scopes it was issued with</strong>, so an account
-authorized before this module was installed does not hold the new
-permission and its history cannot be imported until it is authorized
-again. Refreshing the token is not enough: open the account, press
-<em>Update account</em> with <strong>Update keys</strong> ticked and authorize on LinkedIn
-again.</p>
+authorized before that permission was requested does not hold it and its
+history cannot be imported until it is authorized again. Refreshing the
+token is not enough: open the account, press <em>Update account</em> with
+<strong>Update keys</strong> ticked and authorize on LinkedIn again.</p>
 <p>The accounts concerned say so themselves, so nothing has to be looked
-up: a note is posted on the chatter of each one when this module is
-installed, a warning is drawn on the account form for as long as the
-permission is missing, the responsible user is notified by the check
-that runs every two hours, and the import refuses with the name of the
-missing permission instead of the bare error LinkedIn answers.</p>
-<p>Uninstalling this module stops LinkedIn from being asked for
-<tt class="docutils literal">r_organization_social</tt>: the permission is contributed by the module
-itself, so it leaves with it and nothing has to be cleaned up by hand.</p>
-<p>What does stay is the <em>Granted Scopes</em> field of the accounts already
-associated, which still lists the permission. That is deliberate: the
-field records what LinkedIn granted <strong>the token currently stored</strong>, and
-that token really does hold it, so emptying the field would only make it
-lie. Odoo rewrites it from LinkedIn before every publication and on the
-check that runs every two hours, which would undo the change within a
-couple of hours anyway.</p>
-<p>The consequence is that re-authorizing such an account asks for one
-permission no installed module uses. LinkedIn grants it, since the
-product that does is still enabled on the application, so nothing
-breaks. To make the next authorization strictly minimal, edit <em>Granted
-Scopes</em> by hand and go straight to <em>Update account</em> with <strong>Update keys</strong>
-ticked. Note that this narrows what is requested, it does not revoke
-anything: the permission is withdrawn by removing the product from the
-LinkedIn application, and the token keeps it until it is replaced.</p>
+up: a warning is drawn on the account form for as long as the permission
+is missing, the responsible user is notified by the check that runs
+every two hours, and the import refuses with the name of the missing
+permission instead of the bare error LinkedIn answers.</p>
 </div>
 <div class="section" id="usage">
 <h1><a class="toc-backref" href="#toc-entry-4">Usage</a></h1>

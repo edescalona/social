@@ -460,12 +460,13 @@ Copy the generated URL into your browser and accept.</p>
 <li><p class="first">Then go to the <em>Products</em> tab and request access to the products
 granting the scopes the installed modules ask for:</p>
 <ul class="simple">
-<li>Community Management API, which grants <tt class="docutils literal">rw_organization_admin</tt> and
-<tt class="docutils literal">w_organization_social</tt>, the two this connector needs, and
-<tt class="docutils literal">r_organization_social</tt>, the one <em>Social Media LinkedIn Sync</em> adds
-when it is installed. It is not self-serve: LinkedIn reviews the
-request, and until it is approved the authorization cannot be
-completed.</li>
+<li>Community Management API, which grants the three scopes this
+connector needs: <tt class="docutils literal">rw_organization_admin</tt>,
+<tt class="docutils literal">w_organization_social</tt> and <tt class="docutils literal">r_organization_social</tt>. It is not
+self-serve: LinkedIn reviews the request, and until it is approved
+<strong>no account can be associated at all</strong> — the consent screen is all
+or nothing, so a scope the App was not granted fails the whole
+authorization, not only the calls that need it.</li>
 <li>Advertising API, only if <em>Social Media Advertising LinkedIn</em> is
 installed, for <tt class="docutils literal">r_ads</tt>, <tt class="docutils literal">rw_ads</tt> and <tt class="docutils literal">r_ads_reporting</tt>. It is
 not self-serve either.</li>
@@ -512,13 +513,22 @@ deleting a post, and
 uploading its images
 and videos</td>
 </tr>
+<tr><td>&nbsp;</td>
+<td><tt class="docutils literal">r_organization_social</tt></td>
+<td>Reading a
+publication back,
+which is what tells
+one deleted on
+LinkedIn from one
+still online</td>
+</tr>
 <tr><td><em>Social Media
 LinkedIn Sync</em></td>
 <td><tt class="docutils literal">r_organization_social</tt></td>
-<td>Reading the
-publications of the
-page, their comments
-and their reactions</td>
+<td>Reading the feed of
+the page, the
+comments and the
+reactions</td>
 </tr>
 <tr><td><em>Social Media
 Advertising
@@ -648,6 +658,13 @@ wizard.</p>
 <p>Only posts generated using Odoo are displayed.</p>
 <ul class="simple">
 <li>Go to <em>Social Media</em> &gt; Posts</li>
+<li>Opening a publication, from its form or from its card on the
+dashboard, reads it on LinkedIn first. One that was deleted there is
+reported as <em>The post does not exist or has been deleted.</em> and marked
+as <em>Deleted</em> on the spot, keeping its reference. Only a <tt class="docutils literal">404</tt> counts
+as a deletion: a lost page role or a throttled application leaves the
+publication alone, because a publication is not gone just because Odoo
+could not read it.</li>
 </ul>
 </div>
 <div class="section" id="generate-a-post">

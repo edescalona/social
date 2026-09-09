@@ -12,6 +12,7 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _FINDER_PARAMS_LINKEDIN,
     _POSTS_MAX_PAGES_LINKEDIN,
     _POSTS_PAGE_SIZE_LINKEDIN,
+    _SCOPE_READ_POSTS_LINKEDIN,
     _UPDATE_CHECK_DAYS_LINKEDIN,
     _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
@@ -26,7 +27,6 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
 from ..social_linkedin_sync_utils import (
     _ENTITY_STATISTICS_LINKEDIN,
     _PROJECTION_ACTOR_LINKEDIN,
-    _SCOPE_SYNC_LINKEDIN,
     _URN_PERSON_LINKEDIN,
 )
 
@@ -84,7 +84,7 @@ class SocialAccount(models.Model):
                 account.linkedin_missing_sync_scopes = ""
                 continue
             account.linkedin_missing_sync_scopes = ", ".join(
-                account._missing_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
+                account._missing_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
             )
 
     def _get_all_posts(self):
@@ -593,7 +593,7 @@ class SocialAccount(models.Model):
         # Before the token is even validated: a call that cannot succeed is
         # better refused with the name of the permission it needs than with
         # the bare 403 LinkedIn answers.
-        self._check_linkedin_scopes(_SCOPE_SYNC_LINKEDIN)
+        self._check_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
         PostAccount = self.env["social.post.account"]
         self.with_context(not_notify=True).validate_access_token()
         if not self.linkedin_account_id:
@@ -625,7 +625,7 @@ class SocialAccount(models.Model):
                     ("account_id", "=", self.id),
                     ("state", "!=", "deleted"),
                 ]
-            ).write({"post_account_url": False, "state": "deleted"})
+            )._register_remote_post_gone()
         # The publications Odoo knows and the answer did not bring. Their
         # figures are refreshed all the same, by URN, which is what spares
         # reading the feed. ``sudo`` because the publications are scoped to

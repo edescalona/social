@@ -161,10 +161,9 @@ Posts on the dashboard.
   there. The *Open publication* button opens it on the social media, and
   is only shown for a publication that got there: one that was never
   published, or whose publication was deleted, has no address. The
-  address survives a deletion made on the social media, and finding that
-  out costs one call per publication, so the button opens it as it is.
-  Install *Social Media Sync* and both the button and the card of the
-  dashboard ask the social media first.
+  address survives a deletion made on the social media, so the button
+  asks before opening anything: one call, for the one publication being
+  opened. The card of the dashboard asks the same way.
 
 - A publication carries the very images and videos of its post. The post
   hands them over when it is sent, so a card shows them as soon as the
@@ -178,9 +177,10 @@ Posts on the dashboard.
   is watched on the social media.
 
 - Posts deleted directly on the social media are marked as *Deleted on
-  <media>* and kept in the dashboard as history. Nothing in this module
-  notices such a deletion, because noticing means reading the whole
-  feed: *Social Media Sync* is what marks them.
+  <media>* and kept in the dashboard as history. Opening one is what
+  notices it here. Finding out on its own, without anybody opening
+  anything, means reading the whole feed: that pass comes with *Social
+  Media Sync*.
 
 - Commenting a publication, answering a comment and *Recommend* are read
   from and written to the social media, so they come with *Social Media
@@ -581,11 +581,11 @@ Statistics of the accounts.
 - Opening the dashboard costs nothing at all. There is no throttle on
   the button for that reason: there is nothing to protect.
 - Importing the publications an account already has, filling the series
-  backwards as far as the social media answers, and noticing a
-  publication deleted there are **not** part of this module. They cost
-  one call per page or per publication, so they grow with the history of
-  the account and come with *Social Media Sync*, together with the
-  scheduled actions that run them.
+  backwards as far as the social media answers, and sweeping the feed
+  for the publications deleted there are **not** part of this module.
+  They cost one call per page or per publication, so they grow with the
+  history of the account and come with *Social Media Sync*, together
+  with the scheduled actions that run them.
 
 Account ownership.
 ------------------

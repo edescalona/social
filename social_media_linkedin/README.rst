@@ -126,12 +126,13 @@ the server besides the module itself.
 - Then go to the *Products* tab and request access to the products
   granting the scopes the installed modules ask for:
 
-  - Community Management API, which grants ``rw_organization_admin`` and
-    ``w_organization_social``, the two this connector needs, and
-    ``r_organization_social``, the one *Social Media LinkedIn Sync* adds
-    when it is installed. It is not self-serve: LinkedIn reviews the
-    request, and until it is approved the authorization cannot be
-    completed.
+  - Community Management API, which grants the three scopes this
+    connector needs: ``rw_organization_admin``,
+    ``w_organization_social`` and ``r_organization_social``. It is not
+    self-serve: LinkedIn reviews the request, and until it is approved
+    **no account can be associated at all** — the consent screen is all
+    or nothing, so a scope the App was not granted fails the whole
+    authorization, not only the calls that need it.
   - Advertising API, only if *Social Media Advertising LinkedIn* is
     installed, for ``r_ads``, ``rw_ads`` and ``r_ads_reporting``. It is
     not self-serve either.
@@ -166,10 +167,17 @@ the server besides the module itself.
   |                      |                           | uploading its images |
   |                      |                           | and videos           |
   +----------------------+---------------------------+----------------------+
-  | *Social Media        | ``r_organization_social`` | Reading the          |
-  | LinkedIn Sync*       |                           | publications of the  |
-  |                      |                           | page, their comments |
-  |                      |                           | and their reactions  |
+  |                      | ``r_organization_social`` | Reading a            |
+  |                      |                           | publication back,    |
+  |                      |                           | which is what tells  |
+  |                      |                           | one deleted on       |
+  |                      |                           | LinkedIn from one    |
+  |                      |                           | still online         |
+  +----------------------+---------------------------+----------------------+
+  | *Social Media        | ``r_organization_social`` | Reading the feed of  |
+  | LinkedIn Sync*       |                           | the page, the        |
+  |                      |                           | comments and the     |
+  |                      |                           | reactions            |
   +----------------------+---------------------------+----------------------+
   | *Social Media        | ``r_ads``, ``rw_ads``,    | The advertising      |
   | Advertising          | ``r_ads_reporting``       | accounts, their      |
@@ -303,6 +311,13 @@ List of posts generated from Odoo.
 Only posts generated using Odoo are displayed.
 
 - Go to *Social Media* > Posts
+- Opening a publication, from its form or from its card on the
+  dashboard, reads it on LinkedIn first. One that was deleted there is
+  reported as *The post does not exist or has been deleted.* and marked
+  as *Deleted* on the spot, keeping its reference. Only a ``404`` counts
+  as a deletion: a lost page role or a throttled application leaves the
+  publication alone, because a publication is not gone just because Odoo
+  could not read it.
 
 Generate a post.
 ----------------

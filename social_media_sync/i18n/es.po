@@ -177,13 +177,6 @@ msgid "Pending Initial Sync"
 msgstr "Sincronización inicial pendiente"
 
 #. module: social_media_sync
-#. odoo-python
-#: code:addons/social_media_sync/models/social_post_account.py:0
-#, python-format
-msgid "Post deleted [%(account)s]"
-msgstr "Publicación eliminada [%(account)s]"
-
-#. module: social_media_sync
 #: model:ir.model.fields,field_description:social_media_sync.field_social_account__posts_need_import
 msgid "Posts Need Import"
 msgstr "Publicaciones pendientes de importar"
@@ -308,13 +301,6 @@ msgid ""
 "The periodic check found publications on the social media that Odoo has not "
 "imported yet."
 msgstr "La comprobación periódica ha encontrado en la red social publicaciones que Odoo todavía no ha importado."
-
-#. module: social_media_sync
-#. odoo-python
-#: code:addons/social_media_sync/models/social_post_account.py:0
-#, python-format
-msgid "The post does not exist or has been deleted."
-msgstr "La publicación no existe o ha sido eliminada."
 
 #. module: social_media_sync
 #. odoo-javascript

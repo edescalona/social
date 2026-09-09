@@ -17,15 +17,6 @@ _ENTITY_STATISTICS_LINKEDIN = (
     (_URN_UGC_POST_LINKEDIN, "ugcPosts", "ugcPost"),
 )
 
-# The permission the import of the history consumes. Reading the feed of an
-# organization with ``GET /rest/posts?q=author`` is what requires it, and the
-# calls that follow a publication around — its social actions, its reactions
-# and its comments — travel on the same one. The figures of a publication go
-# with the ``rw_organization_admin`` the connector already asks for.
-_SCOPE_SYNC_LINKEDIN = [
-    "r_organization_social",
-]
-
 # Scopes no call of this module requires. The Community Management migration
 # guide maps, since June 2023, ``r_organization_social`` to
 # ``r_organization_social_feed`` and ``w_organization_social`` to

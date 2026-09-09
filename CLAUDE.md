@@ -79,10 +79,12 @@ social_media_base ── social_media_calendar        (auto_install)
 
 The split between `social_media_base` and `social_media_sync` is a **cost line, not a
 feature line**: base only ever spends a fixed number of calls per account however much
-that account has published (publishing, account figures, the daily series). Anything
-whose cost grows with the history of the account — importing the publications, checking
-they still exist, their comments and reactions — lives in `social_media_sync` and its
-two bridges. When adding a method, that question decides which module it belongs to.
+that account has published (publishing, account figures, the daily series, and the
+single call that answers whether the one publication the user is opening is still
+there). Anything whose cost grows with the history of the account — importing the
+publications, sweeping the feed for the ones deleted there, their comments and reactions
+— lives in `social_media_sync` and its two bridges. When adding a method, that question
+decides which module it belongs to.
 
 `social_media_advertising` adds the ads layer (`utm` and `link_tracker` extensions
 themselves live in `social_media_base`), `social_media_advertising_linkedin` implements
@@ -132,6 +134,7 @@ Empty hooks in `social_media_base` that a connector fills:
 | `_refresh_statistics` / `_backfill_statistics(force)` | `social.account`      | rewrite the last days / fill the series as far back as the API goes                                          |
 | `_on_account_associated`                              | `social.account`      | base refreshes figures and backfills; `social_media_sync` extends it to queue the import                     |
 | `_run_check_media_updates`                            | `social.account`      | periodic check                                                                                               |
+| `_check_remote_post_exists`                           | `social.post.account` | whether the publication is still online; fail open — `False` only when the network said it is gone           |
 
 `_write_statistics_rows()` is the **only** place the series is written (it does the
 upsert the `unique (account_id, date)` constraint needs, in `sudo()`); connectors hand
@@ -176,9 +179,8 @@ directly — it is also the seam the tests patch
 connector's `uninstall_hook` calls it so uninstalling drops its `social.media` record
 (otherwise the row survives with a `media_type` no longer in the selection).
 `post_init_hook` is used the other way around, to tell the user something the code
-cannot fix by itself — `social_media_linkedin_sync` and
-`social_media_advertising_linkedin` post on the chatter of the affected accounts that
-the widened OAuth scopes need a fresh authorization.
+cannot fix by itself — `social_media_advertising_linkedin` posts on the chatter of the
+affected accounts that its widened OAuth scopes need a fresh authorization.
 
 ### Comments and reactions (`social_media_sync`)
 
@@ -194,11 +196,10 @@ network each time.
 Connector hooks on `social.post.account` (empty in `social_media_sync`, filled by
 `social_media_linkedin_sync` / `social_media_x_sync`): `get_comments`,
 `get_comment_replies`, `create_comment`, `delete_comment`, `action_like_post` /
-`action_unlike_post`, `action_like_comment` / `action_unlike_comment`,
-`_check_remote_post_exists`. A connector whose API returns the whole thread nested
-leaves `get_comment_replies` unimplemented. When an action reveals the publication is
-gone, the answer carries `post_deleted` and `_register_remote_post_gone()` marks the
-line `deleted`.
+`action_unlike_post`, `action_like_comment` / `action_unlike_comment`. A connector whose
+API returns the whole thread nested leaves `get_comment_replies` unimplemented. When an
+action reveals the publication is gone, the answer carries `post_deleted` and
+`_register_remote_post_gone()` — both in `social_media_base` — mark the line `deleted`.
 
 ## Rules that are easy to break
 
@@ -226,9 +227,10 @@ line `deleted`.
    `social_media_linkedin/social_linkedin_utils.py`. OAuth scopes live in
    `_SCOPE_LINKEDIN` there, extended per module through
    `social.media._get_linkedin_scopes()`; a refreshed token keeps the scopes it was
-   issued with, so widening the list only reaches accounts authorized again from scratch
-   (hence `social_media_linkedin_sync`'s `post_init_hook`, which posts instructions on
-   the chatter of the affected accounts).
+   issued with, so widening the list only reaches accounts authorized again from
+   scratch. The list is all-or-nothing on the LinkedIn side: a scope the App was not
+   granted fails the whole consent redirect, so `_SCOPE_LINKEDIN` is also the list of
+   products the customer's App must hold before a single account can be associated.
 5. **Advertising mirrors the network and is never pushed back.** Ads that disappear are
    archived, not deleted, and every figure carries its `statistics_date_from` /
    `statistics_date_to` window. Network statuses are `social.stage` **data per

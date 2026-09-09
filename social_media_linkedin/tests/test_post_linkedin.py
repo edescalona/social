@@ -3,6 +3,7 @@
 
 import base64
 from unittest.mock import MagicMock, patch
+from urllib.parse import quote
 
 from odoo import Command
 from odoo.exceptions import UserError
@@ -10,6 +11,7 @@ from odoo.tools import mute_logger
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    _ENDPOINT_POST_LINKEDIN,
     _MAX_IMAGE_SIZE_LINKEDIN,
     _MAX_IMAGES_LINKEDIN,
     _MAX_MESSAGE_LENGTH_LINKEDIN,
@@ -972,4 +974,62 @@ class TestSocialPostLinkedin(TestSocialCommonLinkedin):
         self.assertIn(
             other_account.id,
             self.SocialPost.with_company(company)._default_account_ids(),
+        )
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_post_exists(self, mock_request):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.return_value = mock_response
+        self.assertTrue(self.SocialPostAccountLinkedin.check_post_exists())
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_post_exists_deleted(self, mock_request):
+        """A 404 is the only answer that means the post is gone."""
+        remote_ref = self.SocialPostAccountLinkedin.remote_ref
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_request.return_value = mock_response
+        self.assertFalse(self.SocialPostAccountLinkedin.check_post_exists())
+        self.assertEqual(self.SocialPostAccountLinkedin.state, "deleted")
+        self.assertFalse(self.SocialPostAccountLinkedin.post_account_url)
+        self.assertEqual(self.SocialPostAccountLinkedin.remote_ref, remote_ref)
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_post_exists_forbidden(self, mock_request):
+        """A lost permission is not a deletion: nothing may be written."""
+        post_account = self.SocialPostAccountLinkedin
+        post_account.write({"state": "posted"})
+        remote_ref = post_account.remote_ref
+        post_account_url = post_account.post_account_url
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_request.return_value = mock_response
+        with mute_logger(LOGGER_POST_ACCOUNT_LINKEDIN):
+            self.assertTrue(post_account.check_post_exists())
+        self.assertEqual(post_account.state, "posted")
+        self.assertEqual(post_account.remote_ref, remote_ref)
+        self.assertEqual(post_account.post_account_url, post_account_url)
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_post_exists_unreachable(self, mock_request):
+        """LinkedIn out of reach leaves the publication untouched."""
+        post_account = self.SocialPostAccountLinkedin
+        post_account.write({"state": "posted"})
+        mock_request.side_effect = UserError("boom")
+        with mute_logger(LOGGER_POST_ACCOUNT_LINKEDIN):
+            self.assertTrue(post_account.check_post_exists())
+        self.assertEqual(post_account.state, "posted")
+
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    def test_check_remote_post_exists_reads_the_post_endpoint(self, mock_request):
+        """The check reads the publication itself, by its own reference."""
+        post_account = self.SocialPostAccountLinkedin
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_request.return_value = mock_response
+        self.assertTrue(post_account.check_post_exists())
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"],
+            _ENDPOINT_POST_LINKEDIN % quote(post_account.remote_ref),
         )

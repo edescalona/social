@@ -386,6 +386,13 @@ Rate limits
   the publication stays in Odoo. Deleting the line while the tweet is
   still on X would leave the publication with nothing pointing at it, so
   the deletion waits for the window to end.
+- Opening a publication, from its form or from its card on the
+  dashboard, reads the tweet on X first. One deleted there answers *Not
+  Found* and the publication is marked as *Deleted* on the spot, keeping
+  its reference. The read spends one request of the plan and respects
+  the same window as the rest: while the limit of the ``get_post``
+  endpoint is exhausted the publication is left untouched rather than
+  asked about.
 - The X accounts are walked by the automatic check for updates that runs
   every 2 hours, which by itself asks X for nothing: the token of X does
   not expire and its API reports no figures by day, so the pass only
