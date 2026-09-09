@@ -1531,10 +1531,11 @@ class SocialAccount(models.Model):
         """Read the figures LinkedIn reports for these publications.
 
         Nothing here walks the feed: Odoo already knows the URN of every
-        publication it is handed, so three calls answer a whole page of them
-        however much the page has published. That is what lets the connector
-        keep the figures of a publication up to date with no synchronization
-        module installed.
+        publication it is handed, so at most three calls answer a whole page of
+        them however much the page has published --and only one when every URN
+        of the page is a share, which is what this connector publishes. That is
+        what lets it keep the figures of a publication up to date with no
+        synchronization module installed.
 
         Each account goes in its own savepoint, and its responsible user is
         told when LinkedIn refuses it: the pass writes as it goes, so what was

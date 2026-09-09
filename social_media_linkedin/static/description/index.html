@@ -825,9 +825,15 @@ recent publications</em> scheduled action, and on the spot by the <em>Update</em
 button of the dashboard and <em>Update statistics</em> of the account form.</li>
 <li>Nothing walks the feed to do it: Odoo already knows the URN of every
 publication it is asking about, so a whole page of them is answered by
-<strong>three calls</strong> — <tt class="docutils literal">organizationalEntityShareStatistics</tt> once for the
-shares and once for the UGC posts, and <tt class="docutils literal">socialActions</tt> for the likes
-and the comments, which LinkedIn documents as the up-to-date ones.</li>
+<strong>at most three calls</strong> — <tt class="docutils literal">organizationalEntityShareStatistics</tt> once
+for the shares and once for the UGC posts, and <tt class="docutils literal">socialActions</tt> for
+the likes and the comments of the UGC posts, which LinkedIn documents
+as the up-to-date ones.</li>
+<li>Only the kinds the page really carries are asked for. The publications
+Odoo publishes are shares, so a page of them costs <strong>one call</strong>: the
+finder answers their likes and comments inside the same block, and
+<tt class="docutils literal">socialActions</tt> is only asked about UGC posts, which are the
+publications made outside Odoo.</li>
 <li>Those URNs travel in the query string of a finder LinkedIn documents
 as not paginated, so a page whose URNs do not fit in 4 KB is asked for
 in as many calls as it takes, around 95 publications each. That is the
