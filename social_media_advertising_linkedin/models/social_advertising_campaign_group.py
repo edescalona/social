@@ -3,11 +3,15 @@
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import float_compare
+
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    linkedin_urn_id,
+)
 
 from ..social_advertising_linkedin_utils import (
     _ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN,
     campaign_manager_url_linkedin,
-    linkedin_urn_id,
     run_schedule_window_linkedin,
 )
 from .social_advertising_campaign import LINKEDIN_LOCKED_CODES, LINKEDIN_START_MARGIN
@@ -102,7 +106,16 @@ class SocialAdvertisingCampaignGroup(models.Model):
             if not group.total_budget:
                 continue
             daily_budgets = sum(group.campaign_ids.mapped("daily_budget"))
-            if group.total_budget < daily_budgets:
+            # The currency is optional here, so the comparison falls back
+            # to two decimals and the amounts reach the message
+            # unformatted: ``format_amount`` needs its decimal places.
+            rounding = group.currency_id.rounding or 0.01
+            if (
+                float_compare(
+                    group.total_budget, daily_budgets, precision_rounding=rounding
+                )
+                < 0
+            ):
                 raise ValidationError(
                     _(
                         "The daily budgets of the campaigns of the group "

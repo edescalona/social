@@ -7,10 +7,13 @@ from urllib.parse import quote
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    linkedin_urn_id,
+)
+
 from ..social_advertising_linkedin_utils import (
     _ENDPOINT_AD_CREATIVES_LINKEDIN,
     campaign_manager_url_linkedin,
-    linkedin_urn_id,
 )
 from .social_advertising_campaign import LINKEDIN_LOCKED_CODES
 

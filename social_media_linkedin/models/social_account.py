@@ -48,6 +48,7 @@ from ..social_linkedin_utils import (
     datetime_from_epoch_milliseconds,
     default_statistics_window,
     epoch_milliseconds,
+    linkedin_urn_id,
     social_url_encode,
 )
 
@@ -784,7 +785,7 @@ class SocialAccount(models.Model):
         )
         organization_ids = (
             [
-                organization["organization"].split(":")[-1]
+                linkedin_urn_id(organization["organization"])
                 for organization in response.get("elements", [])
             ]
             if not self

@@ -194,6 +194,18 @@ _ERROR_CREDENTIALS_CODES_LINKEDIN = (
 )
 
 
+def linkedin_urn_id(urn):
+    """Return the identifier at the end of a LinkedIn URN.
+
+    LinkedIn names an entity by its URN everywhere but in the path of an
+    endpoint, which takes the bare identifier.
+
+    :param urn: the URN, or anything falsy when there is none.
+    :rtype: str
+    """
+    return (urn or "").split(":")[-1]
+
+
 def social_url_encode(param_field, params_values):
     """Encode one query parameter the way the social media APIs expect it.
 

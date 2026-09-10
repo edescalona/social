@@ -30,6 +30,7 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _VIDEO_POLL_DELAY_MIN_LINKEDIN,
     _VIDEO_POLL_MAX_WAIT_LINKEDIN,
     datetime_from_epoch_milliseconds,
+    linkedin_urn_id,
 )
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
@@ -1812,7 +1813,7 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         fake_organization = {
             "vanityName": account.username,
             "localizedName": account.name,
-            "id": account.remote_ref.split(":")[-1],
+            "id": linkedin_urn_id(account.remote_ref),
         }
         with (
             patch.object(
