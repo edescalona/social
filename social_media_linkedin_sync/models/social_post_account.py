@@ -8,12 +8,14 @@ from odoo import Command, _, models
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _SCOPE_READ_POSTS_LINKEDIN,
-    _URN_COMMENT_LINKEDIN,
     datetime_from_epoch_milliseconds,
-    linkedin_reaction_id,
 )
 
-from ..social_linkedin_sync_utils import _URN_PERSON_LINKEDIN
+from ..social_linkedin_sync_utils import (
+    _URN_COMMENT_LINKEDIN,
+    _URN_PERSON_LINKEDIN,
+    linkedin_reaction_id,
+)
 
 _logger = logging.getLogger(__name__)
 

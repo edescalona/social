@@ -10,16 +10,18 @@ from odoo import _
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
-from odoo.addons.social_media_linkedin.social_linkedin_utils import (
-    _POSTS_MAX_PAGES_LINKEDIN,
-    linkedin_reaction_id,
-)
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
     RECENT_STATISTICS_LINKEDIN,
 )
 
 from ..models.social_account import SocialAccount as SocialAccountLinkedinSync
+from ..social_linkedin_sync_utils import (
+    _POSTS_MAX_PAGES_LINKEDIN,
+    _POSTS_MAX_PAGES_MAX_LINKEDIN,
+    _POSTS_MAX_PAGES_MIN_LINKEDIN,
+    linkedin_reaction_id,
+)
 from .test_sync_linkedin_common import (
     PATCH_SYNC_ACCOUNT_LINKEDIN,
     PATCH_SYNC_POST_ACCOUNT_LINKEDIN,
@@ -69,7 +71,10 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
 
     @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
     def test_get_all_posts_stops_at_the_page_cap(self):
-        """A feed longer than the cap is reported as read partially."""
+        """A feed longer than the configured cap is read partially."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin_sync.posts_max_pages", "3"
+        )
         with patch.object(
             type(self.SocialAccountLinkedin),
             "_get_posts",
@@ -77,8 +82,60 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
         ) as mock_get_posts:
             posts, complete = self.SocialAccountLinkedin._get_all_posts()
         self.assertFalse(complete)
-        self.assertEqual(mock_get_posts.call_count, _POSTS_MAX_PAGES_LINKEDIN)
+        self.assertEqual(mock_get_posts.call_count, 3)
         self.assertEqual(len(posts), 1)
+
+    @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
+    def test_get_all_posts_reads_one_page_at_the_minimum(self):
+        """A cap of zero pages would import nothing and say nothing."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin_sync.posts_max_pages", "0"
+        )
+        with patch.object(
+            type(self.SocialAccountLinkedin),
+            "_get_posts",
+            return_value=[{"id": "urn:li:share:1"}],
+        ) as mock_get_posts:
+            posts, complete = self.SocialAccountLinkedin._get_all_posts()
+        self.assertFalse(complete)
+        self.assertEqual(mock_get_posts.call_count, _POSTS_MAX_PAGES_MIN_LINKEDIN)
+        self.assertEqual(len(posts), 1)
+
+    def test_posts_max_pages_is_capped_at_the_maximum(self):
+        """What one pass may spend against the feed has a ceiling."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin_sync.posts_max_pages", "100000"
+        )
+        self.assertEqual(
+            self.SocialAccountLinkedin._linkedin_posts_max_pages(),
+            _POSTS_MAX_PAGES_MAX_LINKEDIN,
+        )
+
+    def test_posts_max_pages_falls_back_on_a_wrong_parameter(self):
+        """A parameter that is not a number leaves the default in place."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin_sync.posts_max_pages", "not a number"
+        )
+        self.assertEqual(
+            self.SocialAccountLinkedin._linkedin_posts_max_pages(),
+            _POSTS_MAX_PAGES_LINKEDIN,
+        )
+
+    @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
+    def test_get_all_posts_reads_the_parameter_once(self):
+        """The cap is read before the loop, not on every page."""
+        with patch.object(
+            type(self.SocialAccountLinkedin),
+            "_linkedin_posts_max_pages",
+            return_value=3,
+        ) as mock_max_pages, patch.object(
+            type(self.SocialAccountLinkedin),
+            "_get_posts",
+            return_value=[{"id": "urn:li:share:1"}],
+        ) as mock_get_posts:
+            self.SocialAccountLinkedin._get_all_posts()
+        self.assertEqual(mock_get_posts.call_count, 3)
+        self.assertEqual(mock_max_pages.call_count, 1)
 
     @mute_logger(LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN)
     def test_get_linkedin_images_download_url_error_is_not_fatal(self):

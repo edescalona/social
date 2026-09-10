@@ -9,21 +9,23 @@ from odoo.exceptions import UserError
 from odoo.tools import is_list_of
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
-    _POSTS_MAX_PAGES_LINKEDIN,
     _POSTS_PAGE_SIZE_LINKEDIN,
     _SCOPE_READ_POSTS_LINKEDIN,
     _UPDATE_CHECK_DAYS_LINKEDIN,
-    _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
-    _URN_VIDEO_LINKEDIN,
     _batch_urns_by_url_size,
     datetime_from_epoch_milliseconds,
-    linkedin_reaction_id,
 )
 
 from ..social_linkedin_sync_utils import (
+    _POSTS_MAX_PAGES_LINKEDIN,
+    _POSTS_MAX_PAGES_MAX_LINKEDIN,
+    _POSTS_MAX_PAGES_MIN_LINKEDIN,
     _PROJECTION_ACTOR_LINKEDIN,
+    _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URN_PERSON_LINKEDIN,
+    _URN_VIDEO_LINKEDIN,
+    linkedin_reaction_id,
 )
 
 _logger = logging.getLogger(__name__)
@@ -83,6 +85,30 @@ class SocialAccount(models.Model):
                 account._missing_linkedin_scopes(_SCOPE_READ_POSTS_LINKEDIN)
             )
 
+    def _linkedin_posts_max_pages(self):
+        """Return how many pages of the feed one pass may read.
+
+        Read before the loop and only once: a parameter written while a pass
+        walks the accounts would otherwise give two accounts of the same run
+        two different feeds, and nothing would say so.
+
+        :rtype: int
+        """
+        get_param = self.env["ir.config_parameter"].sudo().get_param
+        try:
+            max_pages = int(
+                get_param(
+                    "social_media_linkedin_sync.posts_max_pages",
+                    _POSTS_MAX_PAGES_LINKEDIN,
+                )
+            )
+        except (TypeError, ValueError):
+            return _POSTS_MAX_PAGES_LINKEDIN
+        return max(
+            _POSTS_MAX_PAGES_MIN_LINKEDIN,
+            min(_POSTS_MAX_PAGES_MAX_LINKEDIN, max_pages),
+        )
+
     def _get_all_posts(self):
         """Read the whole feed of the account, page by page.
 
@@ -98,7 +124,8 @@ class SocialAccount(models.Model):
         self.ensure_one()
         posts = []
         seen_urns = set()
-        for page in range(_POSTS_MAX_PAGES_LINKEDIN):
+        max_pages = self._linkedin_posts_max_pages()
+        for page in range(max_pages):
             page_posts = self._get_posts(
                 params_fields=["start"],
                 params_values={"start": page * _POSTS_PAGE_SIZE_LINKEDIN},
@@ -114,7 +141,7 @@ class SocialAccount(models.Model):
             "The feed of the LinkedIn account %s is longer than %s pages, it "
             "was read partially and the deleted posts are not looked for",
             self.name,
-            _POSTS_MAX_PAGES_LINKEDIN,
+            max_pages,
         )
         return posts, False
 

@@ -649,6 +649,58 @@ existing account, use its <em>Update account</em> button instead of the
 wizard.</p>
 </li>
 </ul>
+</div>
+<div class="section" id="system-parameters">
+<h1>System parameters</h1>
+<p>Nothing here has to be set for the connector to work: each key defaults
+to the value the code carries, and it only exists once it is written by
+hand in <em>Settings</em> &gt; <em>Technical</em> &gt; <em>System Parameters</em>. They are bounded
+when they are read, so a value outside its range is brought back into it
+instead of being obeyed.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="10%" />
+<col width="20%" />
+<col width="20%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Parameter</th>
+<th class="head">Default</th>
+<th class="head">Unit</th>
+<th class="head">Bounds</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal">social_media_linkedin.video_poll_attempts</tt></td>
+<td>30</td>
+<td>polls</td>
+<td>at least 1, and
+at most what the
+600 second
+ceiling allows</td>
+</tr>
+<tr><td><tt class="docutils literal">social_media_linkedin.video_poll_delay</tt></td>
+<td>2</td>
+<td>seconds between
+polls</td>
+<td>at least 1</td>
+</tr>
+</tbody>
+</table>
+<p>The two are the wait LinkedIn needs to finish processing an uploaded
+video before the post can be published, and what matters is their
+product: it is time the publication spends inside its own transaction.
+Past the <tt class="docutils literal">limit_time_real</tt> of the deployment — 120 seconds by default,
+and the scheduled actions inherit it — the worker is killed with the
+video already uploaded on LinkedIn and nothing published in Odoo. That
+is why the product is capped at 600 seconds whatever the two numbers
+say, and why raising the wait for a long video means raising
+<tt class="docutils literal">limit_time_real</tt> as well.</p>
+<p>Below their bounds the numbers stop making sense rather than merely
+being small: zero polls publishes nothing without ever asking LinkedIn,
+and a delay under a second turns the wait into a burst against an API
+whose rate limit the module does not manage.</p>
 <div class="section" id="usage">
 <h2>Usage</h2>
 </div>
@@ -958,11 +1010,9 @@ before uploading anything: LinkedIn would only keep the first one and
 the others would be transferred and processed for nothing.</p>
 </li>
 <li><p class="first">LinkedIn processes an uploaded video before it can be published, so
-publishing a post with a video waits until the video is available. The
-wait is tuned with the <tt class="docutils literal">social_media_linkedin.video_poll_attempts</tt>
-and <tt class="docutils literal">social_media_linkedin.video_poll_delay</tt> system parameters, 30
-attempts every 2 seconds by default. A long video may need more than
-that.</p>
+publishing a post with a video waits until the video is available: 30
+attempts every 2 seconds, which a long video may need more than. Both
+numbers are system parameters, described in CONFIGURE.</p>
 </li>
 <li><p class="first">The video of a published post is not attached to the publication
 itself: only the <em>has video</em> flag is kept, and the dashboard shows a
