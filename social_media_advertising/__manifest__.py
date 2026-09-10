@@ -14,6 +14,7 @@
     "data": [
         "security/ir.model.access.csv",
         "security/social_advertising_campaign_security.xml",
+        "security/social_advertising_campaign_group_security.xml",
         "security/social_advertising_account_security.xml",
         "security/social_advertising_ad_security.xml",
         "data/ir_cron_data.xml",
