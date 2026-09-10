@@ -17,9 +17,17 @@ What is worth reviewing is the two scheduled actions it adds, in
 Both intervals are the ones to move if the social media of an account is
 strict about quotas.
 
-The module adds one setting, in *Settings / General Settings / Discuss*:
-*Max age in days of the medias downloaded from the social media*. It is empty
-by default, which is no policy at all: no media is ever released.
+The retention of the downloaded medias is one system parameter, in *Settings /
+Technical / Parameters / System Parameters*, which only an administrator
+reaches: `social_media_sync.media_max_age_days`. The module installs it at
+`0`, so it is there to be found, and zero is no policy at all: no media is
+ever released.
+
+A system parameter holds text, and this one is read as a number of days.
+Anything that cannot be read as one — a word, an empty value — is taken as no
+policy and leaves a warning in the log; zero and any negative number are no
+policy too, and those are not worth a warning. No media is released in any of
+those cases.
 
 Written as a positive number of days, the daily vacuum releases the images and
 videos this module downloaded for the imported publications older than that,

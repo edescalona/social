@@ -8,37 +8,58 @@ from .test_social_sync_common import TestSocialMediaSyncCommon
 MEDIA_MAX_AGE_PARAM = "social_media_sync.media_max_age_days"
 
 
-class TestMediaRetentionSettingsSync(TestSocialMediaSyncCommon):
-    """The setting that puts a maximum age on the downloaded medias."""
+class TestMediaRetentionParameterSync(TestSocialMediaSyncCommon):
+    """The system parameter that puts a maximum age on the downloaded medias."""
 
-    def test_the_setting_reads_as_zero_without_a_parameter(self):
-        """No parameter written is no retention policy at all.
+    def test_the_parameter_ships_as_no_retention(self):
+        """The module writes the parameter so that it can be found, at zero.
 
-        An ``Integer`` of ``res.config.settings`` cannot store a zero — the
-        wizard turns it into ``False`` and the parameter row is removed — and
-        that is precisely the design here: no row means no policy, which is
-        what the module ships with.
+        Zero is no policy at all, which is what an installation gets until an
+        administrator puts a number in it.
         """
-        self.env["ir.config_parameter"].sudo().set_param(MEDIA_MAX_AGE_PARAM, "")
-        settings = self.env["res.config.settings"].sudo().create({})
-        self.assertEqual(settings.social_media_sync_media_max_age_days, 0)
-
-    def test_the_setting_is_read_back_from_the_parameter(self):
-        """What the administrator saves is what the parameter holds."""
-        settings = self.env["res.config.settings"].sudo().create({})
-        settings.social_media_sync_media_max_age_days = 30
-        settings.execute()
         self.assertEqual(
             self.env["ir.config_parameter"].sudo().get_param(MEDIA_MAX_AGE_PARAM),
-            "30",
+            "0",
         )
-        self.assertEqual(
-            self.env["res.config.settings"]
-            .sudo()
-            .create({})
-            .social_media_sync_media_max_age_days,
-            30,
+        self.assertEqual(self.SocialPostAccount._media_retention_days(), 0)
+
+    def test_the_parameter_is_read_as_an_integer(self):
+        """A system parameter is text, and the policy needs a number of days."""
+        self.env["ir.config_parameter"].sudo().set_param(MEDIA_MAX_AGE_PARAM, "30")
+        self.assertEqual(self.SocialPostAccount._media_retention_days(), 30)
+
+    def test_a_parameter_that_is_not_a_number_is_no_retention(self):
+        """What cannot be read as a number is read as no policy, not as a crash."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            MEDIA_MAX_AGE_PARAM, "every other tuesday"
         )
+        self.assertEqual(self.SocialPostAccount._media_retention_days(), 0)
+
+    def test_a_negative_parameter_is_no_retention(self):
+        """A negative age releases nothing, the same as no policy at all."""
+        self.env["ir.config_parameter"].sudo().set_param(MEDIA_MAX_AGE_PARAM, "-30")
+        self.assertEqual(self.SocialPostAccount._media_retention_days(), -30)
+        post_account, attachments = self._imported_publication_for_parameter()
+        self.SocialPostAccount._gc_aged_post_medias()
+        self.assertEqual(post_account.image_ids, attachments)
+
+    def _imported_publication_for_parameter(self):
+        """An imported publication old enough for any policy."""
+        post_account = self.SocialPostAccount.create(
+            {
+                "message": "Imported long ago",
+                "account_id": self.social_account_id.id,
+                "state": "posted",
+                "published_date": fields.Datetime.subtract(
+                    fields.Datetime.now(), days=600
+                ),
+            }
+        )
+        image = self.env["ir.attachment"].create(
+            {"name": "media.png", "type": "binary", "datas": b"aW1n"}
+        )
+        post_account.write({"image_ids": [Command.link(image.id)]})
+        return post_account, image
 
 
 class TestMediaRetentionSync(TestSocialMediaSyncCommon):

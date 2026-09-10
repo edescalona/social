@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 17.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-10 04:08+0000\n"
+"POT-Creation-Date: 2026-09-10 04:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -95,11 +95,6 @@ msgid "Comments"
 msgstr "Comentarios"
 
 #. module: social_media_sync
-#: model:ir.model,name:social_media_sync.model_res_config_settings
-msgid "Config Settings"
-msgstr "Ajustes de configuración"
-
-#. module: social_media_sync
 #. odoo-javascript
 #: code:addons/social_media_sync/static/src/components/social_comment/social_comment.esm.js:0
 #: code:addons/social_media_sync/static/src/components/social_comment/social_comment.xml:0
@@ -146,21 +141,6 @@ msgid "Hide replies ("
 msgstr "Ocultar respuestas ("
 
 #. module: social_media_sync
-#: model:ir.model.fields,help:social_media_sync.field_res_config_settings__social_media_sync_media_max_age_days
-#: model_terms:ir.ui.view,arch_db:social_media_sync.res_config_settings_view_form
-msgid ""
-"If set as a positive integer, the images and videos downloaded from the "
-"social media are released from the publications older than that, and the "
-"files are removed by the vacuum. What each social media made of them is "
-"kept, so the publications are not downloaded again."
-msgstr ""
-"Si se establece como un entero positivo, las imágenes y los vídeos "
-"descargados de la red social se sueltan de las publicaciones más antiguas "
-"que eso, y la limpieza periódica elimina los ficheros. Lo que cada red "
-"social hizo de ellos se conserva, de modo que las publicaciones no se "
-"vuelven a descargar."
-
-#. module: social_media_sync
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_tree_inherit
 msgid "Impressions"
 msgstr "Impresiones"
@@ -186,11 +166,6 @@ msgstr "Me gusta"
 #, python-format
 msgid "Likes are not available for this social media."
 msgstr "Los me gusta no están disponibles para esta red social."
-
-#. module: social_media_sync
-#: model:ir.model.fields,field_description:social_media_sync.field_res_config_settings__social_media_sync_media_max_age_days
-msgid "Max age in days of the medias downloaded from the social media"
-msgstr "Edad máxima en días de los medios descargados de la red social"
 
 #. module: social_media_sync
 #: model:ir.model.fields,field_description:social_media_sync.field_social_account__pending_initial_sync
@@ -277,11 +252,6 @@ msgid ""
 msgstr ""
 "Muestra u oculta las respuestas a este comentario, pidiéndoselas a la red "
 "social la primera vez."
-
-#. module: social_media_sync
-#: model_terms:ir.ui.view,arch_db:social_media_sync.res_config_settings_view_form
-msgid "Social Media"
-msgstr "Redes sociales"
 
 #. module: social_media_sync
 #: model_terms:ir.ui.view,arch_db:social_media_sync.social_post_account_view_form_inherit

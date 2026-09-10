@@ -469,9 +469,16 @@ few days late into a quota problem.</li>
 </ul>
 <p>Both intervals are the ones to move if the social media of an account is
 strict about quotas.</p>
-<p>The module adds one setting, in <em>Settings / General Settings / Discuss</em>:
-<em>Max age in days of the medias downloaded from the social media</em>. It is
-empty by default, which is no policy at all: no media is ever released.</p>
+<p>The retention of the downloaded medias is one system parameter, in
+<em>Settings / Technical / Parameters / System Parameters</em>, which only an
+administrator reaches: <tt class="docutils literal">social_media_sync.media_max_age_days</tt>. The
+module installs it at <tt class="docutils literal">0</tt>, so it is there to be found, and zero is no
+policy at all: no media is ever released.</p>
+<p>A system parameter holds text, and this one is read as a number of days.
+Anything that cannot be read as one — a word, an empty value — is taken
+as no policy and leaves a warning in the log; zero and any negative
+number are no policy too, and those are not worth a warning. No media is
+released in any of those cases.</p>
 <p>Written as a positive number of days, the daily vacuum releases the
 images and videos this module downloaded for the imported publications
 older than that, and the files are deleted a day later. Two things to
