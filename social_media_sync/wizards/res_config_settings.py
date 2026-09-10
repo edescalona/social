@@ -8,6 +8,7 @@ class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
     social_media_sync_media_max_age_days = fields.Integer(
+        "Max age in days of the medias downloaded from the social media",
         config_parameter="social_media_sync.media_max_age_days",
         help="If set as a positive integer, the images and videos downloaded "
         "from the social media are released from the publications older than "

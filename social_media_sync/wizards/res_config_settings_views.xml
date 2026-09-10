@@ -11,10 +11,7 @@
         <setting id="social_media_sync_media_retention" string="Social Media">
           <field name="social_media_sync_media_max_age_days" />
           <div class="content-group">
-            <label
-                            for="social_media_sync_media_max_age_days"
-                            string="Max age in days of the medias downloaded from the social media"
-                        />
+            <label for="social_media_sync_media_max_age_days" />
             <div
                             class="text-muted"
                             id="social_media_sync_media_max_age_days"

@@ -738,15 +738,20 @@ because every publication points at the attachments of the post instead
 of copying them, and what each social media made of that media is a
 reference in ``media_refs``.
 
-What is missing is a policy for the bytes. There is no retention:
-nothing ages a media out, and the only deletions are the cascade that
-takes the medias of a post or of a publication when the record itself is
-deleted, and ``social.account.action_purge_account``, which drops an
-account with its publication history. Moving those bytes out of the
-filestore is not something this module decides either: an external
-backend is configured at the level of Odoo, through
-``ir_attachment.location``, and applies to every attachment of the
-database.
+What ages a media out lives in *Social Media Sync*, which is where the
+cost grows with the history of an account: it downloads a media of its
+own for every publication it imports, and a maximum age in days releases
+them. The medias of a post are out of that reach on purpose, being
+editorial content that a post stores once however many accounts it went
+to.
+
+Inside this module the only deletions are the cascade that takes the
+medias of a post or of a publication when the record itself is deleted,
+and ``social.account.action_purge_account``, which drops an account with
+its publication history. Moving those bytes out of the filestore is not
+something this module decides either: an external backend is configured
+at the level of Odoo, through ``ir_attachment.location``, and applies to
+every attachment of the database.
 
 Bug Tracker
 ===========
