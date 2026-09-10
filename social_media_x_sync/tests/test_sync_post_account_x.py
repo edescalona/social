@@ -10,6 +10,7 @@ from odoo.addons.social_media_sync.tests.test_social_sync_common import (
     PATCH_SYNC_POST_ACCOUNT,
 )
 
+from ..social_x_sync_utils import _SEARCH_MAX_RESULTS_X
 from .test_sync_x_common import LOGGER_POST_ACCOUNT_X_SYNC, TestSocialSyncCommonX
 
 
@@ -299,6 +300,27 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             str,
             msg="The moment X stamps the tweet with is turned into the "
             "sentence the client draws, not handed over as a date.",
+        )
+
+    def test_get_comments_asks_for_a_whole_page(self):
+        """A page of the conversation is asked for at the ceiling of X."""
+        fake_response = MagicMock()
+        fake_response.data = []
+        fake_response.includes = {}
+        fake_response.meta = {}
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.return_value = fake_response
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            self.SocialPostAccountX.get_comments()
+        self.assertEqual(
+            fake_client.search_recent_tweets.call_args.kwargs["max_results"],
+            _SEARCH_MAX_RESULTS_X,
+            msg="Without it X answers ten replies of its own accord, and a "
+            "thread of eleven is read wrong.",
         )
 
     @mute_logger(LOGGER_POST_ACCOUNT_X_SYNC)

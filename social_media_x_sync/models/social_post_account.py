@@ -8,6 +8,8 @@ from tweepy.errors import TooManyRequests
 
 from odoo import _, fields, models
 
+from ..social_x_sync_utils import _SEARCH_MAX_RESULTS_X
+
 _logger = logging.getLogger(__name__)
 
 
@@ -115,6 +117,7 @@ class SocialPostAccount(models.Model):
                     ],
                     user_fields="id,name,username,profile_image_url",
                     media_fields=["media_key", "type", "url"],
+                    max_results=_SEARCH_MAX_RESULTS_X,
                 )
                 if response.data:
                     comments = []
