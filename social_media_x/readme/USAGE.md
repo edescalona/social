@@ -3,7 +3,7 @@ List of posts generated from Odoo.
 
 Only posts generated using Odoo are displayed.
 
-- Go to *Social Media* > Post
+- Go to *Social Media* > *Posts*
 
 Generate a post.
 ---------------
@@ -11,7 +11,7 @@ Generate a post.
 This feature acts as a template for generating multiple posts
 from a single view, depending on the selected accounts.
 
-- Go to *Social Media* > Post > New or Go to *Social Media* > Dashboard > Add Post
+- Go to *Social Media* > *Posts* > New or Go to *Social Media* > *Dashboard* > Add Post
 - Fill in the required fields
 - When the post is created, every X account of the active company is selected
   by default in *Accounts*; review the list and remove the ones you do not want
@@ -47,12 +47,13 @@ Update token, API Key, API Secret and account data
 Archive Account X
 ----------------------------
 - Go to *Social Media* > Configuration > Accounts
-- Select the account
-- Click on the *Archive account* button
+- Select the account and use the standard *Actions* > *Archive* entry of the
+  account form.
 - Please note that all data associated with this account will be archived.
-- To use an archived account again, open it in *Social Media* > Configuration >
-  Accounts (*Archived* filter) and press *Unarchive account*: the account and
-  its data are restored instead of creating a duplicate. *Update account* only
+- To use an archived account again, open it in *Social Media* > *Configuration* >
+  *Accounts* (*Archived* filter) and use the standard *Actions* > *Unarchive*
+  entry: the account and its data are restored instead of creating a
+  duplicate. *Update account* only
   reactivates it when *Update keys* or *Update token* is ticked, because those
   are the options that send the user back to X to authorize again. The
   *Associate Account* wizard is not the way to do it when the same API Key and
@@ -108,13 +109,17 @@ Rate limits
 
 - The [rate limit](https://docs.x.com/x-api/fundamentals/rate-limits) is
   tracked per endpoint. The ones this module spends are linking the account,
-  publishing, deleting, reading a single post and reading the figures of the
-  recent ones (`get_posts`); a synchronization module adds its own to the same
-  record. When X answers that it is exhausted, Odoo stores the window it
-  returns and does not call that endpoint again until it expires: a notice is
-  shown with the limit of the plan, the remaining requests and the time of the
-  next attempt. If X does not say when the window resets, 60 seconds are
-  assumed.
+  refreshing the data of the account, publishing (message and media upload),
+  deleting, reading a single post and reading the figures of the recent ones
+  (`get_posts`); a synchronization module adds its own to the same record.
+  When X answers that it is exhausted, Odoo stores the window it returns and
+  a notice is shown with the limit of the plan, the remaining requests and
+  the time of the next attempt. That stored window is what stops a deletion,
+  a check of a single post and a refresh of the figures before they are
+  attempted; linking the account and publishing are tried all the same and
+  report the limit only once X has refused them, and the refresh of the data
+  of the account does not track its limit at all. If X does not say when the
+  window resets, 60 seconds are assumed.
 - If X refuses a publication because the requests of the plan are exhausted,
   the line is left as *Failed* with the message *X did not accept the post.
   The account may have reached the limit of requests of its plan: check the
@@ -150,9 +155,11 @@ Figures of a publication
   every post it asks about, so they are read by batches of **100 ids per
   request** on its own `get_posts` endpoint. Reading the timeline is what
   imports what Odoo did not publish, and that is a synchronization module.
-- Daily and not every two hours because what has to be watched on X is not the
-  volume but the 15 minute window of the plan. For the same reason the buttons
-  read the same bounded window and never the whole account.
+- Daily and not every two hours because the figures of a publication move
+  slowly while the quota of the plan is counted per day: the window is what
+  bounds what a run spends and the interval is what bounds how many runs
+  there are. For the same reason the buttons read the same bounded window and
+  never the whole account.
 - While the window of `get_posts` is exhausted the pass asks X for nothing and
   the publications keep the figures they have, with the date of the reading
   they come from. What was read before the limit was reached is kept: those
@@ -191,9 +198,10 @@ publication history:
 - The access tokens are cleared, so no credential outlives the module.
 - The X accounts are archived, together with their posts.
 - The X specific data of this module is lost, because Odoo drops the columns
-  of an uninstalled module: the API Key, the API Secret, the OAuth 1 tokens
-  and the rate limit window of each endpoint. The fields of a synchronization
-  module go with that module, not with this one.
+  of an uninstalled module: the API Key, the API Secret, the OAuth 1 tokens,
+  the app-only bearer token, the rate limit window of each endpoint and the
+  *X Premium* switch, which has to be ticked again after reinstalling. The
+  fields of a synchronization module go with that module, not with this one.
 - The identifier of each account and publication on X is kept, so installing
   the module back and associating the account again reactivates the archived
   history and updates it, instead of importing everything as duplicated
