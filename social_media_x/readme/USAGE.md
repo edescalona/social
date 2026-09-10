@@ -71,10 +71,17 @@ publication of the account that raises the objection is refused instead of
 being sent and failing on X. The same checks are applied when the post reaches
 the publication through an import or an RPC call, so nothing gets past them.
 
-- The message is checked against **280 characters**, the limit of an account
-  without X Premium, see the
-  [creation of a post](https://docs.x.com/x-api/posts/creation-of-a-post). A
-  longer message is reported on the post and the publication is not sent.
+- The message is checked against the characters the plan of the account
+  allows: **280** without X Premium and **25 000** with it, see the
+  [creation of a post](https://docs.x.com/x-api/posts/creation-of-a-post). The
+  plan is the **X Premium** switch of the account form, declared by hand
+  because nothing reads it back from X. A longer message is reported on the
+  post and the publication is not sent. A post selecting several X accounts is
+  measured against the strictest of them while it is written, and every
+  publication against its own account when it is sent, so only the line that
+  cannot publish is refused. An account marked as Premium without holding the
+  subscription sends the post and X refuses it: that line is left as *Failed*
+  with the reason.
 - X publishes **4 images or 1 video** per publication and never both kinds in
   the same message, see the
   [media upload](https://docs.x.com/x-api/media/upload-media) documentation. A

@@ -13,7 +13,7 @@ import requests
 import tweepy
 from markupsafe import Markup, escape
 from requests_oauthlib import OAuth1
-from tweepy.errors import Forbidden, TooManyRequests, Unauthorized
+from tweepy.errors import BadRequest, Forbidden, TooManyRequests, Unauthorized
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
@@ -23,6 +23,8 @@ from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
 from ..social_x_utils import (
     _GET_POSTS_MAX_IDS_X,
+    _MAX_MESSAGE_LENGTH_PREMIUM_X,
+    _MAX_MESSAGE_LENGTH_X,
     _POST_FIELDS_METRICS_X,
     _URL_OAUTH2_TOKEN_X,
     _URL_OAUTH_X,
@@ -55,6 +57,15 @@ class SocialAccount(models.Model):
     x_access_secret_oauth1 = fields.Char(groups="base.group_system")
     x_api_key = fields.Char(string="API Key", groups="base.group_system")
     x_api_secret = fields.Char(string="API Secret", groups="base.group_system")
+    x_premium = fields.Boolean(
+        default=False,
+        help="Whether this account holds an X Premium subscription, which "
+        "raises the message of a post from 280 to 25 000 characters. Left "
+        "off, a post longer than 280 characters is refused before it is sent. "
+        "Turned on for an account that does not hold the subscription, the "
+        "post is sent and X refuses it, and the publication fails with the "
+        "reason X gives.",
+    )
     rate_limit_endpoint = fields.Json(copy=False, default=dict)
 
     def _get_group_account_username(self):
@@ -77,6 +88,19 @@ class SocialAccount(models.Model):
             groupby=["username"],
             aggregates=["__count"],
             having=[("__count", ">", 1)],
+        )
+
+    def _get_x_max_message_length(self):
+        """Return the characters this account may publish in one post.
+
+        The plan belongs to the account and not to the social media, so the
+        limit is answered here and never read from the constants directly.
+
+        :rtype: int
+        """
+        self.ensure_one()
+        return (
+            _MAX_MESSAGE_LENGTH_PREMIUM_X if self.x_premium else _MAX_MESSAGE_LENGTH_X
         )
 
     def _fields_account_url(self):
@@ -475,6 +499,12 @@ class SocialAccount(models.Model):
         error, and since X has no way to renew the token from Odoo, the
         account is flagged for the user to authorize it again.
 
+        A post X itself refuses is answered with the reason of the account
+        instead of the raw text of the network: how many characters an
+        account may publish depends on its plan, which is declared here, so a
+        subscription marked on an account that does not hold it reaches X as
+        a post too long and comes back as this refusal.
+
         The references of the medias travel back with the identifier of the
         tweet, so the publication stores in one write what it published and
         what X called each of its medias.
@@ -507,6 +537,16 @@ class SocialAccount(models.Model):
         except (Unauthorized, Forbidden) as error:
             raise SocialCredentialsError(
                 _("PUBLISHING ON X: %(error)s", error=error)
+            ) from error
+        except BadRequest as error:
+            raise UserError(
+                _(
+                    "X refused the post of %(account)s: %(error)s. What an "
+                    "account may publish depends on its plan, so check the X "
+                    "Premium setting of the account before trying again.",
+                    account=self.display_name,
+                    error=error,
+                )
             ) from error
 
     def _run_check_media_updates(self):

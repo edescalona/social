@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
-from tweepy.errors import Unauthorized
+from tweepy.errors import BadRequest, Unauthorized
 
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
@@ -932,6 +932,26 @@ class TestSocialAccountX(TestSocialCommonX):
         )
         with mock_get_client_api, self.assertRaises(SocialCredentialsError):
             self.SocialAccount.create_tweet("Message Test", [], [], None, {})
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_refused_post(self):
+        """A post X refuses names the plan of the account as the reason.
+
+        The characters an account may publish are declared on the account, so
+        a subscription marked on one that does not hold it is only found out
+        here, and the user reads why instead of the raw answer of X.
+        """
+        fake_client = MagicMock()
+        fake_client.create_tweet.side_effect = BadRequest(
+            self.generate_magic_mock(status_code=400, json_return_value={})
+        )
+        mock_get_client_api = self.get_patch_exceptions_x(
+            fake_client=fake_client, valid_time_request=False
+        )
+        with mock_get_client_api, self.assertRaises(UserError) as error:
+            self.SocialAccountX.create_tweet("Message Test", [], [], None, {})
+        self.assertIn("X Premium", str(error.exception))
+        self.assertIn(self.SocialAccountX.display_name, str(error.exception))
 
     def test_refresh_credentials_is_not_possible_on_x(self):
         """X gives no way to renew the token from Odoo."""

@@ -45,6 +45,11 @@ class SocialPost(models.Model):
                     )
                 )
 
+    @api.depends("account_ids.x_premium")
+    def _compute_post_check_messages(self):
+        """Only declares that the plan of an account moves what X refuses."""
+        return super()._compute_post_check_messages()
+
     def _get_post_errors(self, media_type, account=None):
         """Add what X refuses to publish.
 
@@ -57,18 +62,32 @@ class SocialPost(models.Model):
         _get_checked_message`, so the limit of X is measured against the text
         the publication is about to send and not against an earlier version of
         it.
+
+        How many they may be belongs to the account and not to X: Premium
+        raises them from 280 to 25 000. The publication asks with its own
+        account and is measured against its own limit; the form asks without
+        one and is measured against the strictest of the X accounts of the
+        post, which is the line that would fail.
         """
         errors = super()._get_post_errors(media_type, account=account)
         if media_type != "x":
             return errors
         message = self._get_checked_message()
-        if len(message) > _MAX_MESSAGE_LENGTH_X:
+        x_accounts = account or self.account_ids.filtered(
+            lambda one: one.media_type == "x"
+        )
+        limit = (
+            min(one._get_x_max_message_length() for one in x_accounts)
+            if x_accounts
+            else _MAX_MESSAGE_LENGTH_X
+        )
+        if len(message) > limit:
             errors.append(
                 _(
                     "X publishes at most %(limit)s characters per post, and "
                     "this one has %(length)s. Shorten the message to publish "
                     "it.",
-                    limit=_MAX_MESSAGE_LENGTH_X,
+                    limit=limit,
                     length=len(message),
                 )
             )

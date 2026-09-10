@@ -5,9 +5,11 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.tools import mute_logger
 
 from odoo.addons.social_media_x.social_x_utils import (
     _MAX_IMAGE_SIZE_X,
+    _MAX_MESSAGE_LENGTH_PREMIUM_X,
     _MAX_MESSAGE_LENGTH_X,
 )
 from odoo.addons.social_media_x.tests.test_common_x import (
@@ -162,6 +164,55 @@ class TestSocialPostX(TestSocialCommonX):
         post = self._draft_post(message="x" * (_MAX_MESSAGE_LENGTH_X + 1))
         self.assertIn("at most 280 characters", "\n".join(post._get_post_errors("x")))
 
+    def test_get_post_errors_message_of_a_premium_account(self):
+        """Premium buys characters, so the same post is refused or not."""
+        post = self._draft_post(message="x" * (_MAX_MESSAGE_LENGTH_X + 1))
+        self.assertIn("at most 280 characters", "\n".join(post._get_post_errors("x")))
+
+        self.SocialAccountX.x_premium = True
+        self.assertFalse(post._get_post_errors("x"))
+
+        post.message = "x" * (_MAX_MESSAGE_LENGTH_PREMIUM_X + 1)
+        self.assertIn("at most 25000 characters", "\n".join(post._get_post_errors("x")))
+
+    def test_get_post_errors_measures_the_account_that_asks(self):
+        """The publication asks with its account and gets its own limit."""
+        premium = self.SocialAccountX.copy(
+            {"username": "premium-username", "x_premium": True}
+        )
+        post = self._draft_post(message="x" * (_MAX_MESSAGE_LENGTH_X + 1))
+        self.assertFalse(post._get_post_errors("x", account=premium))
+        self.assertIn(
+            "at most 280 characters",
+            "\n".join(post._get_post_errors("x", account=self.SocialAccountX)),
+        )
+
+    def test_get_post_errors_takes_the_strictest_account_of_the_post(self):
+        """The form asks once per social media, so it answers the minimum.
+
+        The strictest account is the line that would fail, and a check that
+        errs on the safe side is the one the form is allowed to show.
+        """
+        premium = self.SocialAccountX.copy(
+            {"username": "premium-username", "x_premium": True}
+        )
+        post = self._draft_post(
+            message="x" * (_MAX_MESSAGE_LENGTH_X + 1),
+            account_ids=[Command.set((self.SocialAccountX + premium).ids)],
+        )
+        self.assertIn("at most 280 characters", "\n".join(post._get_post_errors("x")))
+
+        self.SocialAccountX.x_premium = True
+        self.assertFalse(post._get_post_errors("x"))
+
+    def test_get_post_errors_without_any_account_of_x(self):
+        """Nothing to resolve the limit with falls back to the strictest."""
+        post = self._draft_post(
+            message="x" * (_MAX_MESSAGE_LENGTH_X + 1),
+            account_ids=[Command.clear()],
+        )
+        self.assertIn("at most 280 characters", "\n".join(post._get_post_errors("x")))
+
     def test_get_post_errors_too_many_images(self):
         post = self._draft_post(
             image_ids=[
@@ -234,6 +285,19 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertIn("at most 280 characters", post.message_error)
         self.assertFalse(post.message_info)
 
+    def test_post_check_messages_follow_the_plan_of_the_account(self):
+        """Turning Premium on refreshes the form of a post already written.
+
+        The plan of an account is neither the accounts, nor the message, nor
+        the media of the post, so without the redeclared dependency the
+        banner would keep refusing a post that can already be published.
+        """
+        post = self._draft_post(message="x" * (_MAX_MESSAGE_LENGTH_X + 1))
+        self.assertIn("at most 280 characters", post.message_error)
+
+        self.SocialAccountX.x_premium = True
+        self.assertFalse(post.message_error)
+
     def test_action_post_refuses_what_the_form_shows(self):
         """The publication fails its own line, with the text of the form.
 
@@ -263,3 +327,58 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertIn(
             "at most 280 characters", self.SocialPostAccountX.failed_description
         )
+
+    @mute_logger("odoo.addons.social_media_base.models.social_post_account")
+    def test_action_post_records_why_x_refused_the_post(self):
+        """A post refused by X leaves its reason on the line, not raw text.
+
+        The plan of an account is declared and can be wrong, so the refusal
+        of X is what tells the user, and it has to name the cause.
+        """
+        post = self._draft_post(message="Test Message")
+        self.SocialAccountX.x_premium = True
+        with patch.object(
+            type(self.SocialAccountX),
+            "create_tweet",
+            autospec=True,
+            side_effect=UserError(
+                "X refused the post of X Account: too long. What an account "
+                "may publish depends on its plan, so check the X Premium "
+                "setting of the account before trying again."
+            ),
+        ):
+            post._action_create_post_account()
+        line = post.post_account_ids
+        self.assertEqual(line.state, "failed")
+        self.assertIn("X Premium", line.failed_description)
+        self.assertFalse(line.remote_ref)
+
+    def test_action_post_fails_only_the_account_the_message_is_too_long_for(self):
+        """A limit of one account stops that account and nothing else.
+
+        The publication that X already accepted keeps its reference: that is
+        what the savepoint of ``_publish_guard`` is there to guarantee.
+        """
+        premium = self.SocialAccountX.copy(
+            {"username": "premium-username", "x_premium": True}
+        )
+        post = self._draft_post(
+            message="x" * (_MAX_MESSAGE_LENGTH_X + 1),
+            account_ids=[Command.set((self.SocialAccountX + premium).ids)],
+        )
+        with patch.object(
+            type(self.SocialAccountX),
+            "create_tweet",
+            autospec=True,
+            return_value=("122809890045", {}),
+        ) as mock_create_tweet:
+            post._action_create_post_account()
+        premium_line = post.post_account_ids.filtered(
+            lambda one: one.account_id == premium
+        )
+        refused_line = post.post_account_ids - premium_line
+        self.assertEqual(premium_line.state, "posted")
+        self.assertEqual(premium_line.remote_ref, "122809890045")
+        self.assertEqual(refused_line.state, "failed")
+        self.assertIn("at most 280 characters", refused_line.failed_description)
+        mock_create_tweet.assert_called_once()

@@ -12,10 +12,13 @@ _NO_PAID_PLAN_REASONS_X = (
 )
 
 # What X accepts in a post, checked before publishing so that the user reads
-# it on the form instead of in a failed publication. They are limits of the
-# social media and not of the account: X Premium raises the message to 25 000
-# characters, which no account here can tell apart yet. See the ROADMAP.
+# it on the form instead of in a failed publication. The media are limits of
+# the social media, the same for every account. The message is not: X Premium
+# raises it from 280 to 25 000 characters and the plan belongs to the account,
+# so the limit is resolved by ``social.account._get_x_max_message_length()``
+# and never read from here directly.
 _MAX_MESSAGE_LENGTH_X = 280
+_MAX_MESSAGE_LENGTH_PREMIUM_X = 25000
 _MAX_IMAGES_X = 4
 _MAX_VIDEOS_X = 1
 # The Media API takes WEBP as well, which LinkedIn does not.

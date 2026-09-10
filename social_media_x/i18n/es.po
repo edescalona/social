@@ -233,6 +233,16 @@ msgid "Unexpected response from X: %(error)s"
 msgstr "Respuesta inesperada de X: %(error)s"
 
 #. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_premium
+msgid ""
+"Whether this account holds an X Premium subscription, which raises the "
+"message of a post from 280 to 25 000 characters. Left off, a post longer "
+"than 280 characters is refused before it is sent. Turned on for an account "
+"that does not hold the subscription, the post is sent and X refuses it, and "
+"the publication fails with the reason X gives."
+msgstr ""
+
+#. module: social_media_x
 #: model:ir.model.fields.selection,name:social_media_x.selection__social_media__media_type__x
 msgid "X"
 msgstr "X"
@@ -250,6 +260,11 @@ msgstr "precios de la API de X"
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_access_secret_oauth1
 msgid "X Access Secret Oauth1"
 msgstr "Secreto de acceso OAuth1 de X"
+
+#. module: social_media_x
+#: model:ir.model.fields,field_description:social_media_x.field_social_account__x_premium
+msgid "X Premium"
+msgstr ""
 
 #. module: social_media_x
 #. odoo-python
@@ -361,6 +376,16 @@ msgstr ""
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
 msgid ""
+"X refused the post of %(account)s: %(error)s. What an account may publish "
+"depends on its plan, so check the X Premium setting of the account before "
+"trying again."
+msgstr ""
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
+msgid ""
 "X rejected the request because the developer App is not enrolled in a paid "
 "plan. The X API no longer has a free access tier: attach the App to a "
 "Project and subscribe a plan at %(pricing_link)s, then try again."
@@ -388,10 +413,3 @@ msgstr ""
 "petición:</b> %(next_request)s<br>Inténtelo de nuevo después de esa hora "
 "(Siguiente petición).<br>Para más información, consulte los <a "
 "href='%(rate_limit_url)s' target='_blank'>límites de peticiones</a>."
-
-#, python-format
-#~ msgid ""
-#~ "The account could not be associated. Check the server log for details."
-#~ msgstr ""
-#~ "No se ha podido asociar la cuenta. Consulte el registro del servidor para "
-#~ "más detalles."
