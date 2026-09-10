@@ -25,10 +25,11 @@ Choose the advertising account.
   from the list, unless the social media returns no account at all: in that
   case nothing is removed, because an empty answer cannot be told apart from a
   temporary failure.
-- Go to *Social Media* > Advertising > `<social media>` > Ad accounts for
-  the list of the advertising accounts of that social media, with filters by
-  environment and by the one in use. Open one to see its details and its
-  *Campaigns* and *Campaign Groups* stat buttons.
+- Go to *Social Media* > Advertising > `<social media>` > Advertising accounts
+  for the list of the advertising accounts of that social media, with filters
+  by environment and by the one in use. Open one to see its details, its
+  *Campaigns* and *Campaign Groups* stat buttons, and the *Open advertising
+  account* button, which opens it on the social media in a new tab.
 - A campaign and a campaign group record the advertising account they belong
   to when they are created on the social media or imported from it, and it
   never changes afterwards, except when the advertising account itself
@@ -55,12 +56,15 @@ Stat buttons of the account.
 Generate a campaign group.
 ---------------
 
-- Go to *Social Media* > Advertising > `<social media>` > Campaign group > New
+- Go to *Social Media* > Advertising > `<social media>` > Campaign Groups > New
 - A form view opens; fill in the required fields
   ![CREATE_GROUP_CAMPAIGN](../static/img/readme/CREATE_GROUP_CAMPAIGN.png)
 - Save
 - The *Campaigns* stat button on the form shows the number of campaigns of
   the group and navigates to them.
+- The *Open campaign group* button opens the campaign group on the social
+  media, in a new tab. It only shows up once the campaign group exists
+  there.
 
 Generate a campaign.
 ---------------
@@ -74,6 +78,8 @@ Generate a campaign.
 - A campaign can target several accounts of the same social media. A
   connector module may restrict it: LinkedIn campaigns accept a single
   account, because the campaign belongs to one advertising account there.
+- The *Open campaign* button opens the campaign on the social media, in a new
+  tab. It only shows up once the campaign exists there.
 
 Campaign and campaign group stages.
 ---------------
@@ -192,10 +198,14 @@ Archiving.
 - A campaign shared by several accounts is only archived when all of its
   accounts are, whether they are archived together or one by one, and a
   campaign group is only archived when it has no active campaign left.
-- Unarchiving the account restores everything.
-- Deleting an account permanently deletes the campaigns and the campaign
-  groups that exist on the social media, the same way the *Delete* button of
-  a campaign does. A campaign that was only written in Odoo and never reached
+- Unarchiving the account restores its campaigns and their campaign groups.
+  The ads are not brought back: an ad is also archived when the social media
+  stops serving it, so unarchiving them all would resurrect the ones it
+  dropped, and the next synchronization is what restores the ones still
+  served.
+- Deleting an account permanently deletes, in Odoo, the campaigns and the
+  campaign groups that exist on the social media; nothing is deleted on the
+  social media itself. A campaign that was only written in Odoo and never reached
   the social media is kept, and it only loses the link to the account; a
   campaign group is kept as long as it still has a campaign.
 
@@ -210,9 +220,9 @@ Campaign ownership.
 Notifications you may never see.
 ---------------
 
-- The check for new ads runs every six hours and raises a notice on the
-  dashboard of the ads, and on the account itself, when the social media
-  serves an ad this database does not know about. It needs an advertising
+- The check for new ads runs every six hours and raises a notice on the ads
+  view when the social media serves an ad this database does not know about.
+  It needs an advertising
   account marked as *in use* on the social media account: without one there
   is no advertiser to ask, the check reads nothing and the notice never goes
   up.
