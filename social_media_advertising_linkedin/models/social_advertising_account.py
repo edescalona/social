@@ -3,9 +3,12 @@
 
 from odoo import api, fields, models
 
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    linkedin_urn_id,
+)
+
 from ..social_advertising_linkedin_utils import (
     _URL_CAMPAIGN_MANAGER_LINKEDIN,
-    linkedin_urn_id,
 )
 
 

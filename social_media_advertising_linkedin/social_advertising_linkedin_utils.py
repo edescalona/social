@@ -8,21 +8,10 @@ from odoo.tools import date_utils
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     epoch_milliseconds,
+    linkedin_urn_id,
 )
 
 _URL_CAMPAIGN_MANAGER_LINKEDIN = "https://www.linkedin.com/campaignmanager/accounts/"
-
-
-def linkedin_urn_id(urn):
-    """Return the identifier at the end of a LinkedIn URN.
-
-    The Ads API names an entity by its URN everywhere but in the path of an
-    endpoint, which takes the bare identifier.
-
-    :param urn: the URN, or anything falsy when there is none.
-    :rtype: str
-    """
-    return (urn or "").split(":")[-1]
 
 
 def campaign_manager_url_linkedin(ad_account_ref, section, parameter, remote_ref):
@@ -96,6 +85,35 @@ def run_schedule_window_linkedin():
     start = fields.Datetime.now()
     end = date_utils.add(start, days=_RUN_SCHEDULE_DAYS_LINKEDIN)
     return epoch_milliseconds(start), epoch_milliseconds(end)
+
+
+def default_statistics_window(start_date, end_date, months=1):
+    """Complete the bounds of a statistics window that were left out.
+
+    Every LinkedIn endpoint reporting figures takes a window, and the bounds
+    do not always reach it: a cron has no dates to give, a form may have had
+    only one of the two filled in, and a hook the framework calls without
+    arguments has none at all. A missing bound is the ordinary case rather
+    than a mistake, and filling it in one place keeps each of those callers
+    from inventing a default of its own.
+
+    The end defaults to now and not to the end of the day: LinkedIn has
+    nothing to report about a moment that has not happened yet.
+
+    The bounds are returned as they arrive, without being converted. What
+    each endpoint expects — epoch milliseconds for the analytics finders, a
+    ``(year:,month:,day:)`` struct for the Ads API — belongs to whoever
+    builds the call.
+
+    :param start_date: first moment asked for, ``months`` back when missing.
+    :param end_date: last moment asked for, now when missing.
+    :param months: how far back the default start reaches.
+    :return: the ``(start, end)`` pair of the window.
+    :rtype: tuple
+    """
+    start = start_date or fields.Datetime.subtract(fields.Datetime.now(), months=months)
+    end = end_date or fields.Datetime.now()
+    return start, end
 
 
 def linkedin_date_struct(value):

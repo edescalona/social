@@ -49,6 +49,46 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
         with self.assertRaises(UserError):
             self.SocialAdvertisingCampaignGroupLinkedin._get_linkedin_account()
 
+    def test_check_total_budget_exactly_covering_the_daily_budgets(self):
+        """The budgets are compared with the rounding of their currency.
+
+        Three daily budgets of ``0.1`` add up to ``0.30000000000000004`` as
+        floats, so a total budget of ``0.3`` looks exceeded to a plain
+        comparison while it is not.
+        """
+        group = self.SocialAdvertisingCampaignGroup.create(
+            {
+                "name": "Rounding Group",
+                "total_budget": 0.3,
+                "currency_id": self.env.ref("base.USD").id,
+            }
+        )
+        for index in range(3):
+            self.SocialAdvertisingCampaign.create(
+                {
+                    "name": f"Rounding Campaign {index}",
+                    "campaign_group_id": group.id,
+                    "daily_budget": 0.1,
+                }
+            )
+        self.assertEqual(len(group.campaign_ids), 3)
+
+    def test_check_total_budget_without_a_currency(self):
+        """The currency is optional, and the rule works without it."""
+        group = self.SocialAdvertisingCampaignGroup.create(
+            {"name": "Currencyless Group", "total_budget": 100}
+        )
+        self.SocialAdvertisingCampaign.create(
+            {
+                "name": "Currencyless Campaign",
+                "campaign_group_id": group.id,
+                "daily_budget": 50,
+            }
+        )
+        group.with_context(skip_linkedin_needs_update=True).total_budget = 80
+        self.assertFalse(group.currency_id)
+        self.assertEqual(group.total_budget, 80)
+
     @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
     @patch(
         PATCH_ADVERTISING_ACCOUNT_LINKEDIN.format("_get_linkedin_advertising_account")

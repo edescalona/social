@@ -11,7 +11,6 @@ from urllib.parse import quote, urljoin
 import psycopg2
 import pytz
 import requests
-from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
@@ -46,8 +45,8 @@ from ..social_linkedin_utils import (
     _linkedin_error_detail,
     _linkedin_is_credentials_error,
     datetime_from_epoch_milliseconds,
-    default_statistics_window,
     epoch_milliseconds,
+    linkedin_urn_id,
     social_url_encode,
 )
 
@@ -784,7 +783,7 @@ class SocialAccount(models.Model):
         )
         organization_ids = (
             [
-                organization["organization"].split(":")[-1]
+                linkedin_urn_id(organization["organization"])
                 for organization in response.get("elements", [])
             ]
             if not self
@@ -1343,7 +1342,7 @@ class SocialAccount(models.Model):
         """
         date_to = fields.Date.today()
         return (
-            date_to - relativedelta(months=_STATISTICS_HISTORY_MONTHS_LINKEDIN),
+            fields.Date.subtract(date_to, months=_STATISTICS_HISTORY_MONTHS_LINKEDIN),
             date_to,
         )
 
@@ -1497,10 +1496,8 @@ class SocialAccount(models.Model):
         end = fields.Date.to_date(date_to)
         if not (start and end) or start > end:
             return None, None
-        start_time, end_time = default_statistics_window(
-            datetime.combine(start, datetime.min.time()),
-            datetime.combine(end + timedelta(days=1), datetime.min.time()),
-        )
+        start_time = datetime.combine(start, datetime.min.time())
+        end_time = datetime.combine(end + timedelta(days=1), datetime.min.time())
         return epoch_milliseconds(start_time), epoch_milliseconds(end_time)
 
     def _linkedin_statistics_chunks(self, date_from, date_to):

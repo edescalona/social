@@ -4,11 +4,14 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    linkedin_urn_id,
+)
+
 from ..social_advertising_linkedin_utils import (
     _ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN,
     _ENDPOINT_AD_CAMPAIGNS_LINKEDIN,
     campaign_manager_url_linkedin,
-    linkedin_urn_id,
     run_schedule_window_linkedin,
 )
 

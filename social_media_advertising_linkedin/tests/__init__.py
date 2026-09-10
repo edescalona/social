@@ -8,3 +8,4 @@ from . import test_social_advertising_ad_linkedin
 from . import test_social_advertising_campaign_linkedin
 from . import test_social_advertising_campaign_group_linkedin
 from . import test_social_post_advertising_linkedin
+from . import test_utils_advertising_linkedin

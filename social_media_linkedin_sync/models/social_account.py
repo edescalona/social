@@ -15,6 +15,7 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _URL_FEED_UPDATE_LINKEDIN,
     _batch_urns_by_url_size,
     datetime_from_epoch_milliseconds,
+    linkedin_urn_id,
 )
 
 from ..social_linkedin_sync_utils import (
@@ -270,7 +271,7 @@ class SocialAccount(models.Model):
         for urn in asked:
             try:
                 response = self._request_linkedin(
-                    endpoint=f"/organizations/{urn.split(':')[-1]}",
+                    endpoint=f"/organizations/{linkedin_urn_id(urn)}",
                     linkedin_v2=True,
                     headers=headers,
                     params={"projection": _PROJECTION_ACTOR_LINKEDIN},

@@ -5,8 +5,6 @@ import json
 from datetime import datetime, timezone
 from urllib.parse import quote
 
-from dateutil.relativedelta import relativedelta
-
 from odoo import fields
 
 _URL_FEED_UPDATE_LINKEDIN = "https://www.linkedin.com/feed/update/"
@@ -192,6 +190,18 @@ _ERROR_CREDENTIALS_CODES_LINKEDIN = (
     "REVOKED_ACCESS_TOKEN",
     "EXPIRED_ACCESS_TOKEN",
 )
+
+
+def linkedin_urn_id(urn):
+    """Return the identifier at the end of a LinkedIn URN.
+
+    LinkedIn names an entity by its URN everywhere but in the path of an
+    endpoint, which takes the bare identifier.
+
+    :param urn: the URN, or anything falsy when there is none.
+    :rtype: str
+    """
+    return (urn or "").split(":")[-1]
 
 
 def social_url_encode(param_field, params_values):
@@ -490,32 +500,3 @@ def datetime_from_epoch_milliseconds(value):
     return datetime.fromtimestamp(int(value) / 1000, tz=timezone.utc).replace(
         tzinfo=None
     )
-
-
-def default_statistics_window(start_date, end_date, months=1):
-    """Complete the bounds of a statistics window that were left out.
-
-    Every LinkedIn endpoint reporting figures takes a window, and the bounds
-    do not always reach it: a cron has no dates to give, a form may have had
-    only one of the two filled in, and a hook the framework calls without
-    arguments has none at all. A missing bound is the ordinary case rather
-    than a mistake, and filling it in one place keeps each of those callers
-    from inventing a default of its own.
-
-    The end defaults to now and not to the end of the day: LinkedIn has
-    nothing to report about a moment that has not happened yet.
-
-    The bounds are returned as they arrive, without being converted. What
-    each endpoint expects — epoch milliseconds for the analytics finders, a
-    ``(year:,month:,day:)`` struct for the Ads API — belongs to whoever
-    builds the call.
-
-    :param start_date: first moment asked for, ``months`` back when missing.
-    :param end_date: last moment asked for, now when missing.
-    :param months: how far back the default start reaches.
-    :return: the ``(start, end)`` pair of the window.
-    :rtype: tuple
-    """
-    start = start_date or (fields.Datetime.now() - relativedelta(months=months))
-    end = end_date or fields.Datetime.now()
-    return start, end
