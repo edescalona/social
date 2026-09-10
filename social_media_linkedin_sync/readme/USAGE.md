@@ -135,10 +135,10 @@ What the check for updates does and does not notice
   next synchronization.
 - It watches the **daily** figures of the page, over a window of the last
   seven days, and not the lifetime totals the same endpoint answers when no
-  time interval is given. Those lifetime totals lag behind: measured against a
-  real account, a reaction was already counted in the daily buckets while the
-  lifetime figures still ignored it an hour and a half later. One consequence
-  worth knowing: activity older than the seven-day window is not announced.
+  time interval is given. The two are two separate reads of LinkedIn's own
+  data, so they are not guaranteed to agree at every instant; this module
+  only relies on the daily buckets. One consequence worth knowing: activity
+  older than the seven-day window is not announced.
   It is imported all the same when the user synchronizes, because the import
   reads the publications themselves and not this window.
 - The engagement is not compared. It is a ratio of the clicks, reactions,

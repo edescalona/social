@@ -24,8 +24,8 @@ System parameters
 ---------------
 
 One key is worth knowing about, and it is only written by hand in *Settings* >
-*Technical* > *System Parameters*: until then the module uses the default the
-code carries. It is bounded when it is read, so a value outside its range is
+*Technical* > *Parameters* > *System Parameters*: until then the module uses
+the default the code carries. It is bounded when it is read, so a value outside its range is
 brought back into it.
 
 | Parameter | Default | Unit | Bounds |
