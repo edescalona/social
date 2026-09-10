@@ -26,6 +26,9 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _STATISTICS_MAX_BUCKETS_LINKEDIN,
     _TOKEN_MARGIN_DAYS_LINKEDIN,
     _UPDATE_CHECK_DAYS_LINKEDIN,
+    _VIDEO_POLL_ATTEMPTS_MIN_LINKEDIN,
+    _VIDEO_POLL_DELAY_MIN_LINKEDIN,
+    _VIDEO_POLL_MAX_WAIT_LINKEDIN,
     datetime_from_epoch_milliseconds,
 )
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
@@ -316,7 +319,8 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
             "social_media_linkedin.video_poll_attempts", "2"
         )
         self.env["ir.config_parameter"].sudo().set_param(
-            "social_media_linkedin.video_poll_delay", "0"
+            "social_media_linkedin.video_poll_delay",
+            str(_VIDEO_POLL_DELAY_MIN_LINKEDIN),
         )
         processing = self.generate_magic_mock(
             **{"status_code": 200, "json_return_value": {"status": "PROCESSING"}}
@@ -347,6 +351,36 @@ class TestSocialLinkedin(TestSocialCommonLinkedin):
         attempts, delay = self.SocialAccountLinkedin._linkedin_video_poll_settings()
         self.assertEqual(attempts, 30)
         self.assertEqual(delay, 2)
+
+    def test_video_poll_attempts_below_the_minimum(self):
+        """A video is asked about at least once, whatever is configured."""
+        for written in ("0", "-5"):
+            with self.subTest(written=written):
+                self.env["ir.config_parameter"].sudo().set_param(
+                    "social_media_linkedin.video_poll_attempts", written
+                )
+                account = self.SocialAccountLinkedin
+                attempts = account._linkedin_video_poll_settings()[0]
+                self.assertEqual(attempts, _VIDEO_POLL_ATTEMPTS_MIN_LINKEDIN)
+
+    def test_video_poll_delay_below_the_minimum(self):
+        """A delay under a second would turn the wait into a burst."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin.video_poll_delay", "0"
+        )
+        delay = self.SocialAccountLinkedin._linkedin_video_poll_settings()[1]
+        self.assertEqual(delay, _VIDEO_POLL_DELAY_MIN_LINKEDIN)
+
+    def test_video_poll_settings_cap_the_whole_wait(self):
+        """What the publication spends inside its transaction is capped."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin.video_poll_delay", "60"
+        )
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_linkedin.video_poll_attempts", "100000"
+        )
+        attempts, delay = self.SocialAccountLinkedin._linkedin_video_poll_settings()
+        self.assertLessEqual(attempts * delay, _VIDEO_POLL_MAX_WAIT_LINKEDIN)
 
     def test_linkedin_prepare_videos_for_post_success(self):
         """A video is uploaded by parts and published once it is available."""

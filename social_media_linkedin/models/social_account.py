@@ -36,7 +36,10 @@ from ..social_linkedin_utils import (
     _URN_ORGANIZATION_LINKEDIN,
     _URN_UGC_POST_LINKEDIN,
     _VIDEO_POLL_ATTEMPTS_LINKEDIN,
+    _VIDEO_POLL_ATTEMPTS_MIN_LINKEDIN,
     _VIDEO_POLL_DELAY_LINKEDIN,
+    _VIDEO_POLL_DELAY_MIN_LINKEDIN,
+    _VIDEO_POLL_MAX_WAIT_LINKEDIN,
     _VIDEO_UPLOAD_PART_SIZE_LINKEDIN,
     _batch_urns_by_url_size,
     _linkedin_error_code,
@@ -516,6 +519,10 @@ class SocialAccount(models.Model):
     def _linkedin_video_poll_settings(self):
         """Return how often and how long a video status may be polled.
 
+        The two numbers are bounded here and not where they are written: any
+        user of ``base.group_system`` may set the parameters by hand, so the
+        read site is the only place that sees every value they can take.
+
         :rtype: tuple
         """
         get_param = self.env["ir.config_parameter"].sudo().get_param
@@ -534,6 +541,11 @@ class SocialAccount(models.Model):
             )
         except (TypeError, ValueError):
             return _VIDEO_POLL_ATTEMPTS_LINKEDIN, _VIDEO_POLL_DELAY_LINKEDIN
+        delay = max(_VIDEO_POLL_DELAY_MIN_LINKEDIN, delay)
+        attempts = max(
+            _VIDEO_POLL_ATTEMPTS_MIN_LINKEDIN,
+            min(attempts, int(_VIDEO_POLL_MAX_WAIT_LINKEDIN / delay)),
+        )
         return attempts, delay
 
     def _linkedin_wait_video_available(self, video_urn):

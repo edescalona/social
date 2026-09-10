@@ -155,6 +155,17 @@ _TOKEN_MARGIN_DAYS_LINKEDIN = 7
 _VIDEO_POLL_ATTEMPTS_LINKEDIN = 30
 _VIDEO_POLL_DELAY_LINKEDIN = 2
 
+# The bounds of that wait. A delay under a second turns the wait into a burst
+# against ``/videos``, and the product of the two numbers is what the
+# publication spends inside its own transaction: past the ``limit_time_real``
+# of the deployment —120 seconds by default, and the crons inherit it— the
+# worker is killed with the video already uploaded and nothing published. The
+# ceiling is capped here, and not left to the product of two numbers typed
+# apart, because that product is the only one of the three that hurts.
+_VIDEO_POLL_ATTEMPTS_MIN_LINKEDIN = 1
+_VIDEO_POLL_DELAY_MIN_LINKEDIN = 1
+_VIDEO_POLL_MAX_WAIT_LINKEDIN = 600
+
 # LinkedIn answers an error in two dialects and both have to be read. The
 # OAuth endpoint speaks ``error`` / ``error_description``; the Rest.li API
 # speaks ``serviceErrorCode`` / ``message``. Each tuple is tried in order,
