@@ -9,21 +9,21 @@ from odoo.exceptions import UserError
 from odoo.tools import is_list_of
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
-    _POSTS_MAX_PAGES_LINKEDIN,
     _POSTS_PAGE_SIZE_LINKEDIN,
     _SCOPE_READ_POSTS_LINKEDIN,
     _UPDATE_CHECK_DAYS_LINKEDIN,
-    _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URL_FEED_UPDATE_LINKEDIN,
-    _URN_VIDEO_LINKEDIN,
     _batch_urns_by_url_size,
     datetime_from_epoch_milliseconds,
-    linkedin_reaction_id,
 )
 
 from ..social_linkedin_sync_utils import (
+    _POSTS_MAX_PAGES_LINKEDIN,
     _PROJECTION_ACTOR_LINKEDIN,
+    _UPDATE_CHECK_FIGURES_LINKEDIN,
     _URN_PERSON_LINKEDIN,
+    _URN_VIDEO_LINKEDIN,
+    linkedin_reaction_id,
 )
 
 _logger = logging.getLogger(__name__)

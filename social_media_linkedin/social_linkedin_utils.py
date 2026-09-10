@@ -95,12 +95,8 @@ _MAX_VIDEO_SIZE_LINKEDIN = 500 * 1024 * 1024
 
 _URN_ORGANIZATION_LINKEDIN = "urn:li:organization:"
 _URN_IMAGE_LINKEDIN = "urn:li:image:"
-_URN_VIDEO_LINKEDIN = "urn:li:video:"
 _URN_SHARE_LINKEDIN = "urn:li:share:"
 _URN_UGC_POST_LINKEDIN = "urn:li:ugcPost:"
-# A comment is addressed by a composite URN, the thread it lives on plus its
-# own identifier: urn:li:comment:(urn:li:activity:6666,120381273128).
-_URN_COMMENT_LINKEDIN = "urn:li:comment:"
 
 # The criteria of the organization finder, which the endpoints answering a
 # single entity by URN do not take.
@@ -123,13 +119,6 @@ _ENTITY_STATISTICS_LINKEDIN = (
 # LinkedIn revises a few days late.
 _UPDATE_CHECK_DAYS_LINKEDIN = 7
 
-# Which figures of a daily bucket are watched, by their position in the tuple
-# ``_get_linkedin_daily_statistics`` builds: clicks, likes, comments, shares
-# and impressions. The engagement (position 4) is left out on purpose: it is a
-# ratio of the other figures over the impressions, so it cannot move without
-# one of them moving, and it is the only float of the set.
-_UPDATE_CHECK_FIGURES_LINKEDIN = (0, 1, 2, 3, 5)
-
 # 4 MiB, the size of the parts the Videos API splits an upload into. It is
 # only the default: the initialization answers the part boundaries it wants,
 # and those are the ones actually used.
@@ -137,10 +126,8 @@ _VIDEO_UPLOAD_PART_SIZE_LINKEDIN = 4 * 1024 * 1024
 
 # The Posts API answers at most 100 posts per page, and it may answer fewer
 # than asked while there are still posts left, so a page is only the last one
-# when it comes back empty. The number of pages is capped to keep a feed that
-# never ends from looping forever.
+# when it comes back empty.
 _POSTS_PAGE_SIZE_LINKEDIN = 100
-_POSTS_MAX_PAGES_LINKEDIN = 50
 
 # LinkedIn answers 414 to a query string longer than 4 KB, and the statistics
 # endpoints take the URN of every post in it. Neither of them paginates, so
@@ -229,21 +216,6 @@ def social_url_encode(param_field, params_values):
     if value.startswith("("):
         return f"{param_field}={quote(value, safe='(),:')}"
     return f"{param_field}={quote(value, safe=',')}"
-
-
-def linkedin_reaction_id(actor, entity):
-    """Return the key naming the reaction of one actor on one entity.
-
-    The Reactions API addresses a single reaction by the pair that creates
-    it, ``(actor:...,entity:...)``. The parentheses, the comma between the
-    two fields and the colons that name them are Rest.li syntax and travel
-    raw; the URNs they carry are opaque strings, so theirs are escaped.
-
-    :param actor: URN of the person or the organization holding the reaction.
-    :param entity: URN of the share, UGC post or comment reacted to.
-    :rtype: str
-    """
-    return f"(actor:{quote(actor, safe='')},entity:{quote(entity, safe='')})"
 
 
 def _encoded_urns_bytes(urns, param_field):

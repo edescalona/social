@@ -10,16 +10,16 @@ from odoo import _
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
-from odoo.addons.social_media_linkedin.social_linkedin_utils import (
-    _POSTS_MAX_PAGES_LINKEDIN,
-    linkedin_reaction_id,
-)
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
     RECENT_STATISTICS_LINKEDIN,
 )
 
 from ..models.social_account import SocialAccount as SocialAccountLinkedinSync
+from ..social_linkedin_sync_utils import (
+    _POSTS_MAX_PAGES_LINKEDIN,
+    linkedin_reaction_id,
+)
 from .test_sync_linkedin_common import (
     PATCH_SYNC_ACCOUNT_LINKEDIN,
     PATCH_SYNC_POST_ACCOUNT_LINKEDIN,
