@@ -17,6 +17,10 @@
 
   * Likes endpoints: https://docs.x.com/x-api/posts/likes/introduction
 
+- Deleting a comment is not implemented either, even though it is the same
+  `DELETE /2/tweets/:id` call already used to delete a publication: the button
+  is hidden client-side until a connector overrides `canDeleteComment`.
+
 - The timeline is read once and `next_token` is never followed, so an account
   with more than 100 publications is only imported up to that page. Paginating
   it costs one request per page against the plan of the account.

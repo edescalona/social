@@ -4,7 +4,7 @@
 import logging
 
 import pytz
-from tweepy.errors import TooManyRequests
+from tweepy.errors import Forbidden, TooManyRequests, Unauthorized
 
 from odoo import api, fields, models
 
@@ -263,6 +263,8 @@ class SocialAccount(models.Model):
                 account._get_message_many_requests(
                     ex=exManyRequest, endpoint="get_tweets"
                 )
+            except (Unauthorized, Forbidden) as error:
+                account._flag_credentials_expired(str(error))
             except Exception as e:  # noqa: BLE001 - tweepy may fail in any way
                 _logger.exception("Error reading the posts of the X account")
                 self._notify_user_client(

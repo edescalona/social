@@ -3,10 +3,12 @@
 
 import logging
 
-from tweepy.errors import TooManyRequests
+from tweepy.errors import Forbidden, TooManyRequests, Unauthorized
 
 from odoo import _, models
 from odoo.exceptions import UserError
+
+from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
 from ..social_x_utils import _URL_X
 
@@ -64,6 +66,11 @@ class SocialPostAccount(models.Model):
         pointing at it. The quota is such a deletion, and it is raised with
         the same reason the publication gives, because it is a time to wait
         and not a post X refused.
+
+        A token X refuses flags the account the same way :meth:`create_tweet`
+        does, because deleting is one of the few calls that still runs it:
+        OAuth1 tokens do not expire on their own dates, so a call refused for
+        credentials is the only way X's connector learns one was revoked.
         """
         if self.media_id.media_type == "x":
             message_error = ""
@@ -100,6 +107,11 @@ class SocialPostAccount(models.Model):
                     exManyRequest, endpoint="delete_post"
                 )
                 message_error = quota_error
+            except (Unauthorized, Forbidden) as error:
+                self.account_id._flag_credentials_expired(str(error))
+                raise SocialCredentialsError(
+                    _("DELETING POST ON X: %(error)s", error=error)
+                ) from error
             except Exception as e:  # noqa: BLE001 - tweepy may fail in any way
                 message_error = _("ERROR DELETE POST X: %(error)s", error=e)
                 _logger.exception("Error deleting tweet %s", self.remote_ref)
@@ -112,7 +124,11 @@ class SocialPostAccount(models.Model):
 
         Only the ``Not Found`` answer of X is treated as a deletion. A
         throttled application or any other failure means the post could not
-        be read, not that it is gone, so the record is left untouched.
+        be read, not that it is gone, so the record is left untouched — a
+        token X refuses still flags the account, but the line itself is left
+        alone and the answer stays ``True``, matching the fail-open contract
+        of :meth:`~odoo.addons.social_media_base.models.social_post_account.
+        SocialPostAccount._check_remote_post_exists`.
         """
         if self.account_id.media_type != "x" or not self.remote_ref:
             return super()._check_remote_post_exists()
@@ -127,6 +143,9 @@ class SocialPostAccount(models.Model):
             self.account_id._get_message_many_requests(
                 exManyRequest, endpoint="get_post"
             )
+            return True
+        except (Unauthorized, Forbidden) as error:
+            self.account_id._flag_credentials_expired(str(error))
             return True
         except Exception:  # noqa: BLE001 - unreachable is not deleted
             _logger.exception(

@@ -630,6 +630,10 @@ the X publications, neither on the publication nor on its comments.<ul>
 <li>Likes endpoints: <a class="reference external" href="https://docs.x.com/x-api/posts/likes/introduction">https://docs.x.com/x-api/posts/likes/introduction</a></li>
 </ul>
 </li>
+<li>Deleting a comment is not implemented either, even though it is the
+same <tt class="docutils literal">DELETE <span class="pre">/2/tweets/:id</span></tt> call already used to delete a
+publication: the button is hidden client-side until a connector
+overrides <tt class="docutils literal">canDeleteComment</tt>.</li>
 <li>The timeline is read once and <tt class="docutils literal">next_token</tt> is never followed, so an
 account with more than 100 publications is only imported up to that
 page. Paginating it costs one request per page against the plan of the
