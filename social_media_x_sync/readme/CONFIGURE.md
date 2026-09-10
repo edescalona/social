@@ -12,10 +12,12 @@ Enable since
 - Go to *Social Media* > Configuration > Accounts
 - Select the account
 - Select *Enable since*
-- The *Post since* field is then enabled, allowing you to
-  select the post to start the search for in the next post
-  retrieval. Note that metrics for older posts will not be updated
-  if this option is selected.
+- The *Post since* field is then enabled, allowing you to select the post to
+  start the search for in the next post retrieval. The import no longer
+  reads what is older than that publication, but the figures of the
+  publications of the last 30 days are read back all the same by *Social
+  Media X*; older than that, each publication keeps the last figures that
+  were read for it.
 
   ![ENABLE_SINCE](../static/img/readme/ENABLE_SINCE.png)
 
@@ -23,17 +25,23 @@ Scheduled actions
 ------------------------
 
 The passes over an X account are the ones *Social Media Sync* declares, plus
-the check for updates of *Social Media Base*:
+two of *Social Media Base*: the check for updates and the daily refresh of
+the figures of the recent publications.
 
-- *Check media updates*, every 2 hours, reads the timeline of every X account.
-  X has no cheap answer to whether anything moved — the only endpoint that
-  knows is the timeline, and reading it is already the import — so this pass
-  imports instead of flagging the account.
+- *Social: Checking social media updates*, every 2 hours, reads the timeline
+  of every X account. X has no cheap answer to whether anything moved — the
+  only endpoint that knows is the timeline, and reading it is already the
+  import — so this pass imports instead of flagging the account.
 - *Initial sync of the new accounts*, monthly, imports the timeline of an
   account that was just linked. Linking one triggers this action immediately
   as well, so its card is filled from the first moment.
-- *Full resync*, weekly, is the only pass that notices a publication deleted
-  on X.
+- *Full resync*, weekly, reads the timeline of an X account exactly as the
+  ordinary import does, so it notices nothing that was deleted there. A
+  publication deleted on X is marked *Deleted* when someone opens it from the
+  dashboard or from its form, which is a check of *Social Media X*.
+- *Social: Refresh the statistics of the recent publications*, daily, reads
+  the publications of the last 30 days by identifier, which is a call of
+  *Social Media X* and not of this module.
 
 An account whose first import has not run yet is left out of the bihourly
 check, because that check and the initial import write the same row from two

@@ -376,27 +376,26 @@ comments.</p>
 <p>It is the X half of <em>Social Media Sync</em>, split from <em>Social Media X</em>
 along the same line: what a call costs. The connector asks X for a fixed
 number of things per account — link it, refresh its card, publish,
-delete, read the figures of the publications of the last 30 days — and
-that number does not change whether the account published once or ten
-thousand times. Everything whose cost grows with the history of the
-account lives here: the timeline that answers up to a hundred
-publications and one download per media not stored yet, one call per
-publication whose comments are read, and one call per publication that
-is verified.</p>
+delete, read the figures of the publications of the last 30 days, read
+the single publication that is being opened — and that number does not
+change whether the account published once or ten thousand times.
+Everything whose cost grows with the history of the account lives here:
+the timeline that answers up to a hundred publications and one download
+per media not stored yet, and up to five calls per publication whose
+comments are read, one per page of the conversation.</p>
 <p>An Odoo that only publishes on X installs <em>Social Media X</em> alone and
 pays for none of it.</p>
 <p>Main features:</p>
 <ul class="simple">
 <li>Import of the publications of the timeline and of the figures each of
-them collected, on demand and through the scheduled actions of <em>Social
-Media Sync</em>.</li>
+them collected, on demand, through the scheduled actions of <em>Social
+Media Sync</em> and through the check for updates of <em>Social Media Base</em>,
+which on X imports instead of flagging the account.</li>
 <li>Comments of a publication, read from the dashboard: the conversation
 is walked page by page up to a ceiling, and the replies of a comment
 are nested from what was read instead of being asked for apart. A
 comment answers the publication, and answering a comment answers that
 comment, which on X is a post like any other.</li>
-<li>Verification that a publication still exists on X before the dashboard
-acts on it.</li>
 <li>Reading only what was published after a chosen publication, with
 <em>Enable since</em>, for an account that does not need its whole history
 read again.</li>
@@ -411,23 +410,27 @@ This module does not implement them, and until it does the button is not
 rendered for the X publications. The roadmap says the rest.</p>
 <div class="section" id="statistics-account">
 <h1>Statistics account</h1>
-<p>In the case of X statistics, only current posts are taken into account;
-if some are deleted, the metrics also decrease, that is, it is not a
-history of the account’s posts.</p>
-<p>The metrics are computed on the <strong>100 most recent publications</strong> X
-answers in a single request, and only on original publications:
-retweets, replies and quotes are discarded both when importing and when
-computing. The publications older than those 100 are not counted,
-because the timeline (<tt class="docutils literal">GET <span class="pre">/2/users/:id/tweets</span></tt>) is read once and not
-paginated, in order to spare the requests of the plan.</p>
+<p>The figures of the account are the sum of the publications Odoo holds
+for it. A publication deleted on X is marked <em>Deleted</em> and keeps the
+figures of the last read, so it goes on counting; the figures only fall
+when the record itself is removed in Odoo.</p>
+<p>The figures of the card are the sum of every publication of the account
+stored in Odoo, with no window and no ceiling. What the hundred
+publications of one timeline page limit is how far back an import
+reaches, and what the 30-day window of <em>Social Media X</em> limits is which
+publications get their figures read back from X; anything older keeps
+the last figures that were read for it and keeps being counted. Only
+original publications are stored and counted: retweets, replies and
+quotes are discarded on import.</p>
 <ol class="arabic">
 <li><p class="first">The eye icon: Total number of views, which may include multiple views
 by the same user.</p>
 </li>
-<li><p class="first">The hand icon: means the interactions (likes, comments, retweets and
-quotes) of current posts. They are the
-<a class="reference external" href="https://docs.x.com/x-api/fundamentals/metrics">metrics</a> X returns
-for a post.</p>
+<li><p class="first">The hand icon: the interactions (likes, comments, retweets and
+quotes) of every publication stored for the account, a publication
+deleted on X included, which keeps the figures of the last read. They
+are the <a class="reference external" href="https://docs.x.com/x-api/fundamentals/metrics">metrics</a> X
+returns for a post.</p>
 </li>
 <li><p class="first">The star icon: the engagement of the account, the interactions of its
 publications over their impressions. X reports no rate of its own, so
@@ -455,7 +458,9 @@ the choice to synchronize was already made by whoever installed <em>Social
 Media Sync</em>, and this only keeps an X account from being left without
 the half that belongs to it.</p>
 <p>Installing <em>Social Media X</em> alone is a valid installation: the account
-is linked, publishes and deletes.</p>
+is linked, publishes and deletes, reads back the figures of the
+publications of the last 30 days, and marks as <em>Deleted</em> the publication
+that is opened after being deleted on X.</p>
 <p>It adds no Python dependency of its own: it asks the connector for the
 tweepy client and never builds one.</p>
 </div>
@@ -482,9 +487,11 @@ API</a>.</p>
 <li><p class="first">Select <em>Enable since</em></p>
 </li>
 <li><p class="first">The <em>Post since</em> field is then enabled, allowing you to select the
-post to start the search for in the next post retrieval. Note that
-metrics for older posts will not be updated if this option is
-selected.</p>
+post to start the search for in the next post retrieval. The import no
+longer reads what is older than that publication, but the figures of
+the publications of the last 30 days are read back all the same by
+<em>Social Media X</em>; older than that, each publication keeps the last
+figures that were read for it.</p>
 <p><img alt="ENABLE_SINCE" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x_sync/static/img/readme/ENABLE_SINCE.png" /></p>
 </li>
 </ul>
@@ -492,17 +499,25 @@ selected.</p>
 <div class="section" id="scheduled-actions">
 <h1>Scheduled actions</h1>
 <p>The passes over an X account are the ones <em>Social Media Sync</em> declares,
-plus the check for updates of <em>Social Media Base</em>:</p>
+plus two of <em>Social Media Base</em>: the check for updates and the daily
+refresh of the figures of the recent publications.</p>
 <ul class="simple">
-<li><em>Check media updates</em>, every 2 hours, reads the timeline of every X
-account. X has no cheap answer to whether anything moved — the only
-endpoint that knows is the timeline, and reading it is already the
-import — so this pass imports instead of flagging the account.</li>
+<li><em>Social: Checking social media updates</em>, every 2 hours, reads the
+timeline of every X account. X has no cheap answer to whether anything
+moved — the only endpoint that knows is the timeline, and reading it
+is already the import — so this pass imports instead of flagging the
+account.</li>
 <li><em>Initial sync of the new accounts</em>, monthly, imports the timeline of
 an account that was just linked. Linking one triggers this action
 immediately as well, so its card is filled from the first moment.</li>
-<li><em>Full resync</em>, weekly, is the only pass that notices a publication
-deleted on X.</li>
+<li><em>Full resync</em>, weekly, reads the timeline of an X account exactly as
+the ordinary import does, so it notices nothing that was deleted
+there. A publication deleted on X is marked <em>Deleted</em> when someone
+opens it from the dashboard or from its form, which is a check of
+<em>Social Media X</em>.</li>
+<li><em>Social: Refresh the statistics of the recent publications</em>, daily,
+reads the publications of the last 30 days by identifier, which is a
+call of <em>Social Media X</em> and not of this module.</li>
 </ul>
 <p>An account whose first import has not run yet is left out of the
 bihourly check, because that check and the initial import write the same
@@ -520,10 +535,14 @@ answers up to <strong>100 publications in a single request</strong> and is not
 paginated: what is older than those hundred is not imported, in order
 to spare the requests of the plan. Retweets and replies are excluded,
 so only the original publications of the account are stored.</li>
-<li>Each media of an imported publication is downloaded once and stored as
-an attachment. A media already stored is not asked for again.</li>
+<li>Each media X answers with a direct address is downloaded once and
+stored as an attachment; one it answers without a direct address is
+not stored. A media already stored is not asked for again.</li>
 <li>The <em>Update</em> button of the dashboard card runs the same import on
 demand.</li>
+<li>The module adds the <em>With Reposts</em> and <em>With Quotes</em> filters to the
+search panel of the dashboard, next to the filters of impressions and
+interactions of <em>Social Media Sync</em>.</li>
 <li>With <em>Enable since</em> the import only asks for what was published after
 the stored publication, so the older publications are no longer read
 by this import. The ones published in the last 30 days are refreshed
@@ -553,26 +572,23 @@ call to X: on X a comment is a post like any other, and what changes
 is the post being replied to.</li>
 </ul>
 </div>
-<div class="section" id="verification-of-a-publication">
-<h1>Verification of a publication</h1>
+<div class="section" id="what-this-module-does-not-detect">
+<h1>What this module does not detect</h1>
 <ul class="simple">
-<li>Before acting on a publication from the dashboard, Odoo checks on X
-that the post still exists. If it was deleted directly on X, the
-action stops, the publication is marked as <em>Deleted</em> in Odoo and the
-notice <em>The post does not exist or has been deleted.</em> is shown.</li>
-<li>Only the <em>Not Found</em> answer of X marks the publication as deleted. A
-throttled application, or any other failure, means the post could not
-be read and the publication is left untouched.</li>
+<li>Its own passes do not detect a publication deleted on X: a publication
+deleted there is marked <em>Deleted</em> only by the check <em>Social Media X</em>
+makes when the publication is opened.</li>
 </ul>
 </div>
 <div class="section" id="rate-limits">
 <h1>Rate limits</h1>
 <p>The endpoints this module spends from the plan of the account are the
-timeline of the user, the recent search of the comments, the publication
-of a reply and the read of a single post. Each of them has its own
-window on the account, the same record where <em>Social Media X</em> stores the
-ones it spends, and when X answers that one is exhausted Odoo stops
-calling that endpoint until the window expires.</p>
+timeline of the user, the recent search of the comments and the
+publication of a reply. Each of them has its own window on the account,
+the same record where <em>Social Media X</em> stores the windows of the
+endpoints it spends —the read of a single post and the read of the
+figures by identifier—, and when X answers that one is exhausted Odoo
+stops calling that endpoint until the window expires.</p>
 <p>While the window of the comments lasts, opening the conversation of a
 publication shows the notice <em>The comments could not be read from X. The
 account may have reached the limit of requests of its plan.</em> instead of
@@ -580,8 +596,9 @@ an empty thread, and a refresh in that state leaves the comments already
 on screen untouched.</p>
 <p>While the window of the replies lasts, publishing a comment answers <em>The
 comment could not be published on X. The account may have reached the
-limit of requests of its plan.</em> and the text stays in the composer,
-instead of reporting a reply X never received.</p>
+limit of requests of its plan.</em> instead of reporting a reply X never
+received. The text of the composer is not kept, but the comment being
+answered stays aimed at, so the retry starts under the same comment.</p>
 </div>
 <div class="section" id="uninstalling">
 <h1>Uninstalling</h1>

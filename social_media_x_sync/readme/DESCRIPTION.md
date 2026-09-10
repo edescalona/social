@@ -4,11 +4,12 @@ posts of its timeline, the figures each of them collected, and their comments.
 It is the X half of *Social Media Sync*, split from *Social Media X* along the
 same line: what a call costs. The connector asks X for a fixed number of
 things per account — link it, refresh its card, publish, delete, read the
-figures of the publications of the last 30 days — and that number does not
-change whether the account published once or ten thousand times. Everything whose cost grows with the history of the account lives here:
-the timeline that answers up to a hundred publications and one download per
-media not stored yet, one call per publication whose comments are read, and
-one call per publication that is verified.
+figures of the publications of the last 30 days, read the single publication
+that is being opened — and that number does not change whether the account
+published once or ten thousand times. Everything whose cost grows with the
+history of the account lives here: the timeline that answers up to a hundred
+publications and one download per media not stored yet, and up to five calls
+per publication whose comments are read, one per page of the conversation.
 
 An Odoo that only publishes on X installs *Social Media X* alone and pays for
 none of it.
@@ -16,15 +17,14 @@ none of it.
 Main features:
 
 - Import of the publications of the timeline and of the figures each of them
-  collected, on demand and through the scheduled actions of *Social Media
-  Sync*.
+  collected, on demand, through the scheduled actions of *Social Media Sync*
+  and through the check for updates of *Social Media Base*, which on X
+  imports instead of flagging the account.
 - Comments of a publication, read from the dashboard: the conversation is
   walked page by page up to a ceiling, and the replies of a comment are nested
   from what was read instead of being asked for apart. A comment answers the
   publication, and answering a comment answers that comment, which on X is a
   post like any other.
-- Verification that a publication still exists on X before the dashboard acts
-  on it.
 - Reading only what was published after a chosen publication, with *Enable
   since*, for an account that does not need its whole history read again.
 
@@ -38,20 +38,23 @@ rendered for the X publications. The roadmap says the rest.
 
 Statistics account
 -------------------
-In the case of X statistics, only current posts are taken into account; if
-some are deleted, the metrics also decrease, that is, it is not a
-history of the account's posts.
+The figures of the account are the sum of the publications Odoo holds for it.
+A publication deleted on X is marked *Deleted* and keeps the figures of the
+last read, so it goes on counting; the figures only fall when the record
+itself is removed in Odoo.
 
-The metrics are computed on the **100 most recent publications** X answers in
-a single request, and only on original publications: retweets, replies and
-quotes are discarded both when importing and when computing. The publications
-older than those 100 are not counted, because the timeline
-(`GET /2/users/:id/tweets`) is read once and not paginated, in order to spare
-the requests of the plan.
+The figures of the card are the sum of every publication of the account
+stored in Odoo, with no window and no ceiling. What the hundred publications
+of one timeline page limit is how far back an import reaches, and what the
+30-day window of *Social Media X* limits is which publications get their
+figures read back from X; anything older keeps the last figures that were
+read for it and keeps being counted. Only original publications are stored
+and counted: retweets, replies and quotes are discarded on import.
 
 1. The eye icon: Total number of views, which may include multiple views by the same user.
-2. The hand icon: means the interactions (likes, comments, retweets and quotes)
-   of current posts. They are the
+2. The hand icon: the interactions (likes, comments, retweets and quotes) of
+   every publication stored for the account, a publication deleted on X
+   included, which keeps the figures of the last read. They are the
    [metrics](https://docs.x.com/x-api/fundamentals/metrics) X returns for a post.
 3. The star icon: the engagement of the account, the interactions of its
    publications over their impressions. X reports no rate of its own, so it is
