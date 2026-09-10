@@ -3,7 +3,7 @@
 
 {
     "name": "Social Media X",
-    "summary": "Publish on X, with the limits of X checked before posting",
+    "summary": "Publish on X, with the figures of the account and of the posts sent",
     "version": "17.0.1.0.0",
     "category": "Social Network",
     "development_status": "Beta",

@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 {
     "name": "Social Media X Sync",
-    "summary": "Import posts, figures and comments back from X",
+    "summary": "Import the X timeline, its figures and the conversation of each post",
     "version": "17.0.1.0.0",
     "category": "Social Network",
     "development_status": "Beta",

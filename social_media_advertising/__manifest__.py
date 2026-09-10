@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 {
     "name": "Social Media Advertising",
-    "summary": "Advertising campaigns, campaign groups and ads for social media.",
+    "summary": "Campaigns, campaign groups, ads, stages and tags for social media",
     "version": "17.0.1.0.0",
     "category": "Social Network",
     "development_status": "Beta",

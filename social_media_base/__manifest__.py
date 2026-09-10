@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 {
     "name": "Social Media Base",
-    "summary": "Accounts, posts and a daily statistics series for the connectors",
+    "summary": "Accounts, scheduled posts and daily statistics for the connectors",
     "version": "17.0.1.0.0",
     "category": "Social Network",
     "development_status": "Beta",
