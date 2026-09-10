@@ -77,8 +77,7 @@ Archive Account Linkedin
 ----------------------------
 
 - Go to *Social Media* > Configuration > Accounts
-- Select the account
-- Click on the *Archive account* button
+- Select the account and pick *Archive* in the *Actions* menu of the form.
 
   ![ARCHIVE_ACCOUNT](../static/img/readme/ARCHIVE_ACCOUNT.png)
 
@@ -166,9 +165,10 @@ Figures of a publication
 - A publication missing from the answer is one nobody interacted with: the
   finder leaves out the entities with no activity at all, so its figures are
   written as zeros and its date as read all the same.
-- No new permission is needed. It is `r_organization_social`, the same one that
-  reads a single publication, so an account already associated is not asked to
-  authorize anything again.
+- No new permission is needed: the figures of a publication come from
+  `organizationalEntityShareStatistics` and `socialActions`, which the scopes
+  already requested when the account was associated cover, so an account
+  already associated is not asked to authorize anything again.
 - Reading the publications LinkedIn has and Odoo does not is another matter,
   and it stays in *Social Media LinkedIn Sync*: that one costs one call per
   page of the feed.
@@ -235,25 +235,9 @@ them.
   credentials. The line is left as *Failed* stating that the account has no
   access token, and the account shows the update warning. Authorize it again
   with *Update account*.
-- The
-  [Reactions API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api)
-  only accepts **one reaction per account**: liking a publication that was
-  already liked answers *You have already reacted to this post.*, and the
-  reaction cannot be withdrawn from Odoo. If the publication was deleted on
-  LinkedIn, the message is *The post does not exist or has been deleted.*
-- *Recommend* also works on a comment, with the same endpoint and the same
-  permissions: a reaction is created on the comment itself instead of on the
-  publication. The answers are the equivalent ones, *You have already reacted
-  to this comment.* and *The comment does not exist or has been deleted.*
-  Only *Like* is sent; the other reactions LinkedIn offers, *Celebrate*,
-  *Love*, *Insightful*, *Support* and *Funny*, are not offered from Odoo, and
-  a reaction on a comment cannot be withdrawn from Odoo either.
-- A comment is addressed by a composite reference, the thread it lives on plus
-  its own identifier, `urn:li:comment:(urn:li:activity:6666,120381273128)`.
-  LinkedIn does not always answer it, so it is built from the thread the
-  comment reports. A comment that arrives with neither of the two cannot be
-  recommended, and the action says *The comment cannot be recommended on
-  LinkedIn.* instead of calling LinkedIn.
+- Recommending a publication or one of its comments, and reading those
+  comments back, is served by *Social Media LinkedIn Sync*: this module draws
+  none of those buttons and never calls the Reactions API.
 - Deleting a publication from the dashboard deletes it on LinkedIn first. If
   LinkedIn does not confirm the deletion, the operation is cancelled with
   *Error deleting LinkedIn post* and the record is kept in Odoo, so the two
@@ -278,9 +262,11 @@ Video upload
   publishing a post with a video waits until the video is available: 30
   attempts every 2 seconds, which a long video may need more than. Both
   numbers are system parameters, described in CONFIGURE.
-- The video of a published post is not attached to the publication itself:
-  only the *has video* flag is kept, and the dashboard shows a camera icon.
-  The video stays available on the post it was published from.
+- The publication shares the video of its post the same way it shares its
+  images, and what LinkedIn made of it is recorded in its media references.
+  The camera icon without a count is the fallback drawn for a publication
+  that carries only the *has video* flag — one imported from LinkedIn, whose
+  video was never downloaded and can only be watched there.
 
 Publishing options
 ---------------
