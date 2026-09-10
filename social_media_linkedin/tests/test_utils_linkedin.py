@@ -7,6 +7,8 @@ from datetime import date, datetime
 
 import pytz
 
+from odoo.tests.common import tagged
+
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _QUERY_STRING_MARGIN_BYTES_LINKEDIN,
     _QUERY_STRING_MAX_BYTES_LINKEDIN,
@@ -310,6 +312,7 @@ ENCODED_QUERY_PARAMETERS = [
 ]
 
 
+@tagged("post_install", "-at_install")
 class TestSocialUrlEncode(TestSocialCommonLinkedin):
     def test_every_call_site_of_the_repository(self):
         """Each real parameter encodes to the string frozen for it."""
@@ -375,6 +378,7 @@ class TestSocialUrlEncode(TestSocialCommonLinkedin):
         )
 
 
+@tagged("post_install", "-at_install")
 class TestEpochMilliseconds(TestSocialCommonLinkedin):
     @classmethod
     def setUpClass(cls):
@@ -459,6 +463,7 @@ class TestEpochMilliseconds(TestSocialCommonLinkedin):
                 )
 
 
+@tagged("post_install", "-at_install")
 class TestBatchUrnsByUrlSize(TestSocialCommonLinkedin):
     """``_batch_urns_by_url_size`` cuts a list of URNs on its encoded size.
 

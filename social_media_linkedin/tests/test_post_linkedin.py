@@ -7,6 +7,7 @@ from urllib.parse import quote
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
@@ -31,6 +32,7 @@ LOGGER_ACCOUNT_LINKEDIN = "odoo.addons.social_media_linkedin.models.social_accou
 MODULE_POST_LINKEDIN = "odoo.addons.social_media_linkedin.models.social_post"
 
 
+@tagged("post_install", "-at_install")
 class TestSocialPostLinkedin(TestSocialCommonLinkedin):
     def test_post_check_messages(self):
         post_message_info = self.SocialPost.create(

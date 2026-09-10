@@ -2,6 +2,8 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 
+from odoo.tests.common import tagged
+
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     TestSocialCommonLinkedin,
 )
@@ -13,6 +15,7 @@ from ..social_linkedin_utils import (
 )
 
 
+@tagged("post_install", "-at_install")
 class TestSocialMediaLinkedin(TestSocialCommonLinkedin):
     def test_get_linkedin_headers(self):
         headers = self.media_linkedin_id._get_linkedin_headers()
