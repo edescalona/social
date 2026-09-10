@@ -5,8 +5,6 @@ import json
 from datetime import datetime, timezone
 from urllib.parse import quote
 
-from dateutil.relativedelta import relativedelta
-
 from odoo import fields
 
 _URL_FEED_UPDATE_LINKEDIN = "https://www.linkedin.com/feed/update/"
@@ -528,6 +526,6 @@ def default_statistics_window(start_date, end_date, months=1):
     :return: the ``(start, end)`` pair of the window.
     :rtype: tuple
     """
-    start = start_date or (fields.Datetime.now() - relativedelta(months=months))
+    start = start_date or fields.Datetime.subtract(fields.Datetime.now(), months=months)
     end = end_date or fields.Datetime.now()
     return start, end
