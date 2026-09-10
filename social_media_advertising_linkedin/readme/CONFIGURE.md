@@ -55,17 +55,10 @@ Re-authorize the already associated accounts.
 Test and production advertising accounts.
 ---------------
 
-- The *Environment* of the account maps to the `test` flag
-  LinkedIn puts on an advertising account. **LinkedIn sets that flag when the
-  advertising account is created and it can never be changed afterwards**, so
-  a test advertising account stays a test one for good.
-- A test advertising account can only be created through the API, never from
-  the Campaign Manager, and **each developer application may only have one**.
-  Only `BUSINESS` advertising accounts can be test ones: `ENTERPRISE` cannot.
-- Inside a test advertising account the creatives are **never served and are
-  automatically rejected** in the review process, and `/adAnalytics` returns
-  no data at all. Empty statistics in *Test* are therefore expected, not a
-  failure of the module.
+- The *Environment* of an advertising account is the `test` flag LinkedIn
+  answers for it: it is read on every *Fetch advertising accounts* and never
+  chosen in Odoo, so an advertising account is shown as *Test* for as long
+  as LinkedIn reports it that way.
 - The role requirement above is what makes the list of advertising accounts
   return anything: LinkedIn only answers the advertising accounts the
   authorized member holds a role on.

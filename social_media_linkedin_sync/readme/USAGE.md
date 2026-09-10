@@ -137,14 +137,10 @@ What the check for updates does and does not notice
   seven days, and not the lifetime totals the same endpoint answers when no
   time interval is given. Those lifetime totals lag behind: measured against a
   real account, a reaction was already counted in the daily buckets while the
-  lifetime figures still ignored it an hour and a half later. Two consequences
-  worth knowing:
-  - Activity older than the seven-day window is not announced. It is imported
-    all the same when the user synchronizes, because the import reads the
-    publications themselves and not this window.
-  - Impressions reach the daily buckets later than reactions do, so a
-    publication that only gained views may be announced a run or two later
-    than one that gained a reaction.
+  lifetime figures still ignored it an hour and a half later. One consequence
+  worth knowing: activity older than the seven-day window is not announced.
+  It is imported all the same when the user synchronizes, because the import
+  reads the publications themselves and not this window.
 - The engagement is not compared. It is a ratio of the clicks, reactions,
   comments and shares over the impressions, so it cannot move without one of
   those moving, and it is the only non-integer figure of the set.

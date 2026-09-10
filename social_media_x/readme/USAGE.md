@@ -94,9 +94,9 @@ the publication through an import or an RPC call, so nothing gets past them.
   published.
 - The file picker is not filtered: it accepts any file of type ``image/*`` or
   ``video/*``, and the check is what refuses the ones X does not take.
-- The duration of the video is not checked, and X stops at about 140 seconds:
-  a longer one is refused by X and the line is left as *Failed* with the error
-  it returned.
+- The duration of the video is not checked in Odoo: a video X considers too
+  long is refused by X and the line is left as *Failed* with the error it
+  returned.
 - A post is refused when it selects **two X accounts with the same username**:
   *There are X accounts with the same username (...), please check to avoid
   spam errors.* X rejects the same content sent twice from the same account

@@ -250,8 +250,9 @@ Video upload
   instruction per part, of 4 MiB each except the last one, and every part is
   uploaded with its own request. The identifiers LinkedIn returns for the
   parts are sent back to `finalizeUpload` in the same order, so the video is
-  put together as it was cut. A 22 MB video takes 6 parts and around 25
-  seconds, upload and processing included.
+  put together as it was cut. A 22 MB video takes 6 parts, and publishing
+  then waits for LinkedIn to finish processing it, up to 30 polls two seconds
+  apart.
 
   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api
 

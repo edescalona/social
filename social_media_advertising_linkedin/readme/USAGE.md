@@ -289,11 +289,10 @@ Archive a campaign or a campaign group in LinkedIn.
   because LinkedIn no longer accepts changes on it.
 - **It cannot be reactivated from Odoo.** To unarchive it, use the LinkedIn
   Campaign Manager and then run *Fetch campaigns* to refresh the stage.
-- Archiving a campaign group archives its campaigns on LinkedIn as well,
-  except the ones still in Draft, which LinkedIn leaves untouched. Odoo does
-  not know about any of it until you run *Fetch campaigns*, so run it
-  afterwards to refresh them, and archive the draft campaigns one by one if
-  you want them archived too.
+- Archiving a campaign group on LinkedIn also changes the status of its
+  campaigns there. Odoo does not know about any of it until you run *Fetch
+  campaigns*, so run it afterwards to see the stage each campaign was left
+  in, and archive from Odoo the ones LinkedIn did not archive.
 - Deleting the campaign in Odoo does not do anything on LinkedIn: the
   campaign keeps running there and the next *Fetch campaigns* brings it
   back. Use *Archive in LinkedIn* to actually end it.

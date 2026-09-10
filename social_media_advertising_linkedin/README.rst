@@ -115,18 +115,10 @@ Re-authorize the already associated accounts.
 Test and production advertising accounts.
 -----------------------------------------
 
-- The *Environment* of the account maps to the ``test`` flag LinkedIn
-  puts on an advertising account. **LinkedIn sets that flag when the
-  advertising account is created and it can never be changed
-  afterwards**, so a test advertising account stays a test one for good.
-- A test advertising account can only be created through the API, never
-  from the Campaign Manager, and **each developer application may only
-  have one**. Only ``BUSINESS`` advertising accounts can be test ones:
-  ``ENTERPRISE`` cannot.
-- Inside a test advertising account the creatives are **never served and
-  are automatically rejected** in the review process, and
-  ``/adAnalytics`` returns no data at all. Empty statistics in *Test*
-  are therefore expected, not a failure of the module.
+- The *Environment* of an advertising account is the ``test`` flag
+  LinkedIn answers for it: it is read on every *Fetch advertising
+  accounts* and never chosen in Odoo, so an advertising account is shown
+  as *Test* for as long as LinkedIn reports it that way.
 - The role requirement above is what makes the list of advertising
   accounts return anything: LinkedIn only answers the advertising
   accounts the authorized member holds a role on.
@@ -471,11 +463,10 @@ Archive a campaign or a campaign group in LinkedIn.
   LinkedIn Campaign Manager and then run *Fetch campaigns* to refresh
   the stage.
 
-- Archiving a campaign group archives its campaigns on LinkedIn as well,
-  except the ones still in Draft, which LinkedIn leaves untouched. Odoo
-  does not know about any of it until you run *Fetch campaigns*, so run
-  it afterwards to refresh them, and archive the draft campaigns one by
-  one if you want them archived too.
+- Archiving a campaign group on LinkedIn also changes the status of its
+  campaigns there. Odoo does not know about any of it until you run
+  *Fetch campaigns*, so run it afterwards to see the stage each campaign
+  was left in, and archive from Odoo the ones LinkedIn did not archive.
 
 - Deleting the campaign in Odoo does not do anything on LinkedIn: the
   campaign keeps running there and the next *Fetch campaigns* brings it

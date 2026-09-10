@@ -487,18 +487,10 @@ application rather than something to fix in Odoo.</li>
 <div class="section" id="test-and-production-advertising-accounts">
 <h2><a class="toc-backref" href="#toc-entry-4">Test and production advertising accounts.</a></h2>
 <ul class="simple">
-<li>The <em>Environment</em> of the account maps to the <tt class="docutils literal">test</tt> flag LinkedIn
-puts on an advertising account. <strong>LinkedIn sets that flag when the
-advertising account is created and it can never be changed
-afterwards</strong>, so a test advertising account stays a test one for good.</li>
-<li>A test advertising account can only be created through the API, never
-from the Campaign Manager, and <strong>each developer application may only
-have one</strong>. Only <tt class="docutils literal">BUSINESS</tt> advertising accounts can be test ones:
-<tt class="docutils literal">ENTERPRISE</tt> cannot.</li>
-<li>Inside a test advertising account the creatives are <strong>never served and
-are automatically rejected</strong> in the review process, and
-<tt class="docutils literal">/adAnalytics</tt> returns no data at all. Empty statistics in <em>Test</em>
-are therefore expected, not a failure of the module.</li>
+<li>The <em>Environment</em> of an advertising account is the <tt class="docutils literal">test</tt> flag
+LinkedIn answers for it: it is read on every <em>Fetch advertising
+accounts</em> and never chosen in Odoo, so an advertising account is shown
+as <em>Test</em> for as long as LinkedIn reports it that way.</li>
 <li>The role requirement above is what makes the list of advertising
 accounts return anything: LinkedIn only answers the advertising
 accounts the authorized member holds a role on.</li>
@@ -847,11 +839,10 @@ read-only in Odoo, because LinkedIn no longer accepts changes on it.</p>
 LinkedIn Campaign Manager and then run <em>Fetch campaigns</em> to refresh
 the stage.</p>
 </li>
-<li><p class="first">Archiving a campaign group archives its campaigns on LinkedIn as well,
-except the ones still in Draft, which LinkedIn leaves untouched. Odoo
-does not know about any of it until you run <em>Fetch campaigns</em>, so run
-it afterwards to refresh them, and archive the draft campaigns one by
-one if you want them archived too.</p>
+<li><p class="first">Archiving a campaign group on LinkedIn also changes the status of its
+campaigns there. Odoo does not know about any of it until you run
+<em>Fetch campaigns</em>, so run it afterwards to see the stage each campaign
+was left in, and archive from Odoo the ones LinkedIn did not archive.</p>
 </li>
 <li><p class="first">Deleting the campaign in Odoo does not do anything on LinkedIn: the
 campaign keeps running there and the next <em>Fetch campaigns</em> brings it
