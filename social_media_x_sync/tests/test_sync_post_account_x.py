@@ -302,6 +302,37 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             "sentence the client draws, not handed over as a date.",
         )
 
+    def _fake_author_x(self, ref="author_1"):
+        author = MagicMock()
+        author.id = ref
+        author.name = "The author"
+        author.profile_image_url = None
+        return author
+
+    def _fake_tweet_x(self, ref, parent_ref=None, author_ref="author_1"):
+        """One tweet of the conversation as X answers it."""
+        tweet = MagicMock()
+        tweet.id = ref
+        tweet.text = f"Tweet {ref}"
+        tweet.author_id = author_ref
+        tweet.created_at = datetime.now()
+        tweet.attachments = None
+        tweet.referenced_tweets = [
+            MagicMock(
+                type="replied_to",
+                id=parent_ref or self.SocialPostAccountX.remote_ref,
+            )
+        ]
+        return tweet
+
+    def _fake_page_x(self, tweets, next_token=None):
+        """One page of the recent search, with the token of the next one."""
+        page = MagicMock()
+        page.data = tweets
+        page.includes = {"users": [self._fake_author_x()]}
+        page.meta = {"next_token": next_token} if next_token else {}
+        return page
+
     def test_get_comments_asks_for_a_whole_page(self):
         """A page of the conversation is asked for at the ceiling of X."""
         fake_response = MagicMock()
@@ -322,6 +353,72 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             msg="Without it X answers ten replies of its own accord, and a "
             "thread of eleven is read wrong.",
         )
+
+    def test_get_comments_walks_the_pages_of_the_conversation(self):
+        """A conversation longer than one page is read to its end."""
+        first_page = [self._fake_tweet_x(f"1{index:03d}") for index in range(100)]
+        second_page = [self._fake_tweet_x(f"2{index:03d}") for index in range(50)]
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x(first_page, next_token="page_2"),
+            self._fake_page_x(second_page),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        self.assertEqual(len(comments["data"]), 150)
+        self.assertEqual(fake_client.search_recent_tweets.call_count, 2)
+        self.assertEqual(
+            fake_client.search_recent_tweets.call_args_list[1].kwargs["next_token"],
+            "page_2",
+            msg="The second page is asked for with the token the first one "
+            "answered with.",
+        )
+
+    def test_get_comments_keeps_a_parent_read_on_another_page(self):
+        """A reply finds its comment even when they came on different pages."""
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x([self._fake_tweet_x("100")], next_token="page_2"),
+            self._fake_page_x([self._fake_tweet_x("200", parent_ref="100")]),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        by_ref = {comment["remote_ref"]: comment for comment in comments["data"]}
+        self.assertEqual(
+            by_ref["200"]["parent_ref"],
+            "100",
+            msg="Read page by page the reply would hang from the "
+            "publication, which is not where it was written.",
+        )
+
+    def test_get_comments_counts_the_replies_of_the_whole_conversation(self):
+        """The count of a comment covers every page the walk brought."""
+        replies = [
+            self._fake_tweet_x(f"2{index:02d}", parent_ref="100") for index in range(12)
+        ]
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x(
+                [self._fake_tweet_x("100")] + replies[:5], next_token="page_2"
+            ),
+            self._fake_page_x(replies[5:]),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        by_ref = {comment["remote_ref"]: comment for comment in comments["data"]}
+        self.assertEqual(by_ref["100"]["reply_count"], 12)
 
     @mute_logger(LOGGER_POST_ACCOUNT_X_SYNC)
     def test_create_x_comment_exception(self):

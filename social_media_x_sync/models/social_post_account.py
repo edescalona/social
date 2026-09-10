@@ -8,7 +8,7 @@ from tweepy.errors import TooManyRequests
 
 from odoo import _, fields, models
 
-from ..social_x_sync_utils import _SEARCH_MAX_RESULTS_X
+from ..social_x_sync_utils import _COMMENTS_MAX_PAGES_X, _SEARCH_MAX_RESULTS_X
 
 _logger = logging.getLogger(__name__)
 
@@ -77,6 +77,69 @@ class SocialPostAccount(models.Model):
             "post_deleted": False,
         }
 
+    def _x_read_conversation(self, client_api, query):
+        """Walk the pages of a conversation and return what they carried.
+
+        The recent search endpoint answers one page at a time and names the
+        next one in ``meta``. Without that walk the thread Odoo reads is the
+        first page and nothing else, so a reply whose comment stayed on a
+        later page is drawn hanging from the publication instead of from it.
+
+        The walk stops at :data:`_COMMENTS_MAX_PAGES_X`, which is what keeps
+        one dialog from spending the quota of the whole database.
+
+        :param client_api: the client of X the account speaks through.
+        :param query: the search query naming the conversation.
+        :return: the tweets read, the authors and the media by their key, and
+            whether the conversation was left unfinished.
+        :rtype: tuple(list, dict, dict, bool)
+        """
+        tweets = []
+        users = {}
+        media_urls = {}
+        next_token = None
+        for _page in range(_COMMENTS_MAX_PAGES_X):
+            response = client_api.search_recent_tweets(
+                query=query,
+                tweet_fields=[
+                    "id",
+                    "text",
+                    "author_id",
+                    "created_at",
+                    "conversation_id",
+                    "attachments",
+                    "in_reply_to_user_id",
+                ],
+                expansions=[
+                    "author_id",
+                    "in_reply_to_user_id",
+                    "referenced_tweets.id",
+                    "attachments.media_keys",
+                    "referenced_tweets.id.author_id",
+                ],
+                user_fields="id,name,username,profile_image_url",
+                media_fields=["media_key", "type", "url"],
+                max_results=_SEARCH_MAX_RESULTS_X,
+                next_token=next_token,
+            )
+            tweets.extend(response.data or [])
+            includes = getattr(response, "includes", None) or {}
+            # Merged by key instead of concatenated: the same author or the
+            # same media comes back on every page they appear in.
+            for user in includes.get("users") or []:
+                users[str(user.id)] = user
+            for media in includes.get("media") or []:
+                if media.url:
+                    media_urls[media.media_key] = media.url
+            # Read defensively because a page without ``meta`` is a page
+            # without a next one, and anything that is not a mapping says
+            # nothing about where the conversation continues.
+            meta = getattr(response, "meta", None) or {}
+            next_token = meta.get("next_token") if isinstance(meta, dict) else None
+            if not next_token:
+                break
+        return tweets, users, media_urls, bool(next_token)
+
     def get_comments(self):
         """Read the replies to this post.
 
@@ -97,40 +160,18 @@ class SocialPostAccount(models.Model):
                     f"conversation_id:{self.remote_ref} "
                     f"is:reply -is:retweet -is:quote"
                 )
-                response = client_api.search_recent_tweets(
-                    query=query,
-                    tweet_fields=[
-                        "id",
-                        "text",
-                        "author_id",
-                        "created_at",
-                        "conversation_id",
-                        "attachments",
-                        "in_reply_to_user_id",
-                    ],
-                    expansions=[
-                        "author_id",
-                        "in_reply_to_user_id",
-                        "referenced_tweets.id",
-                        "attachments.media_keys",
-                        "referenced_tweets.id.author_id",
-                    ],
-                    user_fields="id,name,username,profile_image_url",
-                    media_fields=["media_key", "type", "url"],
-                    max_results=_SEARCH_MAX_RESULTS_X,
-                )
-                if response.data:
-                    comments = []
-                    comment_refs = {str(tweet.id) for tweet in response.data}
-                    users = {
-                        str(u.id): u for u in (response.includes.get("users", []) or [])
-                    }
-                    media_urls = {
-                        media.media_key: media.url
-                        for media in (response.includes.get("media") or [])
-                        if media.url
-                    }
-                    for comment in response.data or []:
+                (
+                    tweets,
+                    users,
+                    media_urls,
+                    truncated,
+                ) = self._x_read_conversation(client_api, query)
+                if tweets:
+                    # Both are read from everything the walk brought, so a
+                    # reply of one page whose comment came on another still
+                    # finds it.
+                    comment_refs = {str(tweet.id) for tweet in tweets}
+                    for comment in tweets:
                         author = users.get(str(comment.author_id))
                         media_keys = (getattr(comment, "attachments", {}) or {}).get(
                             "media_keys", []
@@ -164,7 +205,7 @@ class SocialPostAccount(models.Model):
                                 ],
                             }
                         )
-                    # The whole thread already arrived, so how many
+                    # The walk that read them reached the end, so how many
                     # replies each comment has is counted here and never
                     # asked to X again.
                     reply_counts = Counter(
