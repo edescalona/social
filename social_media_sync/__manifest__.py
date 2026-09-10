@@ -15,6 +15,7 @@
         "data/ir_cron_data.xml",
         "views/social_post_account_views.xml",
         "views/social_post_views.xml",
+        "wizards/res_config_settings_views.xml",
     ],
     "assets": {
         "web.assets_tests": [

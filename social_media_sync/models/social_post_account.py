@@ -8,7 +8,7 @@ from datetime import datetime
 import pytz
 import requests
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.tools.misc import _format_time_ago
 
 _logger = logging.getLogger(__name__)
@@ -355,3 +355,91 @@ class SocialPostAccount(models.Model):
             }
         )
         return Attachment.create(attach_values)
+
+    def _media_retention_days(self):
+        """Return for how many days the downloaded medias are kept.
+
+        Zero is no policy at all, and it is what the module ships with: an
+        ``Integer`` of ``res.config.settings`` cannot store a zero, so an
+        administrator leaving the setting alone writes no parameter row, and
+        no parameter row reads back as zero here.
+
+        :rtype: int
+        """
+        days = (
+            self.env["ir.config_parameter"]
+            .sudo()
+            .get_param("social_media_sync.media_max_age_days", 0)
+        )
+        try:
+            return int(days)
+        except (TypeError, ValueError):
+            _logger.warning(
+                "The maximum age of the downloaded medias is not a number: %s",
+                days,
+            )
+            return 0
+
+    def _media_retention_domain(self, days):
+        """Return which publications the retention policy reaches.
+
+        Only the imported ones, which are the publications without a post:
+        what a publication of a post carries are the medias of that post,
+        editorial content that is never aged out.
+
+        :param days: for how many days the downloaded medias are kept.
+        :rtype: list
+        """
+        return [
+            ("post_id", "=", False),
+            (
+                "published_date",
+                "<",
+                fields.Datetime.subtract(fields.Datetime.now(), days=days),
+            ),
+            ("state", "in", ["posted", "deleted"]),
+        ]
+
+    @api.autovacuum
+    def _gc_aged_post_medias(self, limit=1000):
+        """Release the medias downloaded for publications older than the policy.
+
+        Only the medias this line downloaded are released: what it shares
+        with a post belongs to the post, which is editorial content and is
+        never aged out. The attachments are not deleted here — dropping them
+        from the publication leaves them with no holder, and
+        ``_gc_lost_media_attachments`` deletes them a day later, which is
+        what marks the file for ``ir.attachment._gc_file_store``.
+
+        ``media_refs`` is kept: it is what tells the next synchronization
+        pass that this publication already had that media, and dropping it
+        would only buy the same download again.
+
+        :param limit: how many publications one pass reaches at most.
+        """
+        days = self._media_retention_days()
+        if days <= 0:
+            return
+        lines = self.sudo().search(self._media_retention_domain(days), limit=limit)
+        for line in lines:
+            downloaded = (
+                line.image_ids | line.video_ids
+            ) - line._media_attachments_to_skip()
+            if not downloaded:
+                continue
+            line.write(
+                {
+                    "image_ids": [
+                        Command.unlink(media.id)
+                        for media in downloaded & line.image_ids
+                    ],
+                    "video_ids": [
+                        Command.unlink(media.id)
+                        for media in downloaded & line.video_ids
+                    ],
+                }
+            )
+            _logger.info(
+                "Released %(count)s medias of the publication %(line)s",
+                {"count": len(downloaded), "line": line.id},
+            )

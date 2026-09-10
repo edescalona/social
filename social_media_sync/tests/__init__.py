@@ -7,3 +7,4 @@ from . import test_social_post_account_sync
 from . import test_thread_controller_sync
 from . import test_card_footer_sync
 from . import test_account_notices_sync
+from . import test_media_retention_sync

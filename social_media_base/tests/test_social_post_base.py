@@ -1763,20 +1763,51 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
             }
 
     def test_check_media_refs_refuses_a_reference_without_media(self):
-        """A reference the publication cannot answer for is refused.
+        """A reference to the media of another publication is refused.
 
-        The attachment is still there, it is simply not on this publication:
-        the reference points at the media of another line, which is what the
-        constraint watches.
+        The attachment is anchored somewhere else, so the reference makes
+        this publication answer for a media it does not have. That is what
+        the constraint watches.
         """
         post_account = self.social_post_account_id
-        stored, unlinked = self._create_publication_images(count=2)
-        post_account.write({"image_ids": [Command.unlink(unlinked.id)]})
+        other = self.SocialPostAccount.create(
+            {
+                "message": "Published somewhere else",
+                "account_id": self.social_account_id.id,
+            }
+        )
+        stored = self._create_publication_images()
+        foreign = self._create_publication_images(post_account=other)
         with self.assertRaises(ValidationError):
             post_account.media_refs = {
                 str(stored.id): "urn:li:image:STORED",
-                str(unlinked.id): "urn:li:image:GONE",
+                str(foreign.id): "urn:li:image:FOREIGN",
             }
+
+    def test_check_media_refs_allows_a_reference_whose_media_was_released(self):
+        """A reference to a media nobody owns any more is left alone.
+
+        It is what the retention of the downloaded medias writes: the
+        attachment is released so the vacuum frees the file, and the
+        reference stays so the next synchronization pass knows the
+        publication already had that media and does not download it again.
+        """
+        post_account = self.social_post_account_id
+        stored, released = self._create_publication_images(count=2)
+        post_account.media_refs = {
+            str(stored.id): "urn:li:image:STORED",
+            str(released.id): "urn:li:image:RELEASED",
+        }
+        post_account.write({"image_ids": [Command.unlink(released.id)]})
+        self.assertEqual(released.sudo().res_id, 0)
+        post_account.invalidate_recordset(["media_refs"])
+        self.assertEqual(
+            post_account.media_refs,
+            {
+                str(stored.id): "urn:li:image:STORED",
+                str(released.id): "urn:li:image:RELEASED",
+            },
+        )
 
     def test_check_media_refs_allows_a_reference_whose_media_is_gone(self):
         """A reference left without its attachment points nowhere.
