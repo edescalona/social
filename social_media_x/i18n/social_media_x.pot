@@ -213,6 +213,16 @@ msgid "Unexpected response from X: %(error)s"
 msgstr ""
 
 #. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_premium
+msgid ""
+"Whether this account holds an X Premium subscription, which raises the "
+"message of a post from 280 to 25 000 characters. Left off, a post longer "
+"than 280 characters is refused before it is sent. Turned on for an account "
+"that does not hold the subscription, the post is sent and X refuses it, and "
+"the publication fails with the reason X gives."
+msgstr ""
+
+#. module: social_media_x
 #: model:ir.model.fields.selection,name:social_media_x.selection__social_media__media_type__x
 msgid "X"
 msgstr ""
@@ -229,6 +239,11 @@ msgstr ""
 #. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_access_secret_oauth1
 msgid "X Access Secret Oauth1"
+msgstr ""
+
+#. module: social_media_x
+#: model:ir.model.fields,field_description:social_media_x.field_social_account__x_premium
+msgid "X Premium"
 msgstr ""
 
 #. module: social_media_x
@@ -312,6 +327,16 @@ msgstr ""
 msgid ""
 "X publishes videos of at most %(limit)s, so %(names)s cannot be published. "
 "Reduce their size or remove them from the post."
+msgstr ""
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
+msgid ""
+"X refused the post of %(account)s: %(error)s. What an account may publish "
+"depends on its plan, so check the X Premium setting of the account before "
+"trying again."
 msgstr ""
 
 #. module: social_media_x

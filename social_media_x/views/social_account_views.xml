@@ -11,6 +11,11 @@
             <xpath expr="//page[@name='account_configuration']" position="inside">
                 <group>
                     <field
+                        name="x_premium"
+                        widget="boolean_toggle"
+                        invisible="media_type != 'x'"
+                    />
+                    <field
                         name="x_api_key"
                         readonly="1"
                         invisible="media_type != 'x'"

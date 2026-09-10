@@ -1,11 +1,6 @@
-- The message of a post is checked against **280 characters**, the limit of an
-  account without X Premium. Premium raises it to 25 000, so an account on
-  that plan is stopped on a post it could publish perfectly well. That
-  subscription is the plan of the X account, and not the plan of the API the
-  developer App is enrolled in, which is the one
-  `_is_app_without_paid_plan` reads from a rejected call: X answers neither of
-  them with the authorized user, and `social.account` stores neither. Once
-  Premium can be told apart before publishing, `_get_post_errors` already
-  receives the account and the limit becomes per account. Meanwhile the check
-  never blocks saving, so the post is still written, and what is refused is
-  its publication on X.
+- The **X Premium** switch of an account is declared by hand. Nothing reads
+  the plan back from X, so an account marked as Premium that does not hold the
+  subscription sends a post X refuses, and the publication is left as *Failed*
+  with the reason X gives. Should the API report the subscription of the
+  authorized user, the switch becomes a read-only field written with the rest
+  of the data of the account.

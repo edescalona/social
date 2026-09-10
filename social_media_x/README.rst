@@ -39,13 +39,14 @@ Main features:
   show are read back from X by a synchronization module, so without one
   the card of the account stays at zero.
 - What X will not publish, shown on the post while it is written. The
-  message is checked against **280 characters**, and the medias against
-  **4 images** of at most **5 MB** each — **15 MB** for a GIF — in JPG,
-  PNG, WEBP or GIF, and **one video** of at most **512 MB** in MP4. X
-  takes images or a video, never both in the same post, so a post mixing
-  them is refused instead of warned about. The same checks refuse the
-  publication if the post reaches it anyway, through an import or an RPC
-  call.
+  message is checked against the characters the plan of the account
+  allows, **280** without X Premium and **25 000** with it, and the
+  medias against **4 images** of at most **5 MB** each — **15 MB** for a
+  GIF — in JPG, PNG, WEBP or GIF, and **one video** of at most **512
+  MB** in MP4. X takes images or a video, never both in the same post,
+  so a post mixing them is refused instead of warned about. The same
+  checks refuse the publication if the post reaches it anyway, through
+  an import or an RPC call.
 
 **An X account will never draw a time series in Social Media >
 Statistics.** That screen reads a history per day, and the
@@ -337,10 +338,18 @@ refused instead of being sent and failing on X. The same checks are
 applied when the post reaches the publication through an import or an
 RPC call, so nothing gets past them.
 
-- The message is checked against **280 characters**, the limit of an
-  account without X Premium, see the `creation of a
-  post <https://docs.x.com/x-api/posts/creation-of-a-post>`__. A longer
-  message is reported on the post and the publication is not sent.
+- The message is checked against the characters the plan of the account
+  allows: **280** without X Premium and **25 000** with it, see the
+  `creation of a
+  post <https://docs.x.com/x-api/posts/creation-of-a-post>`__. The plan
+  is the **X Premium** switch of the account form, declared by hand
+  because nothing reads it back from X. A longer message is reported on
+  the post and the publication is not sent. A post selecting several X
+  accounts is measured against the strictest of them while it is
+  written, and every publication against its own account when it is
+  sent, so only the line that cannot publish is refused. An account
+  marked as Premium without holding the subscription sends the post and
+  X refuses it: that line is left as *Failed* with the reason.
 - X publishes **4 images or 1 video** per publication and never both
   kinds in the same message, see the `media
   upload <https://docs.x.com/x-api/media/upload-media>`__ documentation.
@@ -473,17 +482,12 @@ publication history:
 Known issues / Roadmap
 ======================
 
-- The message of a post is checked against **280 characters**, the limit
-  of an account without X Premium. Premium raises it to 25 000, so an
-  account on that plan is stopped on a post it could publish perfectly
-  well. That subscription is the plan of the X account, and not the plan
-  of the API the developer App is enrolled in, which is the one
-  ``_is_app_without_paid_plan`` reads from a rejected call: X answers
-  neither of them with the authorized user, and ``social.account``
-  stores neither. Once Premium can be told apart before publishing,
-  ``_get_post_errors`` already receives the account and the limit
-  becomes per account. Meanwhile the check never blocks saving, so the
-  post is still written, and what is refused is its publication on X.
+- The **X Premium** switch of an account is declared by hand. Nothing
+  reads the plan back from X, so an account marked as Premium that does
+  not hold the subscription sends a post X refuses, and the publication
+  is left as *Failed* with the reason X gives. Should the API report the
+  subscription of the authorized user, the switch becomes a read-only
+  field written with the rest of the data of the account.
 
 Bug Tracker
 ===========

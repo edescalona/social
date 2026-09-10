@@ -8,7 +8,9 @@ Main features:
   are read back from X by a synchronization module, so without one the card
   of the account stays at zero.
 - What X will not publish, shown on the post while it is written. The message
-  is checked against **280 characters**, and the medias against **4 images** of
+  is checked against the characters the plan of the account allows, **280**
+  without X Premium and **25 000** with it, and the medias against
+  **4 images** of
   at most **5 MB** each — **15 MB** for a GIF — in JPG, PNG, WEBP or GIF, and
   **one video** of at most **512 MB** in MP4. X takes images or a video, never
   both in the same post, so a post mixing them is refused instead of warned
