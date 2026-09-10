@@ -232,14 +232,24 @@ class SocialPostAccount(models.Model):
         A reference to a media the publication no longer holds is the other
         half of the same guarantee: it is the sign that an unlink forgot to
         clean the dictionary up, which would leave the publication answering
-        for a media it does not have.
+        for a media it does not have. Only the references whose attachment
+        still exists are watched, which is where that mistake shows: a
+        reference whose attachment is gone points nowhere, and is what the
+        retention of the downloaded medias leaves behind on purpose so they
+        are not downloaded again.
         """
         for post_account in self:
             refs = post_account.media_refs or {}
             if not refs:
                 continue
             medias = post_account.image_ids | post_account.video_ids
-            dangling = set(refs) - {str(media.id) for media in medias}
+            missing = set(refs) - {str(media.id) for media in medias}
+            dangling = {
+                str(attachment.id)
+                for attachment in self.env["ir.attachment"]
+                .browse(int(ref) for ref in missing)
+                .exists()
+            }
             if dangling:
                 raise ValidationError(
                     _(

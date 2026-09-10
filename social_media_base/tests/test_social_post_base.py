@@ -1765,8 +1765,9 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
     def test_check_media_refs_refuses_a_reference_without_media(self):
         """A reference the publication cannot answer for is refused.
 
-        It is the sign that an unlink dropped the attachment and forgot to
-        clean the dictionary up.
+        The attachment is still there, it is simply not on this publication:
+        the reference points at the media of another line, which is what the
+        constraint watches.
         """
         post_account = self.social_post_account_id
         stored, unlinked = self._create_publication_images(count=2)
@@ -1776,6 +1777,32 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
                 str(stored.id): "urn:li:image:STORED",
                 str(unlinked.id): "urn:li:image:GONE",
             }
+
+    def test_check_media_refs_allows_a_reference_whose_media_is_gone(self):
+        """A reference left without its attachment points nowhere.
+
+        It is the trace the retention of the downloaded medias leaves behind:
+        the attachment is released so the disk is freed, and the reference
+        stays so the next synchronization pass knows the publication already
+        had that media and does not download it again.
+        """
+        post_account = self.social_post_account_id
+        stored, released = self._create_publication_images(count=2)
+        released_id = released.id
+        post_account.write({"image_ids": [Command.unlink(released_id)]})
+        released.sudo().unlink()
+        post_account.media_refs = {
+            str(stored.id): "urn:li:image:STORED",
+            str(released_id): "urn:li:image:RELEASED",
+        }
+        post_account.invalidate_recordset(["media_refs"])
+        self.assertEqual(
+            post_account.media_refs,
+            {
+                str(stored.id): "urn:li:image:STORED",
+                str(released_id): "urn:li:image:RELEASED",
+            },
+        )
 
     def test_check_media_refs_allows_the_medias_attached_by_hand(self):
         """A publication with medias and no reference is what the user made."""
