@@ -284,6 +284,19 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertIn("at most 280 characters", post.message_error)
         self.assertFalse(post.message_info)
 
+    def test_post_check_messages_follow_the_plan_of_the_account(self):
+        """Turning Premium on refreshes the form of a post already written.
+
+        The plan of an account is neither the accounts, nor the message, nor
+        the media of the post, so without the redeclared dependency the
+        banner would keep refusing a post that can already be published.
+        """
+        post = self._draft_post(message="x" * (_MAX_MESSAGE_LENGTH_X + 1))
+        self.assertIn("at most 280 characters", post.message_error)
+
+        self.SocialAccountX.x_premium = True
+        self.assertFalse(post.message_error)
+
     def test_action_post_refuses_what_the_form_shows(self):
         """The publication fails its own line, with the text of the form.
 

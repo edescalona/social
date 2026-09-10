@@ -45,6 +45,11 @@ class SocialPost(models.Model):
                     )
                 )
 
+    @api.depends("account_ids.x_premium")
+    def _compute_post_check_messages(self):
+        """Only declares that the plan of an account moves what X refuses."""
+        return super()._compute_post_check_messages()
+
     def _get_post_errors(self, media_type, account=None):
         """Add what X refuses to publish.
 
