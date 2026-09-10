@@ -275,10 +275,9 @@ Video upload
   before uploading anything: LinkedIn would only keep the first one and the
   others would be transferred and processed for nothing.
 - LinkedIn processes an uploaded video before it can be published, so
-  publishing a post with a video waits until the video is available. The wait
-  is tuned with the `social_media_linkedin.video_poll_attempts` and
-  `social_media_linkedin.video_poll_delay` system parameters, 30 attempts
-  every 2 seconds by default. A long video may need more than that.
+  publishing a post with a video waits until the video is available: 30
+  attempts every 2 seconds, which a long video may need more than. Both
+  numbers are system parameters, described in CONFIGURE.
 - The video of a published post is not attached to the publication itself:
   only the *has video* flag is kept, and the dashboard shows a camera icon.
   The video stays available on the post it was published from.

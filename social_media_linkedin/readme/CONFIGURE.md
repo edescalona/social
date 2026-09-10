@@ -154,3 +154,32 @@ Registering the Client ID and Client Secret. Integration of a user account.
   keep their credentials, so check the *Archived* filter as well before trying
   again. To reauthorize an existing account, use its *Update account* button
   instead of the wizard.
+
+
+System parameters
+---------------
+
+Nothing here has to be set for the connector to work: each key defaults to the
+value the code carries, and it only exists once it is written by hand in
+*Settings* > *Technical* > *System Parameters*. They are bounded when they are
+read, so a value outside its range is brought back into it instead of being
+obeyed.
+
+| Parameter | Default | Unit | Bounds |
+| --- | --- | --- | --- |
+| `social_media_linkedin.video_poll_attempts` | 30 | polls | at least 1, and at most what the 600 second ceiling allows |
+| `social_media_linkedin.video_poll_delay` | 2 | seconds between polls | at least 1 |
+
+The two are the wait LinkedIn needs to finish processing an uploaded video
+before the post can be published, and what matters is their product: it is
+time the publication spends inside its own transaction. Past the
+`limit_time_real` of the deployment — 120 seconds by default, and the
+scheduled actions inherit it — the worker is killed with the video already
+uploaded on LinkedIn and nothing published in Odoo. That is why the product is
+capped at 600 seconds whatever the two numbers say, and why raising the wait
+for a long video means raising `limit_time_real` as well.
+
+Below their bounds the numbers stop making sense rather than merely being
+small: zero polls publishes nothing without ever asking LinkedIn, and a delay
+under a second turns the wait into a burst against an API whose rate limit the
+module does not manage.

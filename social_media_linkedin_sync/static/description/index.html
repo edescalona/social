@@ -416,32 +416,35 @@ on the same pass instead of asking LinkedIn for the same days twice.</li>
 <li><a class="reference internal" href="#upgrading-from-a-version-where-social-media-linkedin-held-both-halves" id="toc-entry-2">Upgrading from a version where <em>Social Media Linkedin</em> held both halves</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#configuration" id="toc-entry-3">Configuration</a></li>
-<li><a class="reference internal" href="#usage" id="toc-entry-4">Usage</a><ul>
-<li><a class="reference internal" href="#importing-what-a-page-already-published" id="toc-entry-5">Importing what a page already published.</a></li>
-<li><a class="reference internal" href="#comments-and-reactions" id="toc-entry-6">Comments and reactions.</a></li>
-<li><a class="reference internal" href="#publications-deleted-on-linkedin" id="toc-entry-7">Publications deleted on LinkedIn.</a></li>
-<li><a class="reference internal" href="#full-resync-of-a-page" id="toc-entry-8">Full resync of a page</a></li>
-<li><a class="reference internal" href="#how-the-synchronization-spends-the-linkedin-quota" id="toc-entry-9">How the synchronization spends the LinkedIn quota</a></li>
-<li><a class="reference internal" href="#what-the-check-for-updates-does-and-does-not-notice" id="toc-entry-10">What the check for updates does and does not notice</a></li>
+<li><a class="reference internal" href="#configuration" id="toc-entry-3">Configuration</a><ul>
+<li><a class="reference internal" href="#system-parameters" id="toc-entry-4">System parameters</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-11">Known issues / Roadmap</a><ul>
-<li><a class="reference internal" href="#one-definition-per-symbol" id="toc-entry-12">One definition per symbol</a></li>
-<li><a class="reference internal" href="#the-history-of-the-daily-series-needs-this-module" id="toc-entry-13">The history of the daily series needs this module</a></li>
-<li><a class="reference internal" href="#who-wrote-a-comment" id="toc-entry-14">Who wrote a comment</a></li>
-<li><a class="reference internal" href="#media-in-the-comments" id="toc-entry-15">Media in the comments</a></li>
-<li><a class="reference internal" href="#the-weekly-full-resync-is-not-spread-over-the-days" id="toc-entry-16">The weekly full resync is not spread over the days</a></li>
-<li><a class="reference internal" href="#asking-linkedin-only-for-what-changed" id="toc-entry-17">Asking LinkedIn only for what changed</a></li>
-<li><a class="reference internal" href="#reactions-other-than-like" id="toc-entry-18">Reactions other than Like</a></li>
-<li><a class="reference internal" href="#video-of-a-publication" id="toc-entry-19">Video of a publication</a></li>
+<li><a class="reference internal" href="#usage" id="toc-entry-5">Usage</a><ul>
+<li><a class="reference internal" href="#importing-what-a-page-already-published" id="toc-entry-6">Importing what a page already published.</a></li>
+<li><a class="reference internal" href="#comments-and-reactions" id="toc-entry-7">Comments and reactions.</a></li>
+<li><a class="reference internal" href="#publications-deleted-on-linkedin" id="toc-entry-8">Publications deleted on LinkedIn.</a></li>
+<li><a class="reference internal" href="#full-resync-of-a-page" id="toc-entry-9">Full resync of a page</a></li>
+<li><a class="reference internal" href="#how-the-synchronization-spends-the-linkedin-quota" id="toc-entry-10">How the synchronization spends the LinkedIn quota</a></li>
+<li><a class="reference internal" href="#what-the-check-for-updates-does-and-does-not-notice" id="toc-entry-11">What the check for updates does and does not notice</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-20">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-21">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-22">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-23">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-24">Maintainers</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-12">Known issues / Roadmap</a><ul>
+<li><a class="reference internal" href="#one-definition-per-symbol" id="toc-entry-13">One definition per symbol</a></li>
+<li><a class="reference internal" href="#the-history-of-the-daily-series-needs-this-module" id="toc-entry-14">The history of the daily series needs this module</a></li>
+<li><a class="reference internal" href="#who-wrote-a-comment" id="toc-entry-15">Who wrote a comment</a></li>
+<li><a class="reference internal" href="#media-in-the-comments" id="toc-entry-16">Media in the comments</a></li>
+<li><a class="reference internal" href="#the-weekly-full-resync-is-not-spread-over-the-days" id="toc-entry-17">The weekly full resync is not spread over the days</a></li>
+<li><a class="reference internal" href="#asking-linkedin-only-for-what-changed" id="toc-entry-18">Asking LinkedIn only for what changed</a></li>
+<li><a class="reference internal" href="#reactions-other-than-like" id="toc-entry-19">Reactions other than Like</a></li>
+<li><a class="reference internal" href="#video-of-a-publication" id="toc-entry-20">Video of a publication</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-21">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-22">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-23">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-24">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-25">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -489,11 +492,54 @@ up: a warning is drawn on the account form for as long as the permission
 is missing, the responsible user is notified by the check that runs
 every two hours, and the import refuses with the name of the missing
 permission instead of the bare error LinkedIn answers.</p>
+<div class="section" id="system-parameters">
+<h2><a class="toc-backref" href="#toc-entry-4">System parameters</a></h2>
+<p>One key is worth knowing about, and it is only written by hand in
+<em>Settings</em> &gt; <em>Technical</em> &gt; <em>System Parameters</em>: until then the module
+uses the default the code carries. It is bounded when it is read, so a
+value outside its range is brought back into it.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="53%" />
+<col width="10%" />
+<col width="26%" />
+<col width="11%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">Parameter</th>
+<th class="head">Default</th>
+<th class="head">Unit</th>
+<th class="head">Bounds</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal">social_media_linkedin_sync.posts_max_pages</tt></td>
+<td>50</td>
+<td>pages of 100
+publications</td>
+<td>1 to 500</td>
+</tr>
+</tbody>
+</table>
+<p>It is how far into the feed of a page one pass reads. The default covers
+five thousand publications, and it is not a limit of LinkedIn: it is
+what keeps a feed that never ends from looping forever.</p>
+<p><strong>A page with a longer history has to raise it.</strong> A feed read short
+comes back partial, and the weekly full resync — the only pass that
+notices a publication deleted on LinkedIn — does not look for deletions
+in a feed it could not read whole. Nothing breaks and nothing is said
+beyond a warning in the log naming the number of pages, so the symptom
+is publications that stay <em>posted</em> in Odoo after being deleted on
+LinkedIn.</p>
+<p>Raising it costs calls: each page is one call against the Posts API, so
+500 pages are 500 calls per pass of every account, plus what reading
+their figures adds. That is why the ceiling exists.</p>
+</div>
 </div>
 <div class="section" id="usage">
-<h1><a class="toc-backref" href="#toc-entry-4">Usage</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-5">Usage</a></h1>
 <div class="section" id="importing-what-a-page-already-published">
-<h2><a class="toc-backref" href="#toc-entry-5">Importing what a page already published.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-6">Importing what a page already published.</a></h2>
 <ul class="simple">
 <li>The <em>Update</em> button of the dashboard card imports the publications of
 the page. Without this module that button refreshes the daily series
@@ -519,7 +565,7 @@ only holds the rewrite window the connector refreshes.</li>
 </ul>
 </div>
 <div class="section" id="comments-and-reactions">
-<h2><a class="toc-backref" href="#toc-entry-6">Comments and reactions.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-7">Comments and reactions.</a></h2>
 <ul class="simple">
 <li>The comment thread of a publication is read from the dashboard, and
 its replies with it: LinkedIn serves the replies of a comment apart,
@@ -540,7 +586,7 @@ no upload on a LinkedIn thread.</li>
 </ul>
 </div>
 <div class="section" id="publications-deleted-on-linkedin">
-<h2><a class="toc-backref" href="#toc-entry-7">Publications deleted on LinkedIn.</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-8">Publications deleted on LinkedIn.</a></h2>
 <ul class="simple">
 <li>Posts deleted directly on LinkedIn are marked as <em>Deleted on LinkedIn</em>
 in Odoo, so the dashboard keeps their history. Only the <em>Full resync</em>
@@ -551,7 +597,7 @@ reported and marked right away instead of waiting for the weekly pass.</li>
 </ul>
 </div>
 <div class="section" id="full-resync-of-a-page">
-<h2><a class="toc-backref" href="#toc-entry-8">Full resync of a page</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-9">Full resync of a page</a></h2>
 <ul class="simple">
 <li>Go to <em>Social Media</em> &gt; Configuration &gt; Accounts, select the account
 and click on the <em>Full resync</em> button of the header.</li>
@@ -574,7 +620,7 @@ Its figures are refreshed all the same.</li>
 </ul>
 </div>
 <div class="section" id="how-the-synchronization-spends-the-linkedin-quota">
-<h2><a class="toc-backref" href="#toc-entry-9">How the synchronization spends the LinkedIn quota</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-10">How the synchronization spends the LinkedIn quota</a></h2>
 <p>The <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/shared/api-guide/concepts/rate-limits">throttle
 limits</a>
 of LinkedIn are counted per day, per application and <strong>per endpoint</strong>,
@@ -624,7 +670,7 @@ still online.</p>
 </ul>
 </div>
 <div class="section" id="what-the-check-for-updates-does-and-does-not-notice">
-<h2><a class="toc-backref" href="#toc-entry-10">What the check for updates does and does not notice</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-11">What the check for updates does and does not notice</a></h2>
 <ul class="simple">
 <li>It only tells that <em>something</em> on the page moved, not which
 publication moved. It does not need to: the only thing it decides is
@@ -659,9 +705,9 @@ once when that happens and the next import reconciles it.</li>
 </div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-11">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-12">Known issues / Roadmap</a></h1>
 <div class="section" id="one-definition-per-symbol">
-<h2><a class="toc-backref" href="#toc-entry-12">One definition per symbol</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-13">One definition per symbol</a></h2>
 <p>The calls of this module cross towards <em>Social Media Linkedin</em>, never
 the other way around: <tt class="docutils literal">_request_linkedin</tt>, <tt class="docutils literal">_get_posts</tt>,
 <tt class="docutils literal">_linkedin_statistics_values</tt>, <tt class="docutils literal">_get_linkedin_daily_statistics</tt>,
@@ -681,7 +727,7 @@ declares an empty hook — <tt class="docutils literal">_linkedin_check_updates<
 overrides it.</p>
 </div>
 <div class="section" id="the-history-of-the-daily-series-needs-this-module">
-<h2><a class="toc-backref" href="#toc-entry-13">The history of the daily series needs this module</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-14">The history of the daily series needs this module</a></h2>
 <p><tt class="docutils literal">_backfill_statistics</tt>, which fills the time series of a page as far
 back as LinkedIn answers, lives here because its only caller is the
 initial synchronization of <em>Social Media Sync</em>. It costs one call per
@@ -703,7 +749,7 @@ not what is being counted.</p>
 asked for from here, so they have no caller of their own over there.</p>
 </div>
 <div class="section" id="who-wrote-a-comment">
-<h2><a class="toc-backref" href="#toc-entry-14">Who wrote a comment</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-15">Who wrote a comment</a></h2>
 <ul class="simple">
 <li><strong>A person cannot be named.</strong> <tt class="docutils literal">GET <span class="pre">/v2/socialActions/{urn}/comments</span></tt>
 identifies the author of a comment by a URN and nothing else, and no
@@ -730,7 +776,7 @@ own expiry and its own security; it is not implemented.</li>
 </ul>
 </div>
 <div class="section" id="media-in-the-comments">
-<h2><a class="toc-backref" href="#toc-entry-15">Media in the comments</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-16">Media in the comments</a></h2>
 <ul class="simple">
 <li>A comment is published with its text alone: the connector sends
 <tt class="docutils literal">actor</tt>, <tt class="docutils literal">message</tt> and <tt class="docutils literal">object</tt>, never <tt class="docutils literal">content</tt>, and the
@@ -758,7 +804,7 @@ that answers does not accept the field.</li>
 </ul>
 </div>
 <div class="section" id="the-weekly-full-resync-is-not-spread-over-the-days">
-<h2><a class="toc-backref" href="#toc-entry-16">The weekly full resync is not spread over the days</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-17">The weekly full resync is not spread over the days</a></h2>
 <ul class="simple">
 <li>The <em>Full resync</em> button reconciles <strong>one account</strong>, the one it is
 pressed on. The scheduled action does not: it walks every account of
@@ -772,7 +818,7 @@ implemented.</li>
 </ul>
 </div>
 <div class="section" id="asking-linkedin-only-for-what-changed">
-<h2><a class="toc-backref" href="#toc-entry-17">Asking LinkedIn only for what changed</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-18">Asking LinkedIn only for what changed</a></h2>
 <ul>
 <li><p class="first"><strong>It is not possible with these endpoints</strong>, so the statistics cost
 one call per batch of identifiers whatever moved:</p>
@@ -806,7 +852,7 @@ Linkedin</em>.</p>
 </ul>
 </div>
 <div class="section" id="reactions-other-than-like">
-<h2><a class="toc-backref" href="#toc-entry-18">Reactions other than Like</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-19">Reactions other than Like</a></h2>
 <ul class="simple">
 <li>Only <tt class="docutils literal">LIKE</tt> is sent, both on a publication and on a comment. The
 <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api">Reactions
@@ -819,7 +865,7 @@ an entry that is no longer one thumb with two states.</li>
 </ul>
 </div>
 <div class="section" id="video-of-a-publication">
-<h2><a class="toc-backref" href="#toc-entry-19">Video of a publication</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-20">Video of a publication</a></h2>
 <ul class="simple">
 <li>The video of a published post is not attached to the publication
 imported from LinkedIn: only the <em>has video</em> flag is kept. Bringing
@@ -829,7 +875,7 @@ synchronization, which is not implemented.</li>
 </div>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-20">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-21">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -837,15 +883,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-21">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-22">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-22">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-23">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-24">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -854,7 +900,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-24">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-25">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

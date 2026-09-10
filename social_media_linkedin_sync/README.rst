@@ -127,6 +127,37 @@ is missing, the responsible user is notified by the check that runs
 every two hours, and the import refuses with the name of the missing
 permission instead of the bare error LinkedIn answers.
 
+System parameters
+-----------------
+
+One key is worth knowing about, and it is only written by hand in
+*Settings* > *Technical* > *System Parameters*: until then the module
+uses the default the code carries. It is bounded when it is read, so a
+value outside its range is brought back into it.
+
++------------------------------------------------+---------+------------------------+----------+
+| Parameter                                      | Default | Unit                   | Bounds   |
++================================================+=========+========================+==========+
+| ``social_media_linkedin_sync.posts_max_pages`` | 50      | pages of 100           | 1 to 500 |
+|                                                |         | publications           |          |
++------------------------------------------------+---------+------------------------+----------+
+
+It is how far into the feed of a page one pass reads. The default covers
+five thousand publications, and it is not a limit of LinkedIn: it is
+what keeps a feed that never ends from looping forever.
+
+**A page with a longer history has to raise it.** A feed read short
+comes back partial, and the weekly full resync — the only pass that
+notices a publication deleted on LinkedIn — does not look for deletions
+in a feed it could not read whole. Nothing breaks and nothing is said
+beyond a warning in the log naming the number of pages, so the symptom
+is publications that stay *posted* in Odoo after being deleted on
+LinkedIn.
+
+Raising it costs calls: each page is one call against the Posts API, so
+500 pages are 500 calls per pass of every account, plus what reading
+their figures adds. That is why the ceiling exists.
+
 Usage
 =====
 
