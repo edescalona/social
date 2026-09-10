@@ -16,12 +16,17 @@ Importing what a page already published.
   LinkedIn is dropped from the dashboard card on the next import. Only the
   medias downloaded from LinkedIn are managed this way, so a file attached by
   hand in Odoo is never removed.
-- Every import leaves a mark with the figures of the last watched days. The
-  bihourly check compares against that mark, which is why importing is what
-  turns the *Update* badge off.
-- The first import also fills the time series of the account backwards, as far
-  back as LinkedIn answers by day. Without this module the series only holds
-  the rewrite window the connector refreshes.
+- An import of the whole page leaves a mark with the figures of the last
+  watched days. The bihourly check compares against that mark, which is why
+  importing is what takes the notice down; refreshing a single publication
+  takes it down too but leaves the mark alone, since one publication says
+  nothing about the rest of the page.
+- The first import asks for the time series again on an account whose
+  association could not read it, which is the retry of a backfill that
+  failed and not a repetition of it. How far back the series goes is the
+  connector's business: *Social Media Linkedin* fills it as far back as
+  LinkedIn answers by day the moment the account is linked, and rebuilds it
+  from the *Rebuild statistics history* button of the account form.
 
 Comments and reactions.
 -----------------------
@@ -81,10 +86,13 @@ what matters is not the total number of calls but how they spread.
 
 - The scheduled action checking for updates costs **two calls per account and
   run**, whatever the number of publications, one when it does find something,
-  and none at all for an account already announcing publications to import, for
-  one whose credentials expired —what it is waiting for is a new authorization,
-  and the call could only end in a refusal— or for one with no organization
-  linked. It reads the figures LinkedIn reports for the whole page
+  and only one for an account already announcing publications to import or for
+  one whose credentials expired: the daily series of the page is written for
+  them all the same, and what is skipped is the second call, the peek at the
+  feed that could only confirm what the dashboard already says or fail on a
+  token known to be dead. No call at all is spent on an account with no
+  organization linked, since the finder is addressed by organization and
+  there is nothing to ask. It reads the figures LinkedIn reports for the whole page
   day by day and compares them against the ones the last import left: no
   publication is read one by one to decide whether the dashboard should
   announce updates. Running every two hours, that is around 24 calls a day per
@@ -107,8 +115,9 @@ what matters is not the total number of calls but how they spread.
 
 - *Full resync* is the expensive pass, one call per hundred publications. The
   button does it for the account it is pressed on; the weekly scheduled action
-  does it for every account of the database. It walks the feed page by page (`count=100`) up to **50
-  pages**, that is 5000 publications, and a page is only taken as the last one
+  does it for every account of the database. It walks the feed page by page (`count=100`) up to as many pages as
+  `social_media_linkedin_sync.posts_max_pages` allows, **fifty by default**,
+  that is 5000 publications, and a page is only taken as the last one
   when it comes back empty, because LinkedIn documents that a page may carry
   fewer publications than asked while more are left. On an account whose feed
   is longer than that, the answer is incomplete and the sweep that marks as
