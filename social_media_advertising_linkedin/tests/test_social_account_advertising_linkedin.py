@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from odoo import fields
 from odoo.exceptions import UserError
 from odoo.fields import Command
+from odoo.tests.common import tagged
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _SCOPE_LINKEDIN,
@@ -31,6 +32,7 @@ from .test_common_advertising_linkedin import (
 MILLISECONDS_PER_DAY = 24 * 3600 * 1000
 
 
+@tagged("post_install", "-at_install")
 class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_get_advertising_account_is_the_one_in_use(self):
         account = self.SocialAccountLinkedin
@@ -1011,6 +1013,7 @@ class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
         )
 
 
+@tagged("post_install", "-at_install")
 class TestSocialAccountAdsScopesLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_missing_ads_scopes(self):
         """A token granted before this module says what it lacks."""
@@ -1049,6 +1052,7 @@ class TestSocialAccountAdsScopesLinkedin(TestSocialCommonAdvertisingLinkedin):
         self.assertEqual(len(account.message_ids), before)
 
 
+@tagged("post_install", "-at_install")
 class TestUtilsAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_run_schedule_window_linkedin(self):
         """The schedule starts now and lasts what LinkedIn proposes."""
@@ -1065,6 +1069,7 @@ class TestUtilsAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
         )
 
 
+@tagged("post_install", "-at_install")
 class TestSocialMediaAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_get_linkedin_scopes_adds_the_ads_ones(self):
         """The authorization must ask for the Ads scopes on top of the base ones."""

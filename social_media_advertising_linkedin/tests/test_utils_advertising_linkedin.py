@@ -6,11 +6,13 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from odoo import fields
+from odoo.tests.common import tagged
 
 from ..social_advertising_linkedin_utils import default_statistics_window
 from .test_common_advertising_linkedin import TestSocialCommonAdvertisingLinkedin
 
 
+@tagged("post_install", "-at_install")
 class TestDefaultStatisticsWindow(TestSocialCommonAdvertisingLinkedin):
     """``default_statistics_window`` only fills in the bounds nobody gave.
 

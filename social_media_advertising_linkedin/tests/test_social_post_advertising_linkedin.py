@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from odoo import Command
 from odoo.exceptions import UserError
-from odoo.tests.common import Form
+from odoo.tests.common import Form, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.link_tracker.models.link_tracker import LinkTracker
@@ -27,6 +27,7 @@ _URL = "https://www.binhex.cloud/"
 _BASE_URL = "http://testserver"
 
 
+@tagged("post_install", "-at_install")
 class TestSocialPostAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_check_publishable_with_an_advertising_account(self):
         """The publication works against the advertising account in use."""
@@ -404,6 +405,7 @@ class TestSocialPostAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
         self.assertEqual(form.social_campaign_id, video_campaign)
 
 
+@tagged("post_install", "-at_install")
 class TestSocialPostAccountLinkTrackerLinkedin(TestSocialCommonAdvertisingLinkedin):
     """The links of a publication are tracked before LinkedIn receives them."""
 

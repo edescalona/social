@@ -48,8 +48,8 @@ class SocialAdvertisingCampaign(models.Model):
     linkedin_objective = fields.Selection(
         [
             ("BRAND_AWARENESS", "Brand awareness"),
-            ("VIDEO_VIEW", "Video views"),
-            ("WEBSITE_VISIT", "Website visits"),
+            ("VIDEO_VIEWS", "Video views"),
+            ("WEBSITE_VISITS", "Website visits"),
             ("ENGAGEMENT", "Engagement"),
         ],
         string="LinkedIn Objective",
@@ -354,6 +354,10 @@ class SocialAdvertisingCampaign(models.Model):
                     else {}
                 ),
                 "politicalIntent": self.linkedin_political_intent,
+                # No bidding strategy is offered from Odoo (see ROADMAP), so
+                # the campaign is created with LinkedIn's auto-bidding
+                # default, which requires costType=CPM and ignores unitCost.
+                "costType": "CPM",
                 "offsiteDeliveryEnabled": False,
                 "runSchedule": {
                     "start": start,
@@ -379,10 +383,7 @@ class SocialAdvertisingCampaign(models.Model):
             return_json=False,
         )
         if response.status_code == 201:
-            campaign = (
-                "urn:li:sponsoredCampaign:"
-                f"{response.headers.get('Location').split('/')[-1]}"
-            )
+            campaign = f"urn:li:sponsoredCampaign:{response.headers.get('x-restli-id')}"
             self.write(
                 {
                     "remote_ref": campaign,

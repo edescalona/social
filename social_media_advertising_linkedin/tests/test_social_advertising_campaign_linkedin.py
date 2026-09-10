@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
+from odoo.tests.common import tagged
 
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
@@ -19,6 +20,7 @@ from .test_common_advertising_linkedin import (
 ADVERTISING_ACCOUNT_URN = "urn:li:sponsoredAccount:999"
 
 
+@tagged("post_install", "-at_install")
 class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_compute_media_id(self):
         campaign = self.SocialAdvertisingCampaign.create(
@@ -55,16 +57,16 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
             campaign._validate_publish_linkedin()
         self.assertIn("requires an objective", str(context.exception))
 
-        campaign.linkedin_objective = "VIDEO_VIEW"
+        campaign.linkedin_objective = "VIDEO_VIEWS"
         campaign._validate_publish_linkedin()
 
     def test_linkedin_create_campaign_sends_format(self):
         """The ad format travels to LinkedIn, which fixes it on creation."""
         campaign = self.SocialAdvertisingCampaignLinkedin
         campaign.linkedin_format = "SINGLE_VIDEO"
-        campaign.linkedin_objective = "VIDEO_VIEW"
+        campaign.linkedin_objective = "VIDEO_VIEWS"
         response = MagicMock(status_code=201)
-        response.headers = {"Location": "/adAccounts/999/adCampaigns/321"}
+        response.headers = {"x-restli-id": "321"}
         patch_request_linkedin = self.get_patch_exceptions_linkedin(response)
         with patch_request_linkedin as mock_request_linkedin:
             res = campaign._linkedin_create_campaign(
@@ -76,7 +78,7 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         self.assertEqual(campaign.stage_id.code, "DRAFT")
         json_data = mock_request_linkedin.call_args.kwargs["json_data"]
         self.assertEqual(json_data["format"], "SINGLE_VIDEO")
-        self.assertEqual(json_data["objectiveType"], "VIDEO_VIEW")
+        self.assertEqual(json_data["objectiveType"], "VIDEO_VIEWS")
 
     def test_check_daily_budget(self):
         with self.assertRaises(ValidationError):
@@ -175,11 +177,9 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         mock_request_linkedin.side_effect = [
             MagicMock(
                 status_code=201,
-                headers={"Location": "/adAccounts/999/adCampaignGroups/45"},
+                headers={"x-restli-id": "45"},
             ),
-            MagicMock(
-                status_code=201, headers={"Location": "/adAccounts/999/adCampaigns/67"}
-            ),
+            MagicMock(status_code=201, headers={"x-restli-id": "67"}),
         ]
         campaign.action_publish_linkedin()
         self.assertEqual(
@@ -360,7 +360,7 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
                 MagicMock(status_code=404),
                 MagicMock(
                     status_code=201,
-                    headers={"Location": "/adAccounts/999/adCampaignGroups/456"},
+                    headers={"x-restli-id": "456"},
                 ),
             ]
         )
@@ -430,7 +430,7 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         campaign = self.SocialAdvertisingCampaignLinkedin
         self.assertEqual(campaign.linkedin_political_intent, "NOT_POLITICAL")
         response = MagicMock(status_code=201)
-        response.headers = {"Location": "/adAccounts/999/adCampaigns/321"}
+        response.headers = {"x-restli-id": "321"}
         with self.get_patch_exceptions_linkedin(response) as mock_request_linkedin:
             campaign._linkedin_create_campaign(
                 self.SocialAccountLinkedin,
@@ -485,7 +485,7 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         mock_request_linkedin.side_effect = [
             MagicMock(
                 status_code=201,
-                headers={"Location": "/adAccounts/999/adCampaignGroups/45"},
+                headers={"x-restli-id": "45"},
             ),
             error_response,
         ]
@@ -531,6 +531,7 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         self.assertFalse(self.SocialAdvertisingCampaignLinkedin.web_url)
 
 
+@tagged("post_install", "-at_install")
 class TestSocialStageLinkedin(TestSocialCommonAdvertisingLinkedin):
     """The stages LinkedIn writes back are module data that has to be there."""
 

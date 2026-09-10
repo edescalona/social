@@ -227,10 +227,7 @@ class SocialAdvertisingCampaignGroup(models.Model):
                     error=self.env["social.account"]._linkedin_error_message(response),
                 )
             )
-        urn = (
-            "urn:li:sponsoredCampaignGroup:"
-            f"{response.headers.get('Location').split('/')[-1]}"
-        )
+        urn = f"urn:li:sponsoredCampaignGroup:{response.headers.get('x-restli-id')}"
         self.with_context(skip_linkedin_needs_update=True).write(
             {
                 "remote_ref": urn,

@@ -4,6 +4,7 @@
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
+from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
 from .test_common_advertising_linkedin import TestSocialCommonAdvertisingLinkedin
@@ -13,6 +14,7 @@ LOGGER_ADVERTISING_AD_LINKEDIN = (
 )
 
 
+@tagged("post_install", "-at_install")
 class TestSocialAdvertisingAdLinkedin(TestSocialCommonAdvertisingLinkedin):
     @classmethod
     def setUpClass(cls):

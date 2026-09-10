@@ -1,6 +1,7 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from odoo.tests.common import tagged
 from odoo.tools.safe_eval import safe_eval
 
 from .test_common_advertising_linkedin import TestSocialCommonAdvertisingLinkedin
@@ -8,6 +9,7 @@ from .test_common_advertising_linkedin import TestSocialCommonAdvertisingLinkedi
 MODULE = "social_media_advertising_linkedin"
 
 
+@tagged("post_install", "-at_install")
 class TestAdvertisingMenusLinkedin(TestSocialCommonAdvertisingLinkedin):
     """The advertising lists of LinkedIn hang from their own menu.
 

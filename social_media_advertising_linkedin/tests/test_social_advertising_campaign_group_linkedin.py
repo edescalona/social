@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from odoo.exceptions import UserError
 from odoo.fields import Command
+from odoo.tests.common import tagged
 
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
     PATCH_ACCOUNT_LINKEDIN,
@@ -17,6 +18,7 @@ from .test_common_advertising_linkedin import (
 )
 
 
+@tagged("post_install", "-at_install")
 class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLinkedin):
     def test_get_linkedin_account(self):
         """The account is taken from the campaigns before the fallback."""
@@ -112,7 +114,7 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
         )
         mock_request_linkedin.return_value = MagicMock(
             status_code=201,
-            headers={"Location": "/adAccounts/999/adCampaignGroups/555"},
+            headers={"x-restli-id": "555"},
         )
         group.action_publish_linkedin()
         self.assertEqual(group.remote_ref, "urn:li:sponsoredCampaignGroup:555")
