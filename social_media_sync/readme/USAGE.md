@@ -23,13 +23,15 @@ Importing what an account already published.
   import has to download, and so the only ones whose images appear on the
   dashboard after it rather than before: a publication sent from Odoo already
   shares the medias of its post.
-- The first import fills the time series of the account backwards, as far back
-  as the social media answers by day. How far that is belongs to the social
-  media, not to Odoo, so two accounts may well start with a different depth of
-  history.
+- The time series of the account is filled backwards when the account is
+  linked, by *Social Media Base*, as far back as the social media answers by
+  day; the first import only asks for it again when that fill could not be
+  read then. How far back that is belongs to the social media, not to Odoo,
+  so two accounts may well start with a different depth of history.
 - Afterwards, the *Update* button of the dashboard imports again on demand.
-  Without this module that button only refreshes the daily series; with it, it
-  does both.
+  Without this module that button refreshes the daily series of the account
+  and the figures of the publications of the last 30 days; with it, the same
+  press also imports the publications.
 - Pressed with no account picked, the button imports only the accounts known to
   be behind: the ones announcing publications to import and the ones whose
   first import never ran. Pressed on a single account, it imports that account
@@ -41,9 +43,16 @@ Importing what an account already published.
   new publications.*— instead of announcing publications it did not bring in.
 - The figures imported for a publication — impressions, social media clicks,
   shares, likes, comments, interactions and engagement — are added by this
-  module to the list of publications, to their form and to the *Statistics*
-  dialog of a card. Without it those views show only the tracked clicks, which
-  are counted by the link tracker of *Social Media Base*.
+  module to the list of publications and to their form, which span the whole
+  history. The *Statistics* dialog of a card belongs to *Social Media Base*,
+  which reads those figures back for the publications of the last 30 days on
+  its own; without this module the list and the form show only the tracked
+  clicks, counted by the link tracker.
+- The totals a post adds up from its publications — likes, comments, clicks,
+  shares, interactions and engagement — are drawn by this module on the list
+  of posts, and Clicks, Interactions and Engagement on the kanban card of a
+  post; without it those columns and that card carry a zero nothing can turn
+  into a number.
 
 What each notice on a card announces.
 ---------------
@@ -92,9 +101,11 @@ Comments and reactions.
   social media, under the account of the publication, which is what the
   composer announces.
 - Answering a comment moves the composer under it, so the reply is written
-  where it will be read, and it stays there afterwards for the next one.
-  Pressing the entry again hands the composer back to the head of the dialog,
-  which also holds it while the answered comment is not on the list.
+  where it will be read. Once the reply is published the composer returns to
+  the head of the dialog; only a reply the social media rejected keeps the
+  aim, so the retry starts under the same comment. Pressing the entry again
+  hands the composer back to the head of the dialog, which also holds it
+  while the answered comment is not on the list.
 - A comment is answered where the social media serves the replies. Where the
   whole thread already arrives with the comments, the replies are nested from
   what is already on screen and nothing else is asked for.

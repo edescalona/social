@@ -382,9 +382,9 @@ whose cost grows with the history of the account lives here: one call
 per page of posts, one call per publication to check it is still there,
 one call per comment thread. An installation that only writes and
 publishes does not have to pay for any of it.</p>
-<p><em>Social Media Base</em> never names this module. Where base needs something
-only the synchronization knows how to do, it declares an empty hook and
-carries on, so base works installed alone.</p>
+<p><em>Social Media Base</em> never depends on this module nor calls into it.
+Where base needs something only the synchronization knows how to do, it
+declares an empty hook and carries on, so base works installed alone.</p>
 <p>Main features:</p>
 <ul class="simple">
 <li>Import of the posts an account already published, and of the figures
@@ -392,27 +392,36 @@ each of them collected however old it is. Base reads back the
 publications of the last 30 days on its own and draws them in the
 <em>Statistics</em> dialog; what this module adds are the views that span the
 whole history — the list of publications, its search filters and the
-ordinary form — where a publication older than that window only
-carries figures once this import has run.</li>
-<li>Initial synchronization right after an account is linked, which also
-fills the daily statistics series of the account backwards as far as
-the social media answers. A monthly cron picks up the accounts still
-waiting for it.</li>
+ordinary form — and the likes and the comments the footer of a
+dashboard card draws for the social media whose connector reports
+them. A publication older than that window only carries figures once
+this import has run.</li>
+<li>Initial synchronization right after an account is linked, which
+imports what the account already published. A monthly cron picks up
+the accounts still waiting for it, and that same pass asks for the
+daily statistics series again for an account whose history could not
+be read when <em>Social Media Base</em> filled it at association.</li>
 <li>A weekly full resynchronization, the only pass that notices a post
 deleted on the social media side.</li>
-<li>Verification that a publication still exists remotely, before its
-thread is read.</li>
+<li>Verification that a publication still exists remotely, for the ones
+nobody opens: the weekly pass asks the social media about them, and a
+reaction or a comment answered with a <em>not found</em> has the publication
+itself asked about before the line is marked. Asking about the one
+publication a user opens is <em>Social Media Base</em>’s and costs the same
+call with or without this module.</li>
 <li>Comment thread of a publication, read from the dashboard: a comment is
 written under the account of the publication, a comment is answered
-where the social media serves the replies, and <em>Recommend</em> toggles the
-reaction of the account on the publication and on each of its
-comments. Which of them a social media really serves is declared by
-its connector, and only then is the entry offered.</li>
+where the social media serves the replies, a comment of the thread is
+deleted after a confirmation, and <em>Recommend</em> toggles the reaction of
+the account on the publication and on each of its comments. Which of
+them a social media really serves is declared by its connector, and
+only then is the entry offered.</li>
 </ul>
-<p>This module does not connect to any social media by itself: it brings
-the scheduled actions, the frontend and the common interface, and a
-synchronization connector is what implements the calls for one social
-media in particular.</p>
+<p>This module implements the API of no social media in particular: it
+brings the scheduled actions, the frontend and the common interface, and
+a synchronization connector is what implements the calls for one social
+media. The only thing it fetches on its own is the media of an imported
+publication, from the URL the connector hands it.</p>
 <p><strong>Table of contents</strong></p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
@@ -475,14 +484,17 @@ administrator reaches: <tt class="docutils literal">social_media_sync.media_max_
 module installs it at <tt class="docutils literal">0</tt>, so it is there to be found, and zero is no
 policy at all: no media is ever released.</p>
 <p>A system parameter holds text, and this one is read as a number of days.
-Anything that cannot be read as one — a word, an empty value — is taken
-as no policy and leaves a warning in the log; zero and any negative
-number are no policy too, and those are not worth a warning. No media is
+A value that cannot be read as one — a word — is taken as no policy and
+leaves a warning in the log; an empty value, zero and any negative
+number are no policy too and are not worth a warning. No media is
 released in any of those cases.</p>
 <p>Written as a positive number of days, the daily vacuum releases the
 images and videos this module downloaded for the imported publications
-older than that, and the files are deleted a day later. Two things to
-weigh before writing a number:</p>
+older than that, and the files are deleted a day later. One run reaches
+a thousand publications and takes them in the order they were created,
+so a database holding more aged publications than that keeps the medias
+of the ones beyond the first thousand. Two things to weigh before
+writing a number:</p>
 <ul class="simple">
 <li><em>What is lost</em> is the media itself. The card of an aged publication is
 drawn with no image and no placeholder in its place. The link to the
@@ -525,13 +537,16 @@ really read.</li>
 the import has to download, and so the only ones whose images appear
 on the dashboard after it rather than before: a publication sent from
 Odoo already shares the medias of its post.</li>
-<li>The first import fills the time series of the account backwards, as
-far back as the social media answers by day. How far that is belongs
-to the social media, not to Odoo, so two accounts may well start with
-a different depth of history.</li>
+<li>The time series of the account is filled backwards when the account is
+linked, by <em>Social Media Base</em>, as far back as the social media
+answers by day; the first import only asks for it again when that fill
+could not be read then. How far back that is belongs to the social
+media, not to Odoo, so two accounts may well start with a different
+depth of history.</li>
 <li>Afterwards, the <em>Update</em> button of the dashboard imports again on
-demand. Without this module that button only refreshes the daily
-series; with it, it does both.</li>
+demand. Without this module that button refreshes the daily series of
+the account and the figures of the publications of the last 30 days;
+with it, the same press also imports the publications.</li>
 <li>Pressed with no account picked, the button imports only the accounts
 known to be behind: the ones announcing publications to import and the
 ones whose first import never ran. Pressed on a single account, it
@@ -544,10 +559,17 @@ updated. No new publications.</em>— instead of announcing publications it
 did not bring in.</li>
 <li>The figures imported for a publication — impressions, social media
 clicks, shares, likes, comments, interactions and engagement — are
-added by this module to the list of publications, to their form and to
-the <em>Statistics</em> dialog of a card. Without it those views show only
-the tracked clicks, which are counted by the link tracker of <em>Social
-Media Base</em>.</li>
+added by this module to the list of publications and to their form,
+which span the whole history. The <em>Statistics</em> dialog of a card
+belongs to <em>Social Media Base</em>, which reads those figures back for the
+publications of the last 30 days on its own; without this module the
+list and the form show only the tracked clicks, counted by the link
+tracker.</li>
+<li>The totals a post adds up from its publications — likes, comments,
+clicks, shares, interactions and engagement — are drawn by this module
+on the list of posts, and Clicks, Interactions and Engagement on the
+kanban card of a post; without it those columns and that card carry a
+zero nothing can turn into a number.</li>
 </ul>
 </div>
 <div class="section" id="what-each-notice-on-a-card-announces">
@@ -598,8 +620,10 @@ way. What this module adds is noticing the ones nobody opens.</li>
 the social media, under the account of the publication, which is what
 the composer announces.</li>
 <li>Answering a comment moves the composer under it, so the reply is
-written where it will be read, and it stays there afterwards for the
-next one. Pressing the entry again hands the composer back to the head
+written where it will be read. Once the reply is published the
+composer returns to the head of the dialog; only a reply the social
+media rejected keeps the aim, so the retry starts under the same
+comment. Pressing the entry again hands the composer back to the head
 of the dialog, which also holds it while the answered comment is not
 on the list.</li>
 <li>A comment is answered where the social media serves the replies. Where
@@ -648,11 +672,16 @@ holds, so that a media is downloaded once and not on every pass. The
 bytes of two identical images still land on the same file, because the
 filestore keys its files by the hash of their content; what multiplies
 is the rows.</p>
-<p>Nothing ages them out. There is no retention policy, and the only
-deletions are the cascade that takes the medias of a publication when
-the publication is deleted and <tt class="docutils literal">social.account.action_purge_account</tt>,
-which drops an account with its history. Serving those bytes from
-somewhere else is configured at the level of Odoo, through
+<p>What ages them out is one number for the whole database.
+<tt class="docutils literal">social_media_sync.media_max_age_days</tt> reaches every imported
+publication older than it, whatever its account, so there is no way to
+keep the medias of one account and age out those of another, and a
+publication kept only for its figures still costs its images until that
+age is reached. The deletion itself belongs to the vacuum:
+<tt class="docutils literal">_gc_aged_post_medias</tt> releases what the policy reaches, the next
+synchronization releases what the social media no longer serves, and
+<tt class="docutils literal">_gc_lost_media_attachments</tt> deletes both a day later. Serving those
+bytes from somewhere else is configured at the level of Odoo, through
 <tt class="docutils literal">ir_attachment.location</tt>, not from here.</p>
 </div>
 </div>
