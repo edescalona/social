@@ -13,7 +13,7 @@ import requests
 import tweepy
 from markupsafe import Markup, escape
 from requests_oauthlib import OAuth1
-from tweepy.errors import Forbidden, TooManyRequests, Unauthorized
+from tweepy.errors import BadRequest, Forbidden, TooManyRequests, Unauthorized
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
@@ -499,6 +499,12 @@ class SocialAccount(models.Model):
         error, and since X has no way to renew the token from Odoo, the
         account is flagged for the user to authorize it again.
 
+        A post X itself refuses is answered with the reason of the account
+        instead of the raw text of the network: how many characters an
+        account may publish depends on its plan, which is declared here, so a
+        subscription marked on an account that does not hold it reaches X as
+        a post too long and comes back as this refusal.
+
         The references of the medias travel back with the identifier of the
         tweet, so the publication stores in one write what it published and
         what X called each of its medias.
@@ -531,6 +537,16 @@ class SocialAccount(models.Model):
         except (Unauthorized, Forbidden) as error:
             raise SocialCredentialsError(
                 _("PUBLISHING ON X: %(error)s", error=error)
+            ) from error
+        except BadRequest as error:
+            raise UserError(
+                _(
+                    "X refused the post of %(account)s: %(error)s. What an "
+                    "account may publish depends on its plan, so check the X "
+                    "Premium setting of the account before trying again.",
+                    account=self.display_name,
+                    error=error,
+                )
             ) from error
 
     def _run_check_media_updates(self):

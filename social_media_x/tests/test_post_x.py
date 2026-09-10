@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.tools import mute_logger
 
 from odoo.addons.social_media_x.social_x_utils import (
     _MAX_IMAGE_SIZE_X,
@@ -326,6 +327,31 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertIn(
             "at most 280 characters", self.SocialPostAccountX.failed_description
         )
+
+    @mute_logger("odoo.addons.social_media_base.models.social_post_account")
+    def test_action_post_records_why_x_refused_the_post(self):
+        """A post refused by X leaves its reason on the line, not raw text.
+
+        The plan of an account is declared and can be wrong, so the refusal
+        of X is what tells the user, and it has to name the cause.
+        """
+        post = self._draft_post(message="Test Message")
+        self.SocialAccountX.x_premium = True
+        with patch.object(
+            type(self.SocialAccountX),
+            "create_tweet",
+            autospec=True,
+            side_effect=UserError(
+                "X refused the post of X Account: too long. What an account "
+                "may publish depends on its plan, so check the X Premium "
+                "setting of the account before trying again."
+            ),
+        ):
+            post._action_create_post_account()
+        line = post.post_account_ids
+        self.assertEqual(line.state, "failed")
+        self.assertIn("X Premium", line.failed_description)
+        self.assertFalse(line.remote_ref)
 
     def test_action_post_fails_only_the_account_the_message_is_too_long_for(self):
         """A limit of one account stops that account and nothing else.
