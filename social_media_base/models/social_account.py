@@ -799,7 +799,7 @@ class SocialAccount(models.Model):
         existing = statistics_model.search(
             [("account_id", "=", self.id), ("date", "in", list(statistics_by_day))]
         )
-        rows_by_day = {row.date: row for row in existing}
+        rows_by_day = existing.grouped("date")
         to_create = []
         for day, statistics in statistics_by_day.items():
             row = rows_by_day.get(day)
