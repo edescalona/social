@@ -49,6 +49,8 @@ _UPDATE_CHECK_FIGURES_LINKEDIN = (0, 1, 2, 3, 5)
 # longer history has to raise, because a feed read short comes back partial and
 # a partial feed is one the pass will not look for deletions in.
 _POSTS_MAX_PAGES_LINKEDIN = 50
+_POSTS_MAX_PAGES_MIN_LINKEDIN = 1
+_POSTS_MAX_PAGES_MAX_LINKEDIN = 500
 
 # What is asked for of the organization behind a comment. Narrower than the
 # projection the association reads, because a comment only needs the name to
