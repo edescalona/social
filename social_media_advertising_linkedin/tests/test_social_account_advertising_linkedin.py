@@ -9,7 +9,6 @@ from odoo.fields import Command
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _SCOPE_LINKEDIN,
-    default_statistics_window,
     epoch_milliseconds,
 )
 from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
@@ -21,6 +20,7 @@ from ..social_advertising_linkedin_utils import (
     _CHUNK_SIZE_ANALYTICS_LINKEDIN,
     _RUN_SCHEDULE_DAYS_LINKEDIN,
     _SCOPE_ADS_LINKEDIN,
+    default_statistics_window,
     run_schedule_window_linkedin,
 )
 from .test_common_advertising_linkedin import (

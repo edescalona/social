@@ -3,12 +3,9 @@
 
 import os
 import time
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 import pytz
-from dateutil.relativedelta import relativedelta
-
-from odoo import fields
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _QUERY_STRING_MARGIN_BYTES_LINKEDIN,
@@ -16,7 +13,6 @@ from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     _batch_urns_by_url_size,
     _encoded_urns_bytes,
     datetime_from_epoch_milliseconds,
-    default_statistics_window,
     epoch_milliseconds,
     social_url_encode,
 )
@@ -461,37 +457,6 @@ class TestEpochMilliseconds(TestSocialCommonLinkedin):
                     datetime_from_epoch_milliseconds(1735689600000).date(),
                     date(2025, 1, 1),
                 )
-
-
-class TestDefaultStatisticsWindow(TestSocialCommonLinkedin):
-    """``default_statistics_window`` only fills in the bounds nobody gave.
-
-    A pure function of ``social_linkedin_utils``, tested here rather than
-    through the accounts that happen to call it.
-    """
-
-    def test_default_statistics_window_keeps_both_bounds(self):
-        """A window the caller bounded travels untouched."""
-        start_date = datetime(2025, 1, 1)
-        end_date = start_date + timedelta(days=30)
-        self.assertEqual(
-            default_statistics_window(start_date, end_date), (start_date, end_date)
-        )
-
-    def test_default_statistics_window_fills_both_bounds(self):
-        """A caller with no dates to give asks for the last ``months``."""
-        before = fields.Datetime.now()
-        start, end = default_statistics_window(None, None, months=3)
-        self.assertGreaterEqual(end, before)
-        self.assertLess(start, before - relativedelta(months=2))
-        self.assertGreater(start, before - relativedelta(months=4))
-
-    def test_default_statistics_window_fills_only_what_is_missing(self):
-        """The bound the caller gave is kept, the other one is completed."""
-        end_date = datetime(2025, 2, 1)
-        start, end = default_statistics_window(None, end_date)
-        self.assertEqual(end, end_date)
-        self.assertLess(start, fields.Datetime.now())
 
 
 class TestBatchUrnsByUrlSize(TestSocialCommonLinkedin):

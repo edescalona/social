@@ -9,7 +9,6 @@ from odoo.tools import split_every
 
 from odoo.addons.social_media_linkedin.social_linkedin_utils import (
     datetime_from_epoch_milliseconds,
-    default_statistics_window,
     linkedin_urn_id,
 )
 
@@ -24,6 +23,7 @@ from ..social_advertising_linkedin_utils import (
     _FIELDS_STATISTIC_LINKEDIN,
     _PAGE_SIZE_LINKEDIN,
     _SCOPE_ADS_LINKEDIN,
+    default_statistics_window,
     linkedin_date_struct,
 )
 from .social_advertising_campaign import LINKEDIN_DELETED_CODES
