@@ -14,6 +14,7 @@
     "data": [
         "data/ir_cron_data.xml",
         "views/social_post_account_views.xml",
+        "data/ir_config_parameter_data.xml",
         "views/social_post_views.xml",
     ],
     "assets": {

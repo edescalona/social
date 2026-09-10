@@ -229,17 +229,34 @@ class SocialPostAccount(models.Model):
         Two attachments pointing at the same remote reference would defeat
         both.
 
-        A reference to a media the publication no longer holds is the other
-        half of the same guarantee: it is the sign that an unlink forgot to
-        clean the dictionary up, which would leave the publication answering
-        for a media it does not have.
+        A reference to the media of another publication is the other half of
+        the same guarantee: it would make this one answer for a media it does
+        not have. That is what is watched, and the reference is measured by
+        what its attachment is anchored to.
+
+        A reference to an attachment anchored nowhere, or still anchored to
+        this very publication, points at nobody else and is left alone: it is
+        what the retention of the downloaded medias leaves behind on purpose,
+        so that they are not downloaded again. The attachment is released
+        after the write that dropped the media, so it is still anchored here
+        while this runs.
         """
         for post_account in self:
             refs = post_account.media_refs or {}
             if not refs:
                 continue
             medias = post_account.image_ids | post_account.video_ids
-            dangling = set(refs) - {str(media.id) for media in medias}
+            missing = set(refs) - {str(media.id) for media in medias}
+            dangling = {
+                str(attachment.id)
+                for attachment in self.env["ir.attachment"]
+                .sudo()
+                .browse(int(ref) for ref in missing)
+                .exists()
+                if (attachment.res_model, attachment.res_id)
+                != (self._name, post_account.id)
+                and attachment.res_id
+            }
             if dangling:
                 raise ValidationError(
                     _(
