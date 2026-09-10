@@ -20,3 +20,13 @@
 - The timeline is read once and `next_token` is never followed, so an account
   with more than 100 publications is only imported up to that page. Paginating
   it costs one request per page against the plan of the account.
+
+- The conversation of a publication is read up to 5 pages of 100 replies, so a
+  thread longer than 500 replies is read truncated; what is missing is said
+  instead of guessed, because no comment of a truncated read states how many
+  replies it has. Raising the ceiling costs one request per page against the
+  plan of the account, and it is paid again on every refresh: the dialog of the
+  comments rereads the conversation whole every two minutes while it stays
+  open. Reading only the first page on those refreshes, and the whole
+  conversation only when the dialog opens, is what would make a higher ceiling
+  affordable.

@@ -25,8 +25,12 @@ Comments
   which only covers the **last 7 days**: the replies to older publications are
   not shown on the dashboard even though the post has them. Retweets and
   quotes are excluded as well, only the replies are listed.
-- The whole conversation arrives in that single answer, so how many replies
-  each comment has is counted in Odoo and never asked to X again.
+- The conversation is read a hundred replies at a time, following the token X
+  answers with until it runs out or five pages have been read. Read to the
+  end, how many replies each comment has is counted in Odoo and never asked to
+  X again; cut short by that ceiling or by the limit of requests of the plan,
+  no number is stated, and the dashboard offers to unfold the replies of every
+  comment.
 - Answering a publication and answering one of its comments are the same call
   to X: on X a comment is a post like any other, and what changes is the post
   being replied to.

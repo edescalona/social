@@ -21,11 +21,16 @@ class SocialPostAccount(models.Model):
     def _x_comment_parent_ref(self, tweet, comment_refs):
         """Return the comment a tweet of the thread answers.
 
-        The search that reads the comments asks for the whole conversation, so
-        the replies of a reply arrive in the same answer as the comments of
-        the post. What tells them apart is already in the payload: the
-        ``replied_to`` reference of a comment is the post, and that of a reply
-        is another tweet of the list.
+        The search that reads the comments asks for the conversation, so the
+        replies of a reply arrive along with the comments of the post. What
+        tells them apart is already in the payload: the ``replied_to``
+        reference of a comment is the post, and that of a reply is another
+        tweet of the list.
+
+        The references are those of everything the walk of the pages brought,
+        never those of one page: a tweet answering a comment left on a page
+        that was never read hangs from the publication, which is not where it
+        was written.
 
         :param tweet: one tweet as X answered it.
         :param comment_refs: the references of every tweet of the thread.
