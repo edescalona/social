@@ -56,7 +56,6 @@ class SocialAdvertisingCampaignGroup(models.Model):
         "advertising account itself disappears from the social media: it is "
         "then dropped and this campaign group is left without a link.",
     )
-
     _sql_constraints = [
         (
             "remote_ref_uniq",

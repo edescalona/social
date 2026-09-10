@@ -80,7 +80,6 @@ class SocialAdvertisingCampaign(models.Model):
         "account itself disappears from the social media: it is then dropped "
         "and this campaign is left without a link.",
     )
-
     _sql_constraints = [
         (
             "remote_ref_uniq",
