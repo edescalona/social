@@ -10,7 +10,8 @@ Importing the publications
 - Each media X answers with a direct address is downloaded once and stored as
   an attachment; one it answers without a direct address is not stored. A
   media already stored is not asked for again.
-- The *Update* button of the dashboard card runs the same import on demand.
+- The *Update* button of the dashboard runs the same import on demand, over
+  every account shown.
 - The module adds the *With Reposts* and *With Quotes* filters to the search
   panel of the dashboard, next to the filters of impressions and interactions
   of *Social Media Sync*.
@@ -24,6 +25,9 @@ Importing the publications
 Comments
 ------------------------
 
+- A comment or a reply written on an X thread may carry images. The composer
+  offers the upload, the files travel to X with the reply and are shown on
+  the published comment.
 - The comments of a publication are read with the
   [recent search](https://docs.x.com/x-api/posts/recent-search) endpoint of X,
   which only covers the **last 7 days**: the replies to older publications are

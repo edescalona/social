@@ -322,8 +322,9 @@ Delete an account permanently.
   only to the *Social Media / Administrator* group. A regular user can
   only archive his accounts, he is not allowed to delete them.
 - It deletes the account, its dashboard publications and the posts that
-  were linked only to that account, together with their metrics,
-  comments and attachments.
+  were linked only to that account, together with their metrics and
+  attachments. Comments live on the social media only and are never
+  stored in Odoo, so there are none to delete.
 - The records of the other applications that reference the account only
   lose the link, they are **not** deleted.
 - Nothing is deleted from the social media: the publications stay

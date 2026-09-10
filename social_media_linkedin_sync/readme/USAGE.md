@@ -1,8 +1,8 @@
 Importing what a page already published.
 ----------------------------------------
 
-- The *Update* button of the dashboard card imports the publications of the
-  page. Without this module that button refreshes the daily series of the page
+- The *Update* button of the dashboard imports the publications of the
+  pages. Without this module that button refreshes the daily series of the page
   and the figures of the publications of the last 30 days; with it, it also
   brings in the publications Odoo does not have yet and the figures of the ones
   older than that window.
