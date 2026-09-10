@@ -8,6 +8,8 @@ from tweepy.errors import TooManyRequests
 
 from odoo import _, fields, models
 
+from ..social_x_sync_utils import _COMMENTS_MAX_PAGES_X, _SEARCH_MAX_RESULTS_X
+
 _logger = logging.getLogger(__name__)
 
 
@@ -19,11 +21,16 @@ class SocialPostAccount(models.Model):
     def _x_comment_parent_ref(self, tweet, comment_refs):
         """Return the comment a tweet of the thread answers.
 
-        The search that reads the comments asks for the whole conversation, so
-        the replies of a reply arrive in the same answer as the comments of
-        the post. What tells them apart is already in the payload: the
-        ``replied_to`` reference of a comment is the post, and that of a reply
-        is another tweet of the list.
+        The search that reads the comments asks for the conversation, so the
+        replies of a reply arrive along with the comments of the post. What
+        tells them apart is already in the payload: the ``replied_to``
+        reference of a comment is the post, and that of a reply is another
+        tweet of the list.
+
+        The references are those of everything the walk of the pages brought,
+        never those of one page: a tweet answering a comment left on a page
+        that was never read hangs from the publication, which is not where it
+        was written.
 
         :param tweet: one tweet as X answered it.
         :param comment_refs: the references of every tweet of the thread.
@@ -75,26 +82,35 @@ class SocialPostAccount(models.Model):
             "post_deleted": False,
         }
 
-    def get_comments(self):
-        """Read the replies to this post.
+    def _x_read_conversation(self, client_api, query):
+        """Walk the pages of a conversation and return what they carried.
 
-        :return: ``success`` and the list of comments, or the error message.
-        :rtype: dict
+        The recent search endpoint answers one page at a time and names the
+        next one in ``meta``. Without that walk the thread Odoo reads is the
+        first page and nothing else, so a reply whose comment stayed on a
+        later page is drawn hanging from the publication instead of from it.
+
+        The walk stops at :data:`_COMMENTS_MAX_PAGES_X`, which is what keeps
+        one dialog from spending the quota of the whole database.
+
+        The quota is what else cuts it short. Reaching it on a later page
+        keeps the pages already read, because throwing them away pays their
+        cost for nothing; on the first one there is nothing to keep, so the
+        error travels up and the caller answers what it always answered.
+
+        :param client_api: the client of X the account speaks through.
+        :param query: the search query naming the conversation.
+        :return: the tweets read, the authors and the media by their key, and
+            whether the conversation was left unfinished.
+        :rtype: tuple(list, dict, dict, bool)
+        :raise TooManyRequests: when the quota stopped the very first page.
         """
-        data = super().get_comments()
-        comments = []
-        if "x" == self.account_id.media_type:
+        tweets = []
+        users = {}
+        media_urls = {}
+        next_token = None
+        for _page in range(_COMMENTS_MAX_PAGES_X):
             try:
-                result = self.account_id._valid_time_request(endpoint="get_comments")
-                if not result:
-                    return self._x_comments_quota_answer()
-                client_api = self.account_id.get_client_api(
-                    bearer_token=self.account_id.sudo().x_access_token_oauth2
-                )
-                query = (
-                    f"conversation_id:{self.remote_ref} "
-                    f"is:reply -is:retweet -is:quote"
-                )
                 response = client_api.search_recent_tweets(
                     query=query,
                     tweet_fields=[
@@ -115,19 +131,66 @@ class SocialPostAccount(models.Model):
                     ],
                     user_fields="id,name,username,profile_image_url",
                     media_fields=["media_key", "type", "url"],
+                    max_results=_SEARCH_MAX_RESULTS_X,
+                    next_token=next_token,
                 )
-                if response.data:
-                    comments = []
-                    comment_refs = {str(tweet.id) for tweet in response.data}
-                    users = {
-                        str(u.id): u for u in (response.includes.get("users", []) or [])
-                    }
-                    media_urls = {
-                        media.media_key: media.url
-                        for media in (response.includes.get("media") or [])
-                        if media.url
-                    }
-                    for comment in response.data or []:
+            except TooManyRequests as exManyRequest:
+                if not tweets:
+                    raise
+                self.account_id._get_message_many_requests(
+                    exManyRequest, endpoint="get_comments"
+                )
+                return tweets, users, media_urls, True
+            tweets.extend(response.data or [])
+            includes = getattr(response, "includes", None) or {}
+            # Merged by key instead of concatenated: the same author or the
+            # same media comes back on every page they appear in.
+            for user in includes.get("users") or []:
+                users[str(user.id)] = user
+            for media in includes.get("media") or []:
+                if media.url:
+                    media_urls[media.media_key] = media.url
+            # Read defensively because a page without ``meta`` is a page
+            # without a next one, and anything that is not a mapping says
+            # nothing about where the conversation continues.
+            meta = getattr(response, "meta", None) or {}
+            next_token = meta.get("next_token") if isinstance(meta, dict) else None
+            if not next_token:
+                break
+        return tweets, users, media_urls, bool(next_token)
+
+    def get_comments(self):
+        """Read the replies to this post.
+
+        :return: ``success`` and the list of comments, or the error message.
+        :rtype: dict
+        """
+        data = super().get_comments()
+        comments = []
+        if "x" == self.account_id.media_type:
+            try:
+                result = self.account_id._valid_time_request(endpoint="get_comments")
+                if not result:
+                    return self._x_comments_quota_answer()
+                client_api = self.account_id.get_client_api(
+                    bearer_token=self.account_id.sudo().x_access_token_oauth2
+                )
+                query = (
+                    f"conversation_id:{self.remote_ref} "
+                    f"is:reply -is:retweet -is:quote"
+                )
+                (
+                    tweets,
+                    users,
+                    media_urls,
+                    truncated,
+                ) = self._x_read_conversation(client_api, query)
+                if tweets:
+                    # Both are read from everything the walk brought, so a
+                    # reply of one page whose comment came on another still
+                    # finds it.
+                    comment_refs = {str(tweet.id) for tweet in tweets}
+                    for comment in tweets:
                         author = users.get(str(comment.author_id))
                         media_keys = (getattr(comment, "attachments", {}) or {}).get(
                             "media_keys", []
@@ -161,18 +224,27 @@ class SocialPostAccount(models.Model):
                                 ],
                             }
                         )
-                    # The whole thread already arrived, so how many
-                    # replies each comment has is counted here and never
-                    # asked to X again.
-                    reply_counts = Counter(
-                        comment["parent_ref"]
-                        for comment in comments
-                        if comment["parent_ref"]
-                    )
-                    for comment in comments:
-                        comment["reply_count"] = reply_counts.get(
-                            comment["remote_ref"], 0
+                    if truncated:
+                        # The replies of a comment may be on the page that
+                        # was never read, so there is no total to state.
+                        # ``None`` is what the contract reserves for it, and
+                        # the client offers to unfold the replies instead of
+                        # hiding them behind a zero it cannot back.
+                        for comment in comments:
+                            comment["reply_count"] = None
+                    else:
+                        # The walk reached the end, so how many replies each
+                        # comment has is counted here and never asked to X
+                        # again.
+                        reply_counts = Counter(
+                            comment["parent_ref"]
+                            for comment in comments
+                            if comment["parent_ref"]
                         )
+                        for comment in comments:
+                            comment["reply_count"] = reply_counts.get(
+                                comment["remote_ref"], 0
+                            )
 
             except TooManyRequests as exManyRequest:
                 self.account_id._get_message_many_requests(

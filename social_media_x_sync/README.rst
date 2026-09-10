@@ -51,11 +51,11 @@ Main features:
 - Import of the publications of the timeline and of the figures each of
   them collected, on demand and through the scheduled actions of *Social
   Media Sync*.
-- Comments of a publication, read from the dashboard: X answers the
-  whole conversation at once, so the replies of a comment are nested
-  from what was already read instead of being asked for apart. A comment
-  answers the publication, and answering a comment answers that comment,
-  which on X is a post like any other.
+- Comments of a publication, read from the dashboard: the conversation
+  is walked page by page up to a ceiling, and the replies of a comment
+  are nested from what was read instead of being asked for apart. A
+  comment answers the publication, and answering a comment answers that
+  comment, which on X is a post like any other.
 - Verification that a publication still exists on X before the dashboard
   acts on it.
 - Reading only what was published after a chosen publication, with
@@ -212,9 +212,12 @@ Comments
   publications are not shown on the dashboard even though the post has
   them. Retweets and quotes are excluded as well, only the replies are
   listed.
-- The whole conversation arrives in that single answer, so how many
-  replies each comment has is counted in Odoo and never asked to X
-  again.
+- The conversation is read a hundred replies at a time, following the
+  token X answers with until it runs out or five pages have been read.
+  Read to the end, how many replies each comment has is counted in Odoo
+  and never asked to X again; cut short by that ceiling or by the limit
+  of requests of the plan, no number is stated, and the dashboard offers
+  to unfold the replies of every comment.
 - Answering a publication and answering one of its comments are the same
   call to X: on X a comment is a post like any other, and what changes
   is the post being replied to.
@@ -285,6 +288,16 @@ Known issues / Roadmap
   account with more than 100 publications is only imported up to that
   page. Paginating it costs one request per page against the plan of the
   account.
+
+- The conversation of a publication is read up to 5 pages of 100
+  replies, so a thread longer than 500 replies is read truncated; what
+  is missing is said instead of guessed, because no comment of a
+  truncated read states how many replies it has. Raising the ceiling
+  costs one request per page against the plan of the account, and it is
+  paid again on every refresh: the dialog of the comments rereads the
+  conversation whole every two minutes while it stays open. Reading only
+  the first page on those refreshes, and the whole conversation only
+  when the dialog opens, is what would make a higher ceiling affordable.
 
 Bug Tracker
 ===========

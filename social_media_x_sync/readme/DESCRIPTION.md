@@ -18,9 +18,9 @@ Main features:
 - Import of the publications of the timeline and of the figures each of them
   collected, on demand and through the scheduled actions of *Social Media
   Sync*.
-- Comments of a publication, read from the dashboard: X answers the whole
-  conversation at once, so the replies of a comment are nested from what was
-  already read instead of being asked for apart. A comment answers the
+- Comments of a publication, read from the dashboard: the conversation is
+  walked page by page up to a ceiling, and the replies of a comment are nested
+  from what was read instead of being asked for apart. A comment answers the
   publication, and answering a comment answers that comment, which on X is a
   post like any other.
 - Verification that a publication still exists on X before the dashboard acts

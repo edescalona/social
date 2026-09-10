@@ -10,6 +10,7 @@ from odoo.addons.social_media_sync.tests.test_social_sync_common import (
     PATCH_SYNC_POST_ACCOUNT,
 )
 
+from ..social_x_sync_utils import _COMMENTS_MAX_PAGES_X, _SEARCH_MAX_RESULTS_X
 from .test_sync_x_common import LOGGER_POST_ACCOUNT_X_SYNC, TestSocialSyncCommonX
 
 
@@ -273,6 +274,7 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         fake_response = MagicMock()
         fake_response.data = [comment, reply]
         fake_response.includes = {"users": [fake_user]}
+        fake_response.meta = {}
         fake_client = MagicMock()
         fake_client.search_recent_tweets.return_value = fake_response
         (
@@ -298,6 +300,183 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             str,
             msg="The moment X stamps the tweet with is turned into the "
             "sentence the client draws, not handed over as a date.",
+        )
+
+    def _fake_author_x(self, ref="author_1"):
+        author = MagicMock()
+        author.id = ref
+        author.name = "The author"
+        author.profile_image_url = None
+        return author
+
+    def _fake_tweet_x(self, ref, parent_ref=None, author_ref="author_1"):
+        """One tweet of the conversation as X answers it."""
+        tweet = MagicMock()
+        tweet.id = ref
+        tweet.text = f"Tweet {ref}"
+        tweet.author_id = author_ref
+        tweet.created_at = datetime.now()
+        tweet.attachments = None
+        tweet.referenced_tweets = [
+            MagicMock(
+                type="replied_to",
+                id=parent_ref or self.SocialPostAccountX.remote_ref,
+            )
+        ]
+        return tweet
+
+    def _fake_page_x(self, tweets, next_token=None):
+        """One page of the recent search, with the token of the next one."""
+        page = MagicMock()
+        page.data = tweets
+        page.includes = {"users": [self._fake_author_x()]}
+        page.meta = {"next_token": next_token} if next_token else {}
+        return page
+
+    def test_get_comments_asks_for_a_whole_page(self):
+        """A page of the conversation is asked for at the ceiling of X."""
+        fake_response = MagicMock()
+        fake_response.data = []
+        fake_response.includes = {}
+        fake_response.meta = {}
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.return_value = fake_response
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            self.SocialPostAccountX.get_comments()
+        self.assertEqual(
+            fake_client.search_recent_tweets.call_args.kwargs["max_results"],
+            _SEARCH_MAX_RESULTS_X,
+            msg="Without it X answers ten replies of its own accord, and a "
+            "thread of eleven is read wrong.",
+        )
+
+    def test_get_comments_walks_the_pages_of_the_conversation(self):
+        """A conversation longer than one page is read to its end."""
+        first_page = [self._fake_tweet_x(f"1{index:03d}") for index in range(100)]
+        second_page = [self._fake_tweet_x(f"2{index:03d}") for index in range(50)]
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x(first_page, next_token="page_2"),
+            self._fake_page_x(second_page),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        self.assertEqual(len(comments["data"]), 150)
+        self.assertEqual(fake_client.search_recent_tweets.call_count, 2)
+        self.assertEqual(
+            fake_client.search_recent_tweets.call_args_list[1].kwargs["next_token"],
+            "page_2",
+            msg="The second page is asked for with the token the first one "
+            "answered with.",
+        )
+
+    def test_get_comments_keeps_a_parent_read_on_another_page(self):
+        """A reply finds its comment even when they came on different pages."""
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x([self._fake_tweet_x("100")], next_token="page_2"),
+            self._fake_page_x([self._fake_tweet_x("200", parent_ref="100")]),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        by_ref = {comment["remote_ref"]: comment for comment in comments["data"]}
+        self.assertEqual(
+            by_ref["200"]["parent_ref"],
+            "100",
+            msg="Read page by page the reply would hang from the "
+            "publication, which is not where it was written.",
+        )
+
+    def test_get_comments_counts_the_replies_of_the_whole_conversation(self):
+        """The count of a comment covers every page the walk brought."""
+        replies = [
+            self._fake_tweet_x(f"2{index:02d}", parent_ref="100") for index in range(12)
+        ]
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x(
+                [self._fake_tweet_x("100")] + replies[:5], next_token="page_2"
+            ),
+            self._fake_page_x(replies[5:]),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        by_ref = {comment["remote_ref"]: comment for comment in comments["data"]}
+        self.assertEqual(by_ref["100"]["reply_count"], 12)
+
+    def test_get_comments_truncated_states_no_reply_count(self):
+        """A walk stopped by the ceiling states no total it cannot back."""
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x(
+                [self._fake_tweet_x(f"{page}00")], next_token=f"page_{page + 1}"
+            )
+            for page in range(_COMMENTS_MAX_PAGES_X)
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        self.assertEqual(
+            fake_client.search_recent_tweets.call_count,
+            _COMMENTS_MAX_PAGES_X,
+            msg="The ceiling is what stops the walk, and X still had more "
+            "pages to answer.",
+        )
+        self.assertTrue(comments["data"])
+        for comment in comments["data"]:
+            self.assertIsNone(
+                comment["reply_count"],
+                msg="Counted over an unfinished walk the total would be a "
+                "number X never said.",
+            )
+
+    def test_get_comments_rate_limited_keeps_the_pages_already_read(self):
+        """The quota reached on a later page does not undo the earlier ones.
+
+        Their cost is already paid, and the window of the endpoint is written
+        the same, so throwing them away would only leave the user with an
+        empty thread.
+        """
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x([self._fake_tweet_x("100")], next_token="page_2"),
+            self.get_exception_manyrequests(),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        self.assertTrue(comments["success"])
+        self.assertEqual(len(comments["data"]), 1)
+        self.assertIsNone(comments["data"][0]["reply_count"])
+        self.assertEqual(
+            self.SocialPostAccountX.account_id.rate_limit_endpoint["get_comments"][
+                "x-rate-limit-reset"
+            ],
+            9999999999,
+            msg="The window of the endpoint is written even though the read "
+            "answered what it had.",
         )
 
     @mute_logger(LOGGER_POST_ACCOUNT_X_SYNC)
@@ -470,6 +649,7 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         fake_response.data = [fake_comment]
         fake_response.includes = {"users": [fake_user], "media": [fake_media]}
         fake_response.errors = self.test_response_errors
+        fake_response.meta = {}
         fake_client = MagicMock()
         fake_client.search_recent_tweets.return_value = fake_response
         (
@@ -502,6 +682,7 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         fake_response.data = [fake_comment]
         fake_response.includes = {"users": [fake_user]}
         fake_response.errors = self.test_response_errors
+        fake_response.meta = {}
         fake_client = MagicMock()
         fake_client.search_recent_tweets.return_value = fake_response
         (
