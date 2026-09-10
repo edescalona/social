@@ -6,13 +6,18 @@ according to their needs.
 
 What it asks of a social media is always a fixed number of calls per account:
 publishing, deleting, and the daily series of the page. Reading back what an
-account already published — the publications themselves, their figures, their
-comments — costs one call per page or per publication, so it grows with the
-history of the account and lives in *Social Media Sync* instead. Without that
-module the dashboard still works: the figures of a card are added up from what
-is already stored, and a publication shows the clicks of its tracked link,
-which is the only figure counted here. The figures a social media reports are
-drawn by *Social Media Sync*, the module that knows how to ask for them.
+account already published — the publications themselves and their comments —
+costs one call per page, so it grows with the history of the account and lives
+in *Social Media Sync* instead. The figures of a publication are read back
+here, but only for the ones published in the last 30 days: what that window
+costs is decided by the days it looks back and not by the history of the
+account. Without *Social Media Sync* the dashboard still works: the figures of
+a card are added up from what is already stored, and the *Statistics* dialog
+of a publication shows both the clicks Odoo counted on its own tracked link
+and the figures the social media reported for it, read back over the last 30
+days. The list, the search filters and the form of a publication draw those
+figures only with *Social Media Sync* installed, because they span the whole
+history of the account.
 
 This module does not connect to any social media by itself: it brings the
 models, the security, the scheduled actions and the common interface. To use

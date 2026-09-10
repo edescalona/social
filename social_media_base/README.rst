@@ -36,14 +36,19 @@ and customize social features according to their needs.
 
 What it asks of a social media is always a fixed number of calls per
 account: publishing, deleting, and the daily series of the page. Reading
-back what an account already published — the publications themselves,
-their figures, their comments — costs one call per page or per
-publication, so it grows with the history of the account and lives in
-*Social Media Sync* instead. Without that module the dashboard still
-works: the figures of a card are added up from what is already stored,
-and a publication shows the clicks of its tracked link, which is the
-only figure counted here. The figures a social media reports are drawn
-by *Social Media Sync*, the module that knows how to ask for them.
+back what an account already published — the publications themselves and
+their comments — costs one call per page, so it grows with the history
+of the account and lives in *Social Media Sync* instead. The figures of
+a publication are read back here, but only for the ones published in the
+last 30 days: what that window costs is decided by the days it looks
+back and not by the history of the account. Without *Social Media Sync*
+the dashboard still works: the figures of a card are added up from what
+is already stored, and the *Statistics* dialog of a publication shows
+both the clicks Odoo counted on its own tracked link and the figures the
+social media reported for it, read back over the last 30 days. The list,
+the search filters and the form of a publication draw those figures only
+with *Social Media Sync* installed, because they span the whole history
+of the account.
 
 This module does not connect to any social media by itself: it brings
 the models, the security, the scheduled actions and the common
@@ -127,9 +132,10 @@ Tracked links.
 
 - The short links published on the social media point at this Odoo, so
   **``web.base.url`` has to be the address the social media audience can
-  reach**. Set it in *Settings / Technical / System Parameters*, and add
-  ``web.base.url.freeze`` set to ``True``, otherwise every administrator
-  login rewrites it with the host that was used.
+  reach**. Set it in *Settings > Technical > Parameters > System
+  Parameters*, and add ``web.base.url.freeze`` set to ``True``,
+  otherwise every administrator login rewrites it with the host that was
+  used.
 - The parameter ``link_tracker.no_external_tracking`` must stay unset:
   with it the UTM parameters are stripped from the links pointing
   outside this Odoo.
@@ -137,14 +143,21 @@ Tracked links.
   on ``link.tracker``, which the core module only grants for reading. A
   user without it cannot publish a post containing a link.
 - Each social media reports a *UTM Medium*, taken from the
-  ``social.media`` record. The connector modules provide a default one,
-  and it can be overridden per social media.
+  ``utm_medium_id`` field of its ``social.media`` record. *Social Media
+  Linkedin* answers the LinkedIn medium of ``utm``, and a social media
+  that answers none reports the *Social Media* medium this module ships.
+  No view draws the field, so a medium of its own is written from a data
+  file.
 
 Usage
 =====
 
 Posts on the dashboard.
 -----------------------
+
+- The header of the dashboard carries *Add account*, which opens the
+  list of social media to link one, and *Add Post*, which opens a new
+  post, next to the *Update* button.
 
 - The dashboard lists the publications that exist on the social media,
   together with their statistics. A scheduled publication is not online
@@ -184,8 +197,11 @@ Posts on the dashboard.
 
 - Commenting a publication, answering a comment and *Recommend* are read
   from and written to the social media, so they come with *Social Media
-  Sync*. The card shows the counters either way; the entries that write
-  are only rendered with that module installed.
+  Sync*. Without that module the card shows neither the counters nor the
+  entries: the footer of a card in this module carries only the campaign
+  badge. Both the like and comment counters and the entries that write
+  them come with that module, and only for a social media whose bridge
+  serves them.
 
 - Deleting a post deletes the publications it created. A post whose
   publications are still online cannot be deleted: remove them from the
@@ -266,17 +282,18 @@ Statistics.
 
 - Only the social media reporting figures **by day** have a history to
   draw. The ones that only publish lifetime counters keep their figures
-  on the account form and draw nothing here, so an account of theirs
-  shows the standard empty view. Each connector module documents which
-  case it is.
+  on the card of the dashboard and draw nothing here, so an account of
+  theirs shows the standard empty view. Each connector module documents
+  which case it is.
 
   |STATISTICS|
 
 Archive an account.
 -------------------
 
-- The account form provides an *Archive account* button, available to
-  the user responsible for the account.
+- The account is archived from the *Archive* entry of the *Actions* menu
+  of the account form, available to the user responsible for the
+  account.
 
   |ACCOUNT_FORM|
 
@@ -290,8 +307,8 @@ Archive an account.
   shows an *Archived* ribbon and an *Unarchive* button.
 
 - Nothing is removed from the social media. The archived account shows
-  an *Archived* ribbon and an *Unarchive account* button that restores
-  everything.
+  an *Archived* ribbon, and the *Unarchive* entry of its *Actions* menu
+  restores everything.
 
 - A scheduled post whose date passed while the account was archived
   comes back as *Draft*, with the reason in its chatter: unarchiving
@@ -336,9 +353,10 @@ Scheduled publishing.
 - A media removed from a post is not deleted on the spot: it stops
   belonging to the post, and the scheduled action *Base: Auto-vacuum
   internal data* deletes it a day later. Until then only the
-  administrators see it, in *Settings > Technical > Attachments*, which
-  is where a file removed by mistake can still be downloaded. A file
-  attached to a post that is never saved leaves the same way.
+  administrators see it, in *Settings > Technical > Database Structure >
+  Attachments*, which is where a file removed by mistake can still be
+  downloaded. A file attached to a post that is never saved leaves the
+  same way.
 - A media a publication still carries is never taken away: the
   publications of a post point at the very files of the post.
 - A *Planned* post can be moved to *Cancelled* with the *Cancel* button,
@@ -451,8 +469,8 @@ shared with the mailings, the leads and the UTM tracking.
   all planned would otherwise look empty.
 - The tab opens with the two figures of the whole campaign:
 
-  - *Social Media Tracked Clicks*, the clicks Odoo counted on the short
-    links of the publications of the campaign.
+  - *Clicks*, the field ``social_link_click_count``, the clicks Odoo
+    counted on the short links of the publications of the campaign.
   - *Engagement*, the total engagement of those publications.
 
 - Underneath, one card per post, whatever its state:
@@ -480,8 +498,12 @@ shared with the mailings, the leads and the UTM tracking.
   they can be switched between kanban, list and form.
 - Both the tab and the stat button are only visible to the users of the
   social media groups.
-- The account form gets a *Marketing Campaigns* stat button, which opens
-  the campaigns of the posts and of the publications of that account.
+- The account form gets three stat buttons: *Posts*, which opens the
+  posts this account is one of the targets of; *Marketing Campaigns*,
+  which opens the campaigns of its posts and of its publications; and
+  *Open account*, which opens the account on the social media in a new
+  tab, the same address the *Go to account* link of the dashboard
+  carries.
 
 Tracked links.
 --------------
@@ -497,8 +519,10 @@ Tracked links.
 - Each publication owns its UTM source, created the first time one of
   its links is tracked, so the same link published on two accounts
   produces two tracked links and a click can be attributed to the
-  account it came from. The UTM medium comes from the social media; the
-  connector modules provide a default one.
+  account it came from. The UTM medium comes from the ``utm_medium_id``
+  field of the ``social.media`` record: *Social Media Linkedin* answers
+  the LinkedIn medium of ``utm``, and a social media that answers none
+  reports the *Social Media* medium this module ships.
 - A tracked link is named after the publication that carries it, as
   ``[social media] account - beginning of the message``, and not after
   the page it points to: what a click is attributed to is the
@@ -512,10 +536,10 @@ Tracked links.
   of the marketing campaign.
 - The same two figures exist on the post: *Tracked Clicks* adds up what
   Odoo counted for all its publications, and *Clicks* is what the social
-  media report. The list of posts shows *Clicks* and offers *Tracked
-  Clicks* as an optional column; the post form shows *Tracked Clicks*
-  once the post has publications.
-- On the campaign, *Social Media Tracked Clicks* counts only the clicks
+  media report. The list of posts offers *Tracked Clicks* as an optional
+  column; *Clicks*, the figure the social media report, is added to that
+  list by *Social Media Sync*. The post form shows no click figure.
+- On the campaign, ``social_link_click_count`` counts only the clicks
   that came from a publication. It is therefore **part of** the native
   *Clicks* button of the campaign, never a figure to add to it: a
   campaign that also tracks links outside the social media sees the
@@ -585,12 +609,16 @@ Statistics of the accounts.
   announcing an update.
 - The *Update* button of the dashboard does the same over every account,
   and adds the figures up again afterwards. It is the only thing on the
-  dashboard that costs calls, one per account, and it is meant to: a
-  person asked for it. If no account of the dashboard reports figures by
-  day, it says there is nothing to bring in rather than announcing an
-  update that did not happen.
-- Opening the dashboard costs nothing at all. There is no throttle on
-  the button for that reason: there is nothing to protect.
+  dashboard that costs a call per account, and it is meant to: a person
+  asked for it. The same press also reads back the figures of the
+  publications of the last 30 days, and opening a card costs the one
+  call that asks whether that publication is still online. If no account
+  of the dashboard reports figures by day, the *Update* button says
+  there is nothing to bring in rather than announcing an update that did
+  not happen.
+- Opening the dashboard itself costs nothing at all. There is no
+  throttle on the *Update* button for that reason: there is nothing to
+  protect.
 - Importing the publications an account already has and sweeping the
   feed for the publications deleted there are **not** part of this
   module. They cost one call per page or per publication, so they grow
@@ -638,6 +666,10 @@ Figures of a publication.
 Account ownership.
 ------------------
 
+- An account is linked from *Social Media* > *Configuration* > *Social
+  Media*, with the *Associate account* button of the social media, which
+  opens the association wizard of its connector. The accounts already
+  linked are listed in *Social Media* > *Configuration* > *Accounts*.
 - Every account has a *Responsible* user, set to whoever linked it. A
   regular user of the *Social Media / User: Own Accounts* group only
   sees and manages his own accounts, their posts and statistics.
@@ -658,26 +690,29 @@ Account ownership.
   when it is linked again.
 - If another user completes the association of an account that is not
   his, nothing is written and a notification explains that the account
-  belongs to somebody else. The same happens when the administrator of
-  the wizard tries to change the credentials of an account that is not
-  his.
-- The *Update account*, *Archive account* and *Unarchive account*
-  buttons of the account form are shown to the responsible user and to
-  the *Social Media / Administrator* group. The credentials themselves
-  (client keys and tokens) stay hidden from everybody but the system
-  administrators, and the connectors read and write them internally, so
-  an administrator of the application can renew them without ever seeing
-  them.
+  belongs to somebody else. A *Social Media / Administrator* may relink
+  an account that is not his, and only the check on the company can
+  still stop him: an account of a company he has not activated answers
+  *The account ... belongs to another company*.
+- The *Update account* and *Update statistics* buttons of the account
+  form are shown to the responsible user and to the *Social Media /
+  Administrator* group; archiving and unarchiving are done from the
+  *Actions* menu, which a user reaches on his own accounts. The
+  credentials themselves (client keys and tokens) stay hidden from
+  everybody but the system administrators, and the connectors read and
+  write them internally, so an administrator of the application can
+  renew them without ever seeing them.
 
 Notifications you may never see.
 --------------------------------
 
 - *Update statistics* answers one of two notices: that the daily figures
   were refreshed, or that the social media reports no figures by day and
-  there is no history to update. The second one only reaches a connector
-  whose API answers aggregated figures alone, which is neither of the
-  two shipped today: LinkedIn and X both report by day, so the button
-  always answers the first one.
+  there is no history to update. The second one reaches every social
+  media that reports no figures by day, and X is one of them: pressing
+  *Update statistics* on an X account answers that there is no history
+  to update. LinkedIn does report by day, so on a LinkedIn account the
+  button answers the first one.
 
 .. |DASHBOARD| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/DASHBOARD.png
 .. |POSTS_KANBAN| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/POSTS_KANBAN.png
@@ -698,19 +733,6 @@ they are only filtered by their responsible user. In a multi-company
 database a social media administrator therefore sees the posts of every
 company.
 
-Limits of the social media, not of the account
-----------------------------------------------
-
-The limits a post is checked against are those of the social media, not
-those of the account. A paid plan can raise them — X Premium takes the
-message from 280 to 25 000 characters — and an account on such a plan is
-warned today about a post it could publish. ``_get_post_errors`` already
-takes the account next to the ``media_type``, and the publication
-already passes it, so what is missing is a connector able to tell the
-plan apart. Until then the checks err on the safe side: a limit stricter
-than the one the account really has warns too much, never too little,
-and it never blocks saving.
-
 Figures older than the window
 -----------------------------
 
@@ -723,10 +745,11 @@ it — but on a card it reads like a figure that failed to arrive, and
 there is no way from here to tell the two apart. Reading the history of
 an account is what *Social Media Sync* is for.
 
-The list, the search filters and the form of a publication are drawn by
-that module for the same reason: they span the whole history, where a
-figure inside the window sits next to one that was never read. The
-*Statistics* dialog of a card does not, and it draws them all.
+The figures of those views are added by that module for the same reason:
+the list, the search filters and the form of a publication span the
+whole history, where a figure inside the window sits next to one that
+was never read. The *Statistics* dialog of a card does not, and it draws
+them all.
 
 Storage of the medias of a post
 -------------------------------
@@ -745,10 +768,11 @@ them. The medias of a post are out of that reach on purpose, being
 editorial content that a post stores once however many accounts it went
 to.
 
-Inside this module the only deletions are the cascade that takes the
-medias of a post or of a publication when the record itself is deleted,
-and ``social.account.action_purge_account``, which drops an account with
-its publication history. Moving those bytes out of the filestore is not
+Inside this module the deletions are the cascade that takes the medias
+of a post or of a publication when the record itself is deleted, the
+vacuum that deletes a day later the medias a post let go of, and
+``social.account.action_purge_account``, which drops an account with its
+publication history. Moving those bytes out of the filestore is not
 something this module decides either: an external backend is configured
 at the level of Odoo, through ``ir_attachment.location``, and applies to
 every attachment of the database.
