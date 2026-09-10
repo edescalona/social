@@ -15,9 +15,11 @@ Main features:
   or the video, never both.
 - Daily statistics of the page: the figures LinkedIn reports by day are
   written as a time series, with reports and native graph and pivot views over
-  them. It costs one call per account whatever the page published, because the
-  figures asked for are those of the whole organization and the URNs of the
-  publications never enter the query.
+  them. It costs a fixed number of calls per account, decided by the width of
+  the window asked for and not by what the page published: one call for the
+  refresh of the last days, a handful for the whole period LinkedIn reports,
+  because the figures asked for are those of the whole organization and the
+  URNs of the publications never enter the query.
 - What LinkedIn will not publish, shown on the post while it is written. The
   message is checked against **3000 characters**, and the medias against **20
   images** of at most **10 MB** each in JPG, PNG or GIF, and **one video** of
@@ -32,7 +34,9 @@ Statistics account
 1. The eye icon: Total number of views, which may include multiple views by the same user.
 2. The hand icon: the interactions (clicks, likes, comments and shares) the
    page accumulated over the days of the series.
-3. The star icon: the engagement LinkedIn reports by day, averaged. It is a
-   ratio, so it is averaged and never added up.
+3. The star icon: the engagement of the account, its interactions over its
+   impressions, shown as a percentage. The engagement LinkedIn reports by day
+   is kept on each row of the time series and read in the graph and pivot
+   views; it is never averaged into the card.
 
    ![STATISTICS_ACCOUNT](../static/img/readme/STATISTICS_ACCOUNT.png)

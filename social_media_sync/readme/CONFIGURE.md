@@ -23,16 +23,18 @@ reaches: `social_media_sync.media_max_age_days`. The module installs it at
 `0`, so it is there to be found, and zero is no policy at all: no media is
 ever released.
 
-A system parameter holds text, and this one is read as a number of days.
-Anything that cannot be read as one — a word, an empty value — is taken as no
-policy and leaves a warning in the log; zero and any negative number are no
-policy too, and those are not worth a warning. No media is released in any of
-those cases.
+A system parameter holds text, and this one is read as a number of days. A
+value that cannot be read as one — a word — is taken as no policy and leaves
+a warning in the log; an empty value, zero and any negative number are no
+policy too and are not worth a warning. No media is released in any of those
+cases.
 
 Written as a positive number of days, the daily vacuum releases the images and
 videos this module downloaded for the imported publications older than that,
-and the files are deleted a day later. Two things to weigh before writing a
-number:
+and the files are deleted a day later. One run reaches a thousand
+publications and takes them in the order they were created, so a database
+holding more aged publications than that keeps the medias of the ones beyond
+the first thousand. Two things to weigh before writing a number:
 
 - *What is lost* is the media itself. The card of an aged publication is drawn
   with no image and no placeholder in its place. The link to the social media,

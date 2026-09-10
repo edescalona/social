@@ -4,7 +4,10 @@ Calendar view
 1. Go to Social Media > Posts
 2. Click on the Calendar icon to open the calendar view
 3. Click on a Post and a popover with its details opens. Its *Edit* button
-   opens the post form in a dialog, where it can be modified and saved.
+   opens the post form in a dialog. A draft post can be modified and saved
+   there; a planned or a cancelled one has to be taken back to draft with the
+   *Draft* button of the form first, and a post that already reached one of
+   its accounts keeps its content locked.
 
 Each post is placed on the date it was published; if it has not been published
 yet, on its schedule date; and if it is not scheduled, on its creation date.
@@ -13,10 +16,12 @@ really published.
 
 Posts cannot be rescheduled by dragging them across the calendar: the date
 shown is computed from the dates of the post. To change it, open the post and
-modify its schedule date.
+press *Draft* — a post is planned as soon as a schedule date is saved, and
+that date can only be edited while the post is in draft — and then modify its
+schedule date.
 
-Deletion is the only action disabled in this view: posts are deleted from the
-list or the form.
+Deletion is disabled in this view: posts are deleted from the list or the
+form.
 
 Colors by publication status
 ---------------------------

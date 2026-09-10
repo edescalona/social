@@ -25,7 +25,9 @@ Campaign visibility of a shared post.
 
 The record rule of `social.advertising.campaign` restricts a user to the campaigns he is
 responsible for. If an administrator assigns a post to a user and that post is
-linked to a campaign of somebody else, the badge is empty for that user. A
+linked to a campaign of somebody else, that user cannot open the campaign
+from the post, and the *Social Campaign* field offers him nothing to choose
+from. A
 finer rule, for instance sharing the campaigns of a campaign group, is left
 for a later version.
 

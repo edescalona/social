@@ -7,15 +7,12 @@ that belongs to it.
 Installing *Social Media Linkedin* alone is a valid installation: the account
 is linked, publishes, deletes and shows the daily figures of its page.
 
-Upgrading from a version where *Social Media Linkedin* held both halves
+The mark the update check compares against
 ---------------
 
-The stored field `social.account.linkedin_statistics_checkpoint` moves from
-*Social Media Linkedin* to this module, and no migration script ships with
-it. Recreate the database instead of updating it in place.
-
-Updating in place is what loses the column, and losing it has a visible
-consequence: the checkpoint is the baseline the update check compares
-against, so the first pass of the bihourly cron after the deployment finds no
-baseline on any account and turns the *Update* badge on for all of them at
-once.
+`social.account.linkedin_statistics_checkpoint` is stored by this module and
+holds the daily figures LinkedIn reported for the whole page as of the last
+import. An account that has no mark yet is given one on the first pass of
+the bihourly check and announced as having nothing to import, so installing
+this module on a database that already publishes on LinkedIn does not put
+the notice up on every account at once.

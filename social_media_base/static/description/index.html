@@ -377,14 +377,19 @@ flexible and scalable, it allows developers and businesses to integrate
 and customize social features according to their needs.</p>
 <p>What it asks of a social media is always a fixed number of calls per
 account: publishing, deleting, and the daily series of the page. Reading
-back what an account already published — the publications themselves,
-their figures, their comments — costs one call per page or per
-publication, so it grows with the history of the account and lives in
-<em>Social Media Sync</em> instead. Without that module the dashboard still
-works: the figures of a card are added up from what is already stored,
-and a publication shows the clicks of its tracked link, which is the
-only figure counted here. The figures a social media reports are drawn
-by <em>Social Media Sync</em>, the module that knows how to ask for them.</p>
+back what an account already published — the publications themselves and
+their comments — costs one call per page, so it grows with the history
+of the account and lives in <em>Social Media Sync</em> instead. The figures of
+a publication are read back here, but only for the ones published in the
+last 30 days: what that window costs is decided by the days it looks
+back and not by the history of the account. Without <em>Social Media Sync</em>
+the dashboard still works: the figures of a card are added up from what
+is already stored, and the <em>Statistics</em> dialog of a publication shows
+both the clicks Odoo counted on its own tracked link and the figures the
+social media reported for it, read back over the last 30 days. The list,
+the search filters and the form of a publication draw those figures only
+with <em>Social Media Sync</em> installed, because they span the whole history
+of the account.</p>
 <p>This module does not connect to any social media by itself: it brings
 the models, the security, the scheduled actions and the common
 interface. To use it, a connector module has to be installed as well
@@ -469,16 +474,15 @@ go out as usual.</li>
 </li>
 <li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-21">Known issues / Roadmap</a><ul>
 <li><a class="reference internal" href="#multi-company-scope-of-the-posts" id="toc-entry-22">Multi-company scope of the posts.</a></li>
-<li><a class="reference internal" href="#limits-of-the-social-media-not-of-the-account" id="toc-entry-23">Limits of the social media, not of the account</a></li>
-<li><a class="reference internal" href="#figures-older-than-the-window" id="toc-entry-24">Figures older than the window</a></li>
-<li><a class="reference internal" href="#storage-of-the-medias-of-a-post" id="toc-entry-25">Storage of the medias of a post</a></li>
+<li><a class="reference internal" href="#figures-older-than-the-window" id="toc-entry-23">Figures older than the window</a></li>
+<li><a class="reference internal" href="#storage-of-the-medias-of-a-post" id="toc-entry-24">Storage of the medias of a post</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-26">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-27">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-28">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-29">Contributors</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-30">Maintainers</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-25">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-26">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-27">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-28">Contributors</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-29">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -501,9 +505,10 @@ affected, since every module of it depends on this one.</p>
 <ul class="simple">
 <li>The short links published on the social media point at this Odoo, so
 <strong>``web.base.url`` has to be the address the social media audience can
-reach</strong>. Set it in <em>Settings / Technical / System Parameters</em>, and add
-<tt class="docutils literal">web.base.url.freeze</tt> set to <tt class="docutils literal">True</tt>, otherwise every administrator
-login rewrites it with the host that was used.</li>
+reach</strong>. Set it in <em>Settings &gt; Technical &gt; Parameters &gt; System
+Parameters</em>, and add <tt class="docutils literal">web.base.url.freeze</tt> set to <tt class="docutils literal">True</tt>,
+otherwise every administrator login rewrites it with the host that was
+used.</li>
 <li>The parameter <tt class="docutils literal">link_tracker.no_external_tracking</tt> must stay unset:
 with it the UTM parameters are stripped from the links pointing
 outside this Odoo.</li>
@@ -511,8 +516,11 @@ outside this Odoo.</li>
 on <tt class="docutils literal">link.tracker</tt>, which the core module only grants for reading. A
 user without it cannot publish a post containing a link.</li>
 <li>Each social media reports a <em>UTM Medium</em>, taken from the
-<tt class="docutils literal">social.media</tt> record. The connector modules provide a default one,
-and it can be overridden per social media.</li>
+<tt class="docutils literal">utm_medium_id</tt> field of its <tt class="docutils literal">social.media</tt> record. <em>Social Media
+Linkedin</em> answers the LinkedIn medium of <tt class="docutils literal">utm</tt>, and a social media
+that answers none reports the <em>Social Media</em> medium this module ships.
+No view draws the field, so a medium of its own is written from a data
+file.</li>
 </ul>
 </div>
 </div>
@@ -521,6 +529,10 @@ and it can be overridden per social media.</li>
 <div class="section" id="posts-on-the-dashboard">
 <h2><a class="toc-backref" href="#toc-entry-5">Posts on the dashboard.</a></h2>
 <ul>
+<li><p class="first">The header of the dashboard carries <em>Add account</em>, which opens the
+list of social media to link one, and <em>Add Post</em>, which opens a new
+post, next to the <em>Update</em> button.</p>
+</li>
 <li><p class="first">The dashboard lists the publications that exist on the social media,
 together with their statistics. A scheduled publication is not online
 yet and a failed one never got there, so neither of them is listed:
@@ -559,8 +571,11 @@ Media Sync</em>.</p>
 </li>
 <li><p class="first">Commenting a publication, answering a comment and <em>Recommend</em> are read
 from and written to the social media, so they come with <em>Social Media
-Sync</em>. The card shows the counters either way; the entries that write
-are only rendered with that module installed.</p>
+Sync</em>. Without that module the card shows neither the counters nor the
+entries: the footer of a card in this module carries only the campaign
+badge. Both the like and comment counters and the entries that write
+them come with that module, and only for a social media whose bridge
+serves them.</p>
 </li>
 <li><p class="first">Deleting a post deletes the publications it created. A post whose
 publications are still online cannot be deleted: remove them from the
@@ -641,9 +656,9 @@ Odoo, which is indistinguishable from a day with no activity.</p>
 </li>
 <li><p class="first">Only the social media reporting figures <strong>by day</strong> have a history to
 draw. The ones that only publish lifetime counters keep their figures
-on the account form and draw nothing here, so an account of theirs
-shows the standard empty view. Each connector module documents which
-case it is.</p>
+on the card of the dashboard and draw nothing here, so an account of
+theirs shows the standard empty view. Each connector module documents
+which case it is.</p>
 <p><img alt="STATISTICS" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/STATISTICS.png" /></p>
 </li>
 </ul>
@@ -651,8 +666,9 @@ case it is.</p>
 <div class="section" id="archive-an-account">
 <h2><a class="toc-backref" href="#toc-entry-7">Archive an account.</a></h2>
 <ul>
-<li><p class="first">The account form provides an <em>Archive account</em> button, available to
-the user responsible for the account.</p>
+<li><p class="first">The account is archived from the <em>Archive</em> entry of the <em>Actions</em> menu
+of the account form, available to the user responsible for the
+account.</p>
 <p><img alt="ACCOUNT_FORM" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_base/static/img/readme/ACCOUNT_FORM.png" /></p>
 </li>
 <li><p class="first">Archiving an account also archives its dashboard publications and the
@@ -665,8 +681,8 @@ found in the <em>Posts</em> menu with the <em>Archived</em> filter, and their fo
 shows an <em>Archived</em> ribbon and an <em>Unarchive</em> button.</p>
 </li>
 <li><p class="first">Nothing is removed from the social media. The archived account shows
-an <em>Archived</em> ribbon and an <em>Unarchive account</em> button that restores
-everything.</p>
+an <em>Archived</em> ribbon, and the <em>Unarchive</em> entry of its <em>Actions</em> menu
+restores everything.</p>
 </li>
 <li><p class="first">A scheduled post whose date passed while the account was archived
 comes back as <em>Draft</em>, with the reason in its chatter: unarchiving
@@ -682,8 +698,9 @@ Reschedule it to publish it.</p>
 only to the <em>Social Media / Administrator</em> group. A regular user can
 only archive his accounts, he is not allowed to delete them.</li>
 <li>It deletes the account, its dashboard publications and the posts that
-were linked only to that account, together with their metrics,
-comments and attachments.</li>
+were linked only to that account, together with their metrics and
+attachments. Comments live on the social media only and are never
+stored in Odoo, so there are none to delete.</li>
 <li>The records of the other applications that reference the account only
 lose the link, they are <strong>not</strong> deleted.</li>
 <li>Nothing is deleted from the social media: the publications stay
@@ -714,9 +731,10 @@ remains the last authority on what it accepts.</li>
 <li>A media removed from a post is not deleted on the spot: it stops
 belonging to the post, and the scheduled action <em>Base: Auto-vacuum
 internal data</em> deletes it a day later. Until then only the
-administrators see it, in <em>Settings &gt; Technical &gt; Attachments</em>, which
-is where a file removed by mistake can still be downloaded. A file
-attached to a post that is never saved leaves the same way.</li>
+administrators see it, in <em>Settings &gt; Technical &gt; Database Structure &gt;
+Attachments</em>, which is where a file removed by mistake can still be
+downloaded. A file attached to a post that is never saved leaves the
+same way.</li>
 <li>A media a publication still carries is never taken away: the
 publications of a post point at the very files of the post.</li>
 <li>A <em>Planned</em> post can be moved to <em>Cancelled</em> with the <em>Cancel</em> button,
@@ -831,8 +849,8 @@ shared with the mailings, the leads and the UTM tracking.</p>
 are not created until it is published, so a campaign whose posts are
 all planned would otherwise look empty.</li>
 <li>The tab opens with the two figures of the whole campaign:<ul>
-<li><em>Social Media Tracked Clicks</em>, the clicks Odoo counted on the short
-links of the publications of the campaign.</li>
+<li><em>Clicks</em>, the field <tt class="docutils literal">social_link_click_count</tt>, the clicks Odoo
+counted on the short links of the publications of the campaign.</li>
 <li><em>Engagement</em>, the total engagement of those publications.</li>
 </ul>
 </li>
@@ -861,8 +879,12 @@ prefixed with <tt class="docutils literal">social_</tt>, but no view shows them.
 they can be switched between kanban, list and form.</li>
 <li>Both the tab and the stat button are only visible to the users of the
 social media groups.</li>
-<li>The account form gets a <em>Marketing Campaigns</em> stat button, which opens
-the campaigns of the posts and of the publications of that account.</li>
+<li>The account form gets three stat buttons: <em>Posts</em>, which opens the
+posts this account is one of the targets of; <em>Marketing Campaigns</em>,
+which opens the campaigns of its posts and of its publications; and
+<em>Open account</em>, which opens the account on the social media in a new
+tab, the same address the <em>Go to account</em> link of the dashboard
+carries.</li>
 </ul>
 </div>
 <div class="section" id="tracked-links-1">
@@ -879,8 +901,10 @@ post.</li>
 <li>Each publication owns its UTM source, created the first time one of
 its links is tracked, so the same link published on two accounts
 produces two tracked links and a click can be attributed to the
-account it came from. The UTM medium comes from the social media; the
-connector modules provide a default one.</li>
+account it came from. The UTM medium comes from the <tt class="docutils literal">utm_medium_id</tt>
+field of the <tt class="docutils literal">social.media</tt> record: <em>Social Media Linkedin</em> answers
+the LinkedIn medium of <tt class="docutils literal">utm</tt>, and a social media that answers none
+reports the <em>Social Media</em> medium this module ships.</li>
 <li>A tracked link is named after the publication that carries it, as
 <tt class="docutils literal">[social media] account - beginning of the message</tt>, and not after
 the page it points to: what a click is attributed to is the
@@ -894,10 +918,10 @@ the publication itself. Only the first one feeds the <em>Clicks</em> button
 of the marketing campaign.</li>
 <li>The same two figures exist on the post: <em>Tracked Clicks</em> adds up what
 Odoo counted for all its publications, and <em>Clicks</em> is what the social
-media report. The list of posts shows <em>Clicks</em> and offers <em>Tracked
-Clicks</em> as an optional column; the post form shows <em>Tracked Clicks</em>
-once the post has publications.</li>
-<li>On the campaign, <em>Social Media Tracked Clicks</em> counts only the clicks
+media report. The list of posts offers <em>Tracked Clicks</em> as an optional
+column; <em>Clicks</em>, the figure the social media report, is added to that
+list by <em>Social Media Sync</em>. The post form shows no click figure.</li>
+<li>On the campaign, <tt class="docutils literal">social_link_click_count</tt> counts only the clicks
 that came from a publication. It is therefore <strong>part of</strong> the native
 <em>Clicks</em> button of the campaign, never a figure to add to it: a
 campaign that also tracks links outside the social media sees the
@@ -970,12 +994,16 @@ pass; on a social media with no figures by day it says so instead of
 announcing an update.</li>
 <li>The <em>Update</em> button of the dashboard does the same over every account,
 and adds the figures up again afterwards. It is the only thing on the
-dashboard that costs calls, one per account, and it is meant to: a
-person asked for it. If no account of the dashboard reports figures by
-day, it says there is nothing to bring in rather than announcing an
-update that did not happen.</li>
-<li>Opening the dashboard costs nothing at all. There is no throttle on
-the button for that reason: there is nothing to protect.</li>
+dashboard that costs a call per account, and it is meant to: a person
+asked for it. The same press also reads back the figures of the
+publications of the last 30 days, and opening a card costs the one
+call that asks whether that publication is still online. If no account
+of the dashboard reports figures by day, the <em>Update</em> button says
+there is nothing to bring in rather than announcing an update that did
+not happen.</li>
+<li>Opening the dashboard itself costs nothing at all. There is no
+throttle on the <em>Update</em> button for that reason: there is nothing to
+protect.</li>
 <li>Importing the publications an account already has and sweeping the
 feed for the publications deleted there are <strong>not</strong> part of this
 module. They cost one call per page or per publication, so they grow
@@ -1025,6 +1053,10 @@ rate limits it has to respect, is documented in that connector.</li>
 <div class="section" id="account-ownership">
 <h2><a class="toc-backref" href="#toc-entry-19">Account ownership.</a></h2>
 <ul class="simple">
+<li>An account is linked from <em>Social Media</em> &gt; <em>Configuration</em> &gt; <em>Social
+Media</em>, with the <em>Associate account</em> button of the social media, which
+opens the association wizard of its connector. The accounts already
+linked are listed in <em>Social Media</em> &gt; <em>Configuration</em> &gt; <em>Accounts</em>.</li>
 <li>Every account has a <em>Responsible</em> user, set to whoever linked it. A
 regular user of the <em>Social Media / User: Own Accounts</em> group only
 sees and manages his own accounts, their posts and statistics.</li>
@@ -1045,16 +1077,18 @@ identifier is the only exception: it is looked up by its user name
 when it is linked again.</li>
 <li>If another user completes the association of an account that is not
 his, nothing is written and a notification explains that the account
-belongs to somebody else. The same happens when the administrator of
-the wizard tries to change the credentials of an account that is not
-his.</li>
-<li>The <em>Update account</em>, <em>Archive account</em> and <em>Unarchive account</em>
-buttons of the account form are shown to the responsible user and to
-the <em>Social Media / Administrator</em> group. The credentials themselves
-(client keys and tokens) stay hidden from everybody but the system
-administrators, and the connectors read and write them internally, so
-an administrator of the application can renew them without ever seeing
-them.</li>
+belongs to somebody else. A <em>Social Media / Administrator</em> may relink
+an account that is not his, and only the check on the company can
+still stop him: an account of a company he has not activated answers
+<em>The account … belongs to another company</em>.</li>
+<li>The <em>Update account</em> and <em>Update statistics</em> buttons of the account
+form are shown to the responsible user and to the <em>Social Media /
+Administrator</em> group; archiving and unarchiving are done from the
+<em>Actions</em> menu, which a user reaches on his own accounts. The
+credentials themselves (client keys and tokens) stay hidden from
+everybody but the system administrators, and the connectors read and
+write them internally, so an administrator of the application can
+renew them without ever seeing them.</li>
 </ul>
 </div>
 <div class="section" id="notifications-you-may-never-see">
@@ -1062,10 +1096,11 @@ them.</li>
 <ul class="simple">
 <li><em>Update statistics</em> answers one of two notices: that the daily figures
 were refreshed, or that the social media reports no figures by day and
-there is no history to update. The second one only reaches a connector
-whose API answers aggregated figures alone, which is neither of the
-two shipped today: LinkedIn and X both report by day, so the button
-always answers the first one.</li>
+there is no history to update. The second one reaches every social
+media that reports no figures by day, and X is one of them: pressing
+<em>Update statistics</em> on an X account answers that there is no history
+to update. LinkedIn does report by day, so on a LinkedIn account the
+button answers the first one.</li>
 </ul>
 </div>
 </div>
@@ -1081,20 +1116,8 @@ they are only filtered by their responsible user. In a multi-company
 database a social media administrator therefore sees the posts of every
 company.</p>
 </div>
-<div class="section" id="limits-of-the-social-media-not-of-the-account">
-<h2><a class="toc-backref" href="#toc-entry-23">Limits of the social media, not of the account</a></h2>
-<p>The limits a post is checked against are those of the social media, not
-those of the account. A paid plan can raise them — X Premium takes the
-message from 280 to 25 000 characters — and an account on such a plan is
-warned today about a post it could publish. <tt class="docutils literal">_get_post_errors</tt> already
-takes the account next to the <tt class="docutils literal">media_type</tt>, and the publication
-already passes it, so what is missing is a connector able to tell the
-plan apart. Until then the checks err on the safe side: a limit stricter
-than the one the account really has warns too much, never too little,
-and it never blocks saving.</p>
-</div>
 <div class="section" id="figures-older-than-the-window">
-<h2><a class="toc-backref" href="#toc-entry-24">Figures older than the window</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Figures older than the window</a></h2>
 <p>The daily refresh reads back the publications of the last 30 days, which
 is what keeps its cost independent of the history of the account. A
 publication that was already older than that when the module was
@@ -1103,13 +1126,14 @@ window again. It is accurate — nobody ever asked the social media about
 it — but on a card it reads like a figure that failed to arrive, and
 there is no way from here to tell the two apart. Reading the history of
 an account is what <em>Social Media Sync</em> is for.</p>
-<p>The list, the search filters and the form of a publication are drawn by
-that module for the same reason: they span the whole history, where a
-figure inside the window sits next to one that was never read. The
-<em>Statistics</em> dialog of a card does not, and it draws them all.</p>
+<p>The figures of those views are added by that module for the same reason:
+the list, the search filters and the form of a publication span the
+whole history, where a figure inside the window sits next to one that
+was never read. The <em>Statistics</em> dialog of a card does not, and it draws
+them all.</p>
 </div>
 <div class="section" id="storage-of-the-medias-of-a-post">
-<h2><a class="toc-backref" href="#toc-entry-25">Storage of the medias of a post</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-24">Storage of the medias of a post</a></h2>
 <p>The images and videos of a post and of its publications are ordinary
 <tt class="docutils literal">ir.attachment</tt> records, kept for as long as the record that owns
 them. A post published on several accounts stores each media once,
@@ -1122,17 +1146,18 @@ own for every publication it imports, and a maximum age in days releases
 them. The medias of a post are out of that reach on purpose, being
 editorial content that a post stores once however many accounts it went
 to.</p>
-<p>Inside this module the only deletions are the cascade that takes the
-medias of a post or of a publication when the record itself is deleted,
-and <tt class="docutils literal">social.account.action_purge_account</tt>, which drops an account with
-its publication history. Moving those bytes out of the filestore is not
+<p>Inside this module the deletions are the cascade that takes the medias
+of a post or of a publication when the record itself is deleted, the
+vacuum that deletes a day later the medias a post let go of, and
+<tt class="docutils literal">social.account.action_purge_account</tt>, which drops an account with its
+publication history. Moving those bytes out of the filestore is not
 something this module decides either: an external backend is configured
 at the level of Odoo, through <tt class="docutils literal">ir_attachment.location</tt>, and applies to
 every attachment of the database.</p>
 </div>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-26">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-25">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -1140,15 +1165,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-27">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-26">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-28">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-27">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-29">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-28">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -1157,7 +1182,7 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-30">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-29">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

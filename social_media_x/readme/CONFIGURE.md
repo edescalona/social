@@ -9,16 +9,18 @@ Basic/Pro subscription), see
 grants general access to the API, so the account cannot be associated with a
 Free-tier App. The association wizard shows this warning, and when X rejects
 the request for this reason the module replaces the raw error with a message
-pointing to the pricing page. Note that the authorization screen of X is still
-shown with a Free-tier App: the rejection only happens afterwards, when the
-module reads the authorized user, and the message is then displayed on the
-Dashboard.
+pointing to the pricing page. Note that a Free-tier App can be refused at two
+different moments: when the request token is asked, before any authorization
+screen is shown, and the wizard answers with the pricing notice; or later,
+when the module reads the authorized user, and the message is then delivered
+on the Dashboard.
 
 A call made with a Free-tier account answers ``403 Forbidden``, either with
 ``"reason": "client-not-enrolled"`` or asking for an App attached to a
 Project, since only a paid App can belong to one. Every endpoint this module
-uses is affected: linking the account, refreshing its card, publishing and
-deleting.
+uses is affected: linking the account, refreshing the data of the account,
+publishing (message and media upload), deleting, checking whether a
+publication is still online and reading the figures of the recent ones.
 
 ![FREE_PLAN_DEPRECATED](../static/img/readme/FREE_PLAN_DEPRECATED.png)
 
@@ -38,7 +40,8 @@ The steps required for using it are defined below:
 
   ![CONFIGURATION_ACCOUNT](../static/img/readme/CONFIGURATION_ACCOUNT.png)
 
-- Once on the page, in the App Permissions section, select the Read and Write and Direct Messages.
+- Once on the page, in the App Permissions section, select *Read and write*,
+  which is what the endpoints this module calls need.
 
   ![APP_PERMISIONS](../static/img/readme/APP_PERMISIONS.png)
 
@@ -47,7 +50,7 @@ The steps required for using it are defined below:
   ![TYPE_APP](../static/img/readme/TYPE_APP.png)
 
 - Then, in the Callback URI / Redirect URL section, add a new address. Here are the steps to get that URL in Odoo:
-   * Go to *Configuration* > *Technical* > System Parameters.
+   * Go to *Settings* > *Technical* > *Parameters* > *System Parameters*.
    * Search for web.base.url
    * Copy the base URL and concatenate it with the endpoint.
      Example:
@@ -74,7 +77,7 @@ Learn more at [X Developer Portal](https://developer.twitter.com)
 Registering the API Key and API Key Secret. Integration of a user account.
 ---------------
 
-- Go to *Social Media* > Configuration > Social medias
+- Go to *Social Media* > *Configuration* > *Social Media*
 - Click on  the *Associate Account* button for the desired social media.
 
   ![ASSOCIATE_ACCOUNT](../static/img/readme/ASSOCIATE_ACCOUNT.png)
@@ -109,9 +112,12 @@ Registering the API Key and API Key Secret. Integration of a user account.
   already exists.* Create a different developer App for that account.
 - Besides the OAuth 1.0a authorization of the user, the module obtains an
   application-only *bearer token* (OAuth 2.0 *client credentials*) from the
-  same API Key and API Secret; that is the one every read of X answers to,
-  from refreshing the card of the account to whatever a synchronization
-  module asks for, see
+  same API Key and API Secret; that is the one the reads about the posts
+  answer to — the figures of the recent publications, the check that one of
+  them is still online and whatever a synchronization module asks for —
+  while reading the authorized user, which is what the association and the
+  update of the data of the account do, travels with the OAuth 1.0a
+  credentials of the user, see
   [about the X API](https://docs.x.com/x-api/getting-started/about-x-api). If X
   does not deliver it, the account is not created and the notice *The account
   was not created: the OAuth2 access token could not be obtained.* is shown.

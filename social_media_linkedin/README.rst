@@ -47,9 +47,12 @@ Main features:
   images or the video, never both.
 - Daily statistics of the page: the figures LinkedIn reports by day are
   written as a time series, with reports and native graph and pivot
-  views over them. It costs one call per account whatever the page
-  published, because the figures asked for are those of the whole
-  organization and the URNs of the publications never enter the query.
+  views over them. It costs a fixed number of calls per account, decided
+  by the width of the window asked for and not by what the page
+  published: one call for the refresh of the last days, a handful for
+  the whole period LinkedIn reports, because the figures asked for are
+  those of the whole organization and the URNs of the publications never
+  enter the query.
 - What LinkedIn will not publish, shown on the post while it is written.
   The message is checked against **3000 characters**, and the medias
   against **20 images** of at most **10 MB** each in JPG, PNG or GIF,
@@ -68,8 +71,10 @@ Statistics account
 2. The hand icon: the interactions (clicks, likes, comments and shares)
    the page accumulated over the days of the series.
 
-3. The star icon: the engagement LinkedIn reports by day, averaged. It
-   is a ratio, so it is averaged and never added up.
+3. The star icon: the engagement of the account, its interactions over
+   its impressions, shown as a percentage. The engagement LinkedIn
+   reports by day is kept on each row of the time series and read in the
+   graph and pivot views; it is never averaged into the card.
 
    |STATISTICS_ACCOUNT|
 
@@ -213,11 +218,14 @@ the server besides the module itself.
   and the account cannot be authorized again until it is removed from
   the field.
 
-  Every call is sent with the ``LinkedIn-Version: 202607`` and
-  ``X-Restli-Protocol-Version: 2.0.0`` headers. LinkedIn retires each
-  version of the API about a year after publishing it, so the module has
-  to be updated periodically: once the version is no longer supported,
-  LinkedIn answers every request with a version error.
+  Every call to the versioned REST API carries the
+  ``LinkedIn-Version: 202607`` and ``X-Restli-Protocol-Version: 2.0.0``
+  headers. The OAuth calls of the association — the code-for-token
+  exchange and the token introspection — and the download of the
+  organization logo do not. LinkedIn retires each version of the API
+  about a year after publishing it, so the module has to be updated
+  periodically: once the version is no longer supported, LinkedIn
+  answers every request with a version error.
 
 - At the top of the aforementioned tab, you will see the Client ID and
   Primary Client Secret information.
@@ -225,7 +233,7 @@ the server besides the module itself.
 - Configure the access points for which you want to use the account.
   Follow these steps:
 
-  - Go to *Settings* > *Technical* > System Parameters.
+  - Go to *Settings* > *Technical* > *Parameters* > *System Parameters*.
   - Search for web.base.url
   - Copy the base URL and concatenate it with the endpoint. Then, in
     your LinkedIn Developer Account, on the Authentication tab, in the
@@ -239,7 +247,7 @@ the server besides the module itself.
 Registering the Client ID and Client Secret. Integration of a user account.
 ---------------------------------------------------------------------------
 
-- Go to *Social Media* > Configuration > Social medias
+- Go to *Social Media* > Configuration > Social Media
 
 - Click on the *Associate Account* button for the desired social media.
 
@@ -299,9 +307,9 @@ System parameters
 
 Nothing here has to be set for the connector to work: each key defaults
 to the value the code carries, and it only exists once it is written by
-hand in *Settings* > *Technical* > *System Parameters*. They are bounded
-when they are read, so a value outside its range is brought back into it
-instead of being obeyed.
+hand in *Settings* > *Technical* > *Parameters* > *System Parameters*.
+They are bounded when they are read, so a value outside its range is
+brought back into it instead of being obeyed.
 
 +-----------------------------------------------+---------+-------------------+-------------------+
 | Parameter                                     | Default | Unit              | Bounds            |
@@ -321,9 +329,11 @@ product: it is time the publication spends inside its own transaction.
 Past the ``limit_time_real`` of the deployment — 120 seconds by default,
 and the scheduled actions inherit it — the worker is killed with the
 video already uploaded on LinkedIn and nothing published in Odoo. That
-is why the product is capped at 600 seconds whatever the two numbers
-say, and why raising the wait for a long video means raising
-``limit_time_real`` as well.
+is why the number of polls is cut down to what 600 seconds allow at the
+delay in force, and why raising the wait for a long video means raising
+``limit_time_real`` as well. A delay longer than the ceiling itself is
+not cut: it becomes one single wait, and setting one is asking for the
+worker to be killed.
 
 Below their bounds the numbers stop making sense rather than merely
 being small: zero polls publishes nothing without ever asking LinkedIn,
@@ -430,9 +440,8 @@ Archive Account Linkedin
 
 - Go to *Social Media* > Configuration > Accounts
 
-- Select the account
-
-- Click on the *Archive account* button
+- Select the account and pick *Archive* in the *Actions* menu of the
+  form.
 
   |ARCHIVE_ACCOUNT|
 
@@ -527,9 +536,11 @@ Figures of a publication
 - A publication missing from the answer is one nobody interacted with:
   the finder leaves out the entities with no activity at all, so its
   figures are written as zeros and its date as read all the same.
-- No new permission is needed. It is ``r_organization_social``, the same
-  one that reads a single publication, so an account already associated
-  is not asked to authorize anything again.
+- No new permission is needed: the figures of a publication come from
+  ``organizationalEntityShareStatistics`` and ``socialActions``, which
+  the scopes already requested when the account was associated cover, so
+  an account already associated is not asked to authorize anything
+  again.
 - Reading the publications LinkedIn has and Odoo does not is another
   matter, and it stays in *Social Media LinkedIn Sync*: that one costs
   one call per page of the feed.
@@ -599,28 +610,9 @@ an RPC call, so nothing gets past them.
   clears the credentials. The line is left as *Failed* stating that the
   account has no access token, and the account shows the update warning.
   Authorize it again with *Update account*.
-- The `Reactions
-  API <https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/reactions-api>`__
-  only accepts **one reaction per account**: liking a publication that
-  was already liked answers *You have already reacted to this post.*,
-  and the reaction cannot be withdrawn from Odoo. If the publication was
-  deleted on LinkedIn, the message is *The post does not exist or has
-  been deleted.*
-- *Recommend* also works on a comment, with the same endpoint and the
-  same permissions: a reaction is created on the comment itself instead
-  of on the publication. The answers are the equivalent ones, *You have
-  already reacted to this comment.* and *The comment does not exist or
-  has been deleted.* Only *Like* is sent; the other reactions LinkedIn
-  offers, *Celebrate*, *Love*, *Insightful*, *Support* and *Funny*, are
-  not offered from Odoo, and a reaction on a comment cannot be withdrawn
-  from Odoo either.
-- A comment is addressed by a composite reference, the thread it lives
-  on plus its own identifier,
-  ``urn:li:comment:(urn:li:activity:6666,120381273128)``. LinkedIn does
-  not always answer it, so it is built from the thread the comment
-  reports. A comment that arrives with neither of the two cannot be
-  recommended, and the action says *The comment cannot be recommended on
-  LinkedIn.* instead of calling LinkedIn.
+- Recommending a publication or one of its comments, and reading those
+  comments back, is served by *Social Media LinkedIn Sync*: this module
+  draws none of those buttons and never calls the Reactions API.
 - Deleting a publication from the dashboard deletes it on LinkedIn
   first. If LinkedIn does not confirm the deletion, the operation is
   cancelled with *Error deleting LinkedIn post* and the record is kept
@@ -634,7 +626,8 @@ Video upload
   part is uploaded with its own request. The identifiers LinkedIn
   returns for the parts are sent back to ``finalizeUpload`` in the same
   order, so the video is put together as it was cut. A 22 MB video takes
-  6 parts and around 25 seconds, upload and processing included.
+  6 parts, and publishing then waits for LinkedIn to finish processing
+  it, up to 30 polls two seconds apart.
 
   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api
 
@@ -647,10 +640,12 @@ Video upload
   attempts every 2 seconds, which a long video may need more than. Both
   numbers are system parameters, described in CONFIGURE.
 
-- The video of a published post is not attached to the publication
-  itself: only the *has video* flag is kept, and the dashboard shows a
-  camera icon. The video stays available on the post it was published
-  from.
+- The publication shares the video of its post the same way it shares
+  its images, and what LinkedIn made of it is recorded in its media
+  references. The camera icon without a count is the fallback drawn for
+  a publication that carries only the *has video* flag — one imported
+  from LinkedIn, whose video was never downloaded and can only be
+  watched there.
 
 Publishing options
 ------------------
@@ -697,15 +692,17 @@ Publishing options are not configurable
 
   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
 
-Size and duration of a video are not checked
---------------------------------------------
+Duration, codecs, dimensions and aspect ratio of a video are not checked
+------------------------------------------------------------------------
 
-- Odoo does not check them before uploading: those limits are the ones
-  of the `Videos
+- Odoo does not read them before uploading: those limits are the ones of
+  the `Videos
   API <https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api>`__
-  and LinkedIn applies them while processing. A video out of limits is
-  transferred whole and rejected afterwards, in the processing phase,
-  with *LinkedIn could not process the video*.
+  and LinkedIn applies them while processing, so a video that breaks one
+  of them is transferred whole and rejected afterwards, in the
+  processing phase, with *LinkedIn could not process the video*. The
+  size, 500 MB, and the MP4 format are checked in Odoo, on the post
+  while it is written and again before the publication is sent.
 
 Rate limits are not handled
 ---------------------------

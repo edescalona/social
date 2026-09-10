@@ -18,31 +18,27 @@ Where the connector needs something only this module knows how to do, it
 declares an empty hook — `_linkedin_check_updates` — and this module
 overrides it.
 
-The history of the daily series needs this module
--------------------------------------------------
+Where the daily series is filled
+---------------------------------
 
-`_backfill_statistics`, which fills the time series of a page as far back as
-LinkedIn answers, lives here because its only caller is the initial
-synchronization of *Social Media Sync*. It costs one call per account, the
-same as the ordinary refresh, so what puts it here is where it is called
-from and not what it costs.
+`_backfill_statistics` is the empty hook of *Social Media Base* and *Social
+Media Linkedin* implements it, so neither the method nor the calls it spends
+belong to this module. Base asks for it the moment an account is associated,
+the *Rebuild statistics history* button of the account form asks for it
+again with `force=True`, and the initial synchronization of *Social Media
+Sync* asks for it once more, which on an account that already holds its
+series is the retry of an association whose history could not be read
+rather than a repetition of it.
 
-The consequence is worth writing down, because it changes a figure and not
-only a depth. Without this module an account gets the rewrite window of the
-series, a handful of days, and the card of the dashboard adds up every row
-there is with no date filter: it shows the impressions and interactions of
-those days, and the engagement derived from them. That is the figure of a
-week, not a partial figure of a year. The graph view starts with as many
-points as the window has days.
-
-Either way they are the figures of the whole page --what the finder answers
-without a list of URNs counts what was published before Odoo and outside of
-it-- so what the depth changes is how many days are covered, not what is
+They are the figures of the whole page --what the finder answers without a
+list of URNs counts what was published before Odoo and outside of it-- so
+what this module changes is when the series is asked for again, not what is
 being counted.
 
 `_snapshot_statistics`, `_linkedin_backfill_window` and
-`_STATISTICS_HISTORY_MONTHS_LINKEDIN` stay in the connector and are asked for
-from here, so they have no caller of their own over there.
+`_STATISTICS_HISTORY_MONTHS_LINKEDIN` stay in the connector, and so do the
+calls that use them: `_backfill_statistics` is the only caller of the three.
+This module asks for none of them.
 
 Who wrote a comment
 -------------------

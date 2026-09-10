@@ -89,8 +89,11 @@ besides the module itself.
   authorization, and the account cannot be authorized again until it is
   removed from the field.
 
-  Every call is sent with the `LinkedIn-Version: 202607` and
-  `X-Restli-Protocol-Version: 2.0.0` headers. LinkedIn retires each version of
+  Every call to the versioned REST API carries the `LinkedIn-Version: 202607`
+  and `X-Restli-Protocol-Version: 2.0.0` headers. The OAuth calls of the
+  association — the code-for-token exchange and the token introspection —
+  and the download of the organization logo do not. LinkedIn retires each
+  version of
   the API about a year after publishing it, so the module has to be updated
   periodically: once the version is no longer supported, LinkedIn answers
   every request with a version error.
@@ -98,7 +101,7 @@ besides the module itself.
 - At the top of the aforementioned tab, you will see the Client ID and Primary Client Secret information.
 
 - Configure the access points for which you want to use the account. Follow these steps:
-  * Go to *Settings* > *Technical* > System Parameters.
+  * Go to *Settings* > *Technical* > *Parameters* > *System Parameters*.
   * Search for web.base.url
   * Copy the base URL and concatenate it with the endpoint. Then, in your LinkedIn Developer Account, on the Authentication tab, in the Authorized Redirect URLs for Your App section, add a new item. * Example:
   web.base.url: http://192.168.1.7:8017
@@ -111,7 +114,7 @@ besides the module itself.
 Registering the Client ID and Client Secret. Integration of a user account.
 ---------------
 
-- Go to *Social Media* > Configuration > Social medias
+- Go to *Social Media* > Configuration > Social Media
 - Click on  the *Associate Account* button for the desired social media.
 
   ![ASSOCIATE_ACCOUNT](../static/img/readme/ASSOCIATE_ACCOUNT.png)
@@ -161,7 +164,7 @@ System parameters
 
 Nothing here has to be set for the connector to work: each key defaults to the
 value the code carries, and it only exists once it is written by hand in
-*Settings* > *Technical* > *System Parameters*. They are bounded when they are
+*Settings* > *Technical* > *Parameters* > *System Parameters*. They are bounded when they are
 read, so a value outside its range is brought back into it instead of being
 obeyed.
 
@@ -175,9 +178,11 @@ before the post can be published, and what matters is their product: it is
 time the publication spends inside its own transaction. Past the
 `limit_time_real` of the deployment — 120 seconds by default, and the
 scheduled actions inherit it — the worker is killed with the video already
-uploaded on LinkedIn and nothing published in Odoo. That is why the product is
-capped at 600 seconds whatever the two numbers say, and why raising the wait
-for a long video means raising `limit_time_real` as well.
+uploaded on LinkedIn and nothing published in Odoo. That is why the number of
+polls is cut down to what 600 seconds allow at the delay in force, and why
+raising the wait for a long video means raising `limit_time_real` as well. A
+delay longer than the ceiling itself is not cut: it becomes one single wait,
+and setting one is asking for the worker to be killed.
 
 Below their bounds the numbers stop making sense rather than merely being
 small: zero polls publishes nothing without ever asking LinkedIn, and a delay

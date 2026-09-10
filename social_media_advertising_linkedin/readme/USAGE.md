@@ -3,7 +3,9 @@ Choose the LinkedIn advertising account.
 
 - Go to *Social Media* > Configuration > Accounts, open the LinkedIn account
   and its *Advertising* tab, then click *Fetch advertising accounts*.
-- Besides the generic columns, the list shows what LinkedIn reports:
+- Besides the generic columns, the list shows *LinkedIn Status* and
+  *LinkedIn Serving Status*, with *LinkedIn Type* and *LinkedIn Owner*
+  available from the optional-columns toggle:
   - *LinkedIn Status*: `DRAFT`, `ACTIVE`, `CANCELED`, `PENDING_DELETION` or
     `REMOVED`.
   - *LinkedIn Serving Status*: `RUNNABLE` when the advertising account is
@@ -15,7 +17,9 @@ Choose the LinkedIn advertising account.
   - *LinkedIn Owner*: the organization or person the advertising account
     advertises on behalf of, which tells apart two advertising accounts
     sharing a name.
-- *Campaign Manager URL* opens the advertising account on LinkedIn.
+- Open an advertising account and press *Open advertising account* to reach
+  it in the LinkedIn Campaign Manager. The address is also available in this
+  list as the optional *Web URL* column.
 - *Create in LinkedIn*, *Fetch campaigns* and the sponsored creatives all
   work against the advertising account marked *In Use*.
 
@@ -145,9 +149,10 @@ Fetch campaigns from LinkedIn.
   from LinkedIn Ads. Every creative is matched with the publication it
   promotes by its remote reference.
 - A publication brought from the wall with *Update* has no post in Odoo, so
-  its campaign is taken from the creative and its badge appears on the
-  dashboard. Publications published from Odoo keep the campaign of their
-  post and are never overwritten by the import.
+  its campaign is resolved from the creative and written to its *Social
+  Campaign* field, which the publication form shows and the search view
+  offers as a filter and a group-by. Publications published from Odoo keep
+  the campaign of their post and are never overwritten by the import.
 - The Posts API does not return the campaign of a post, so only this import
   can resolve it. The order does not matter, but the publications have to be
   already in Odoo: if they are brought **after** importing the campaigns,
@@ -190,8 +195,12 @@ Delete an ad in LinkedIn.
 - LinkedIn only deletes a
   [sponsored creative](https://learn.microsoft.com/en-us/linkedin/marketing/integrations/ads/account-structure/create-and-manage-creatives)
   outright when it is still a draft, when its campaign is, or when it is a
-  video that failed to process. In that case the ad disappears from
-  LinkedIn and its record is deleted in Odoo too, statistics included.
+  video that failed to process. Odoo tries that outright deletion only when
+  the ad or its campaign is in *Draft*, and when LinkedIn accepts it the ad
+  disappears from LinkedIn and its record is deleted in Odoo too, statistics
+  included. A video that failed to process is not recognised here, so it
+  goes through the deletion request like any other ad and its record is
+  kept.
 - Any other ad is not deleted on the spot: LinkedIn only takes the request
   and processes it afterwards. The creative is read back right away, so the
   status shown in Odoo is the one LinkedIn reports and not the one that was
@@ -206,6 +215,8 @@ Delete an ad in LinkedIn.
   *Pending deletion* or *Removed*: LinkedIn accepts no change on those and
   answers *Cannot update a canceled creative*. Those ads stay in Odoo as
   history.
+- The form of an ad carries an *Open ad* button, which opens the creative in
+  the LinkedIn Campaign Manager in a new tab.
 
 Update a campaign in LinkedIn.
 ---------------
@@ -234,6 +245,10 @@ Update a campaign in LinkedIn.
   LinkedIn values are logged in the chatter so you can decide whether to
   keep your changes (push them with *Update in LinkedIn*) or re-type the
   LinkedIn ones.
+- The form of a campaign and of a campaign group that already exists on
+  LinkedIn also carries an *Open campaign* / *Open campaign group* button,
+  which opens it in the LinkedIn Campaign Manager in a new tab. It is not
+  drawn while the record has no LinkedIn reference.
 - When the LinkedIn stage is *Archived*, *Canceled*, *Pending deletion*
   or *Removed*, the campaign or campaign group cannot be modified in Odoo
   (LinkedIn does not allow editing them either): the editable fields
@@ -274,11 +289,10 @@ Archive a campaign or a campaign group in LinkedIn.
   because LinkedIn no longer accepts changes on it.
 - **It cannot be reactivated from Odoo.** To unarchive it, use the LinkedIn
   Campaign Manager and then run *Fetch campaigns* to refresh the stage.
-- Archiving a campaign group archives its campaigns on LinkedIn as well,
-  except the ones still in Draft, which LinkedIn leaves untouched. Odoo does
-  not know about any of it until you run *Fetch campaigns*, so run it
-  afterwards to refresh them, and archive the draft campaigns one by one if
-  you want them archived too.
+- Archiving a campaign group on LinkedIn also changes the status of its
+  campaigns there. Odoo does not know about any of it until you run *Fetch
+  campaigns*, so run it afterwards to see the stage each campaign was left
+  in, and archive from Odoo the ones LinkedIn did not archive.
 - Deleting the campaign in Odoo does not do anything on LinkedIn: the
   campaign keeps running there and the next *Fetch campaigns* brings it
   back. Use *Archive in LinkedIn* to actually end it.

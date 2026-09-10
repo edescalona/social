@@ -77,3 +77,23 @@ Connector modules.
   `social_media_advertising.social_stage_root_menu` for your stages. Both
   menus of this module are only containers: they hold nothing until a
   connector fills them, and Odoo hides them meanwhile.
+- To import the campaigns and the campaign groups of a social media,
+  implement `social.account.action_import_campaigns()` and return `success`,
+  `message` and the number of imported `groups`, `campaigns` and `ads`. It is
+  what the *Fetch campaigns* button of the account calls.
+- To list the ads, implement `social.account._fetch_ads()`, returning one
+  dict of values per ad, each carrying its `remote_ref`, and
+  `social.account._fetch_ad_refs()`, returning only the references: the first
+  is what *Sync ads* mirrors, the second is the cheap call the six-hour cron
+  checks with.
+- To delete an ad on the social media, implement
+  `social.advertising.ad._delete_remote_ad()` and answer
+  `_compute_can_delete_remote_ad()` for the ads your API accepts a deletion
+  on. Extend `_register_remote_ad_gone()` to leave on the archived ad the
+  status your social media gives a deleted one, and `_advertising_ad_action()`
+  to send the user back to the list of your own social media.
+- To give a record its address on the social media, implement
+  `_get_web_url()` on `social.advertising.account`,
+  `social.advertising.campaign`, `social.advertising.campaign.group` or
+  `social.advertising.ad`: the *Open ...* button of the form shows up as soon
+  as it answers one.

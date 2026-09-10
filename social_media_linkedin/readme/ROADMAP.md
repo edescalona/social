@@ -8,14 +8,16 @@ Publishing options are not configurable
 
   https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
 
-Size and duration of a video are not checked
---------------------------------------------
+Duration, codecs, dimensions and aspect ratio of a video are not checked
+--------------------------------------------------------------------------
 
-- Odoo does not check them before uploading: those limits are the ones of the
+- Odoo does not read them before uploading: those limits are the ones of the
   [Videos API](https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api)
-  and LinkedIn applies them while processing. A video out of limits is
-  transferred whole and rejected afterwards, in the processing phase, with
-  *LinkedIn could not process the video*.
+  and LinkedIn applies them while processing, so a video that breaks one of
+  them is transferred whole and rejected afterwards, in the processing phase,
+  with *LinkedIn could not process the video*. The size, 500 MB, and the MP4
+  format are checked in Odoo, on the post while it is written and again before
+  the publication is sent.
 
 Rate limits are not handled
 ---------------------------

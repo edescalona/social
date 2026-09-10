@@ -431,7 +431,6 @@ LinkedIn Developer App, following the configuration steps of that
 module:</p>
 <ul class="simple">
 <li>Advertising API</li>
-<li>LinkedIn Ad Library</li>
 </ul>
 <p>The access levels of those products are described in the <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/getting-started">LinkedIn
 Marketing API
@@ -472,31 +471,26 @@ because the authorization requests what the modules need <strong>and</strong> wh
 the account was granted; uninstalling this module takes nothing away
 from a token LinkedIn already issued. To really drop them, empty them
 from the <em>Granted Scopes</em> field of the account and authorize it again.</li>
-<li><strong>LinkedIn does not refuse an authorization that asks for a scope the
-application has no product for: it answers a token without it.</strong> So an
-application without the <em>Advertising API</em> product authorizes normally
-and every Ads call is then refused with a
-<tt class="docutils literal">Not enough permissions to access</tt> error. The Advertising tab of the
-account shows which scopes are missing, which is the sign the product
-is not granted on the application rather than something to fix in
-Odoo.</li>
+<li>An application that was not granted the <em>Advertising API</em> product
+leaves the account without the <tt class="docutils literal">r_ads</tt>, <tt class="docutils literal">rw_ads</tt> and
+<tt class="docutils literal">r_ads_reporting</tt> scopes, and every Ads call is then refused with a
+<tt class="docutils literal">Not enough permissions to access</tt> error. What LinkedIn does with an
+authorization asking for a scope no product of the application grants
+is described in the configuration of <em>Social Media Linkedin</em>, which is
+where the scopes are negotiated. A warning banner at the top of the
+account form lists the scopes LinkedIn did not grant and tells you to
+add the <em>Advertising API</em> product to the application and authorize the
+account again, which is the sign the product is not granted on the
+application rather than something to fix in Odoo.</li>
 </ul>
 </div>
 <div class="section" id="test-and-production-advertising-accounts">
 <h2><a class="toc-backref" href="#toc-entry-4">Test and production advertising accounts.</a></h2>
 <ul class="simple">
-<li>The <em>Environment</em> of the account maps to the <tt class="docutils literal">test</tt> flag LinkedIn
-puts on an advertising account. <strong>LinkedIn sets that flag when the
-advertising account is created and it can never be changed
-afterwards</strong>, so a test advertising account stays a test one for good.</li>
-<li>A test advertising account can only be created through the API, never
-from the Campaign Manager, and <strong>each developer application may only
-have one</strong>. Only <tt class="docutils literal">BUSINESS</tt> advertising accounts can be test ones:
-<tt class="docutils literal">ENTERPRISE</tt> cannot.</li>
-<li>Inside a test advertising account the creatives are <strong>never served and
-are automatically rejected</strong> in the review process, and
-<tt class="docutils literal">/adAnalytics</tt> returns no data at all. Empty statistics in <em>Test</em>
-are therefore expected, not a failure of the module.</li>
+<li>The <em>Environment</em> of an advertising account is the <tt class="docutils literal">test</tt> flag
+LinkedIn answers for it: it is read on every <em>Fetch advertising
+accounts</em> and never chosen in Odoo, so an advertising account is shown
+as <em>Test</em> for as long as LinkedIn reports it that way.</li>
 <li>The role requirement above is what makes the list of advertising
 accounts return anything: LinkedIn only answers the advertising
 accounts the authorized member holds a role on.</li>
@@ -511,7 +505,9 @@ accounts the authorized member holds a role on.</li>
 <li>Go to <em>Social Media</em> &gt; Configuration &gt; Accounts, open the LinkedIn
 account and its <em>Advertising</em> tab, then click <em>Fetch advertising
 accounts</em>.</li>
-<li>Besides the generic columns, the list shows what LinkedIn reports:<ul>
+<li>Besides the generic columns, the list shows <em>LinkedIn Status</em> and
+<em>LinkedIn Serving Status</em>, with <em>LinkedIn Type</em> and <em>LinkedIn Owner</em>
+available from the optional-columns toggle:<ul>
 <li><em>LinkedIn Status</em>: <tt class="docutils literal">DRAFT</tt>, <tt class="docutils literal">ACTIVE</tt>, <tt class="docutils literal">CANCELED</tt>,
 <tt class="docutils literal">PENDING_DELETION</tt> or <tt class="docutils literal">REMOVED</tt>.</li>
 <li><em>LinkedIn Serving Status</em>: <tt class="docutils literal">RUNNABLE</tt> when the advertising account
@@ -526,7 +522,9 @@ advertises on behalf of, which tells apart two advertising accounts
 sharing a name.</li>
 </ul>
 </li>
-<li><em>Campaign Manager URL</em> opens the advertising account on LinkedIn.</li>
+<li>Open an advertising account and press <em>Open advertising account</em> to
+reach it in the LinkedIn Campaign Manager. The address is also
+available in this list as the optional <em>Web URL</em> column.</li>
 <li><em>Create in LinkedIn</em>, <em>Fetch campaigns</em> and the sponsored creatives
 all work against the advertising account marked <em>In Use</em>.</li>
 </ul>
@@ -686,9 +684,11 @@ account and its <em>Advertising</em> tab</li>
 imported from LinkedIn Ads. Every creative is matched with the
 publication it promotes by its remote reference.</li>
 <li>A publication brought from the wall with <em>Update</em> has no post in Odoo,
-so its campaign is taken from the creative and its badge appears on
-the dashboard. Publications published from Odoo keep the campaign of
-their post and are never overwritten by the import.</li>
+so its campaign is resolved from the creative and written to its
+<em>Social Campaign</em> field, which the publication form shows and the
+search view offers as a filter and a group-by. Publications published
+from Odoo keep the campaign of their post and are never overwritten by
+the import.</li>
 <li>The Posts API does not return the campaign of a post, so only this
 import can resolve it. The order does not matter, but the publications
 have to be already in Odoo: if they are brought <strong>after</strong> importing
@@ -734,8 +734,12 @@ cannot delete anything even with the scope granted.</li>
 <li>LinkedIn only deletes a <a class="reference external" href="https://learn.microsoft.com/en-us/linkedin/marketing/integrations/ads/account-structure/create-and-manage-creatives">sponsored
 creative</a>
 outright when it is still a draft, when its campaign is, or when it is
-a video that failed to process. In that case the ad disappears from
-LinkedIn and its record is deleted in Odoo too, statistics included.</li>
+a video that failed to process. Odoo tries that outright deletion only
+when the ad or its campaign is in <em>Draft</em>, and when LinkedIn accepts
+it the ad disappears from LinkedIn and its record is deleted in Odoo
+too, statistics included. A video that failed to process is not
+recognised here, so it goes through the deletion request like any
+other ad and its record is kept.</li>
 <li>Any other ad is not deleted on the spot: LinkedIn only takes the
 request and processes it afterwards. The creative is read back right
 away, so the status shown in Odoo is the one LinkedIn reports and not
@@ -751,6 +755,8 @@ history like every ad that stops being answered.</li>
 <em>Canceled</em>, <em>Pending deletion</em> or <em>Removed</em>: LinkedIn accepts no
 change on those and answers <em>Cannot update a canceled creative</em>. Those
 ads stay in Odoo as history.</li>
+<li>The form of an ad carries an <em>Open ad</em> button, which opens the
+creative in the LinkedIn Campaign Manager in a new tab.</li>
 </ul>
 </div>
 <div class="section" id="update-a-campaign-in-linkedin">
@@ -780,6 +786,11 @@ fields, your local pending changes are preserved by the import — the
 LinkedIn values are logged in the chatter so you can decide whether to
 keep your changes (push them with <em>Update in LinkedIn</em>) or re-type the
 LinkedIn ones.</p>
+</li>
+<li><p class="first">The form of a campaign and of a campaign group that already exists on
+LinkedIn also carries an <em>Open campaign</em> / <em>Open campaign group</em>
+button, which opens it in the LinkedIn Campaign Manager in a new tab.
+It is not drawn while the record has no LinkedIn reference.</p>
 </li>
 <li><p class="first">When the LinkedIn stage is <em>Archived</em>, <em>Canceled</em>, <em>Pending deletion</em>
 or <em>Removed</em>, the campaign or campaign group cannot be modified in
@@ -828,11 +839,10 @@ read-only in Odoo, because LinkedIn no longer accepts changes on it.</p>
 LinkedIn Campaign Manager and then run <em>Fetch campaigns</em> to refresh
 the stage.</p>
 </li>
-<li><p class="first">Archiving a campaign group archives its campaigns on LinkedIn as well,
-except the ones still in Draft, which LinkedIn leaves untouched. Odoo
-does not know about any of it until you run <em>Fetch campaigns</em>, so run
-it afterwards to refresh them, and archive the draft campaigns one by
-one if you want them archived too.</p>
+<li><p class="first">Archiving a campaign group on LinkedIn also changes the status of its
+campaigns there. Odoo does not know about any of it until you run
+<em>Fetch campaigns</em>, so run it afterwards to see the stage each campaign
+was left in, and archive from Odoo the ones LinkedIn did not archive.</p>
 </li>
 <li><p class="first">Deleting the campaign in Odoo does not do anything on LinkedIn: the
 campaign keeps running there and the next <em>Fetch campaigns</em> brings it

@@ -379,9 +379,11 @@ LinkedIn for a fixed number of things per account — publish, delete, the
 daily figures of the whole page — and that number does not change
 whether the page published once or ten thousand times. Everything whose
 cost grows with the history of the page lives here: reading the feed one
-page at a time, asking for the statistics of a list of publications in
-chunks against the 4 KB limit of the query string, one call per
-publication to check it is still there, one call per comment thread.</p>
+page at a time, asking LinkedIn about the publications missing from it a
+hundred URNs at a time, and one call per comment thread. The figures of
+the publications are read by <em>Social Media Linkedin</em>, in as many calls
+as the 4 KB limit of the query string needs, whoever hands it the
+identifiers.</p>
 <p>An Odoo that only publishes on LinkedIn installs <em>Social Media Linkedin</em>
 alone and pays for none of it.</p>
 <p>Main features:</p>
@@ -399,21 +401,24 @@ publishes asynchronously (<tt class="docutils literal">PUBLISH_REQUESTED</tt>), 
 finder in reader context, and states that a page returning fewer
 results than asked is not the end of the feed — so a publication that
 is alive can be absent from a listing read whole.</li>
-<li>Verification that a publication still exists on LinkedIn before its
-thread is read.</li>
+<li>Publications deleted on LinkedIn recognised while the dashboard is
+being used: a reaction or a comment answered with a <tt class="docutils literal">404</tt> makes Odoo
+ask LinkedIn about the publication itself, and only its confirmation
+marks the line as deleted.</li>
 <li>Comment threads read from the dashboard, with their replies, and
 <em>Recommend</em> on a publication and on each of its comments, which also
 withdraws the reaction it made.</li>
-<li>Detection of pages that moved since the last import, which turns on
-the <em>Update</em> badge of the dashboard card. It costs at most two calls
-per account, and reuses the daily figures the connector already read
-on the same pass instead of asking LinkedIn for the same days twice.</li>
+<li>Detection of pages that moved since the last import, which puts a
+notice on the dashboard inviting the user to press <em>Update</em>. It costs
+at most two calls per account, and reuses the daily figures the
+connector already read on the same pass instead of asking LinkedIn for
+the same days twice.</li>
 </ul>
 <p><strong>Table of contents</strong></p>
 <div class="contents local topic" id="contents">
 <ul class="simple">
 <li><a class="reference internal" href="#installation" id="toc-entry-1">Installation</a><ul>
-<li><a class="reference internal" href="#upgrading-from-a-version-where-social-media-linkedin-held-both-halves" id="toc-entry-2">Upgrading from a version where <em>Social Media Linkedin</em> held both halves</a></li>
+<li><a class="reference internal" href="#the-mark-the-update-check-compares-against" id="toc-entry-2">The mark the update check compares against</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#configuration" id="toc-entry-3">Configuration</a><ul>
@@ -431,7 +436,7 @@ on the same pass instead of asking LinkedIn for the same days twice.</li>
 </li>
 <li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-12">Known issues / Roadmap</a><ul>
 <li><a class="reference internal" href="#one-definition-per-symbol" id="toc-entry-13">One definition per symbol</a></li>
-<li><a class="reference internal" href="#the-history-of-the-daily-series-needs-this-module" id="toc-entry-14">The history of the daily series needs this module</a></li>
+<li><a class="reference internal" href="#where-the-daily-series-is-filled" id="toc-entry-14">Where the daily series is filled</a></li>
 <li><a class="reference internal" href="#who-wrote-a-comment" id="toc-entry-15">Who wrote a comment</a></li>
 <li><a class="reference internal" href="#media-in-the-comments" id="toc-entry-16">Media in the comments</a></li>
 <li><a class="reference internal" href="#the-weekly-full-resync-is-not-spread-over-the-days" id="toc-entry-17">The weekly full resync is not spread over the days</a></li>
@@ -459,16 +464,14 @@ without the half that belongs to it.</p>
 <p>Installing <em>Social Media Linkedin</em> alone is a valid installation: the
 account is linked, publishes, deletes and shows the daily figures of its
 page.</p>
-<div class="section" id="upgrading-from-a-version-where-social-media-linkedin-held-both-halves">
-<h2><a class="toc-backref" href="#toc-entry-2">Upgrading from a version where <em>Social Media Linkedin</em> held both halves</a></h2>
-<p>The stored field <tt class="docutils literal">social.account.linkedin_statistics_checkpoint</tt> moves
-from <em>Social Media Linkedin</em> to this module, and no migration script
-ships with it. Recreate the database instead of updating it in place.</p>
-<p>Updating in place is what loses the column, and losing it has a visible
-consequence: the checkpoint is the baseline the update check compares
-against, so the first pass of the bihourly cron after the deployment
-finds no baseline on any account and turns the <em>Update</em> badge on for all
-of them at once.</p>
+<div class="section" id="the-mark-the-update-check-compares-against">
+<h2><a class="toc-backref" href="#toc-entry-2">The mark the update check compares against</a></h2>
+<p><tt class="docutils literal">social.account.linkedin_statistics_checkpoint</tt> is stored by this
+module and holds the daily figures LinkedIn reported for the whole page
+as of the last import. An account that has no mark yet is given one on
+the first pass of the bihourly check and announced as having nothing to
+import, so installing this module on a database that already publishes
+on LinkedIn does not put the notice up on every account at once.</p>
 </div>
 </div>
 <div class="section" id="configuration">
@@ -495,9 +498,9 @@ permission instead of the bare error LinkedIn answers.</p>
 <div class="section" id="system-parameters">
 <h2><a class="toc-backref" href="#toc-entry-4">System parameters</a></h2>
 <p>One key is worth knowing about, and it is only written by hand in
-<em>Settings</em> &gt; <em>Technical</em> &gt; <em>System Parameters</em>: until then the module
-uses the default the code carries. It is bounded when it is read, so a
-value outside its range is brought back into it.</p>
+<em>Settings</em> &gt; <em>Technical</em> &gt; <em>Parameters</em> &gt; <em>System Parameters</em>: until
+then the module uses the default the code carries. It is bounded when it
+is read, so a value outside its range is brought back into it.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="53%" />
@@ -541,11 +544,11 @@ their figures adds. That is why the ceiling exists.</p>
 <div class="section" id="importing-what-a-page-already-published">
 <h2><a class="toc-backref" href="#toc-entry-6">Importing what a page already published.</a></h2>
 <ul class="simple">
-<li>The <em>Update</em> button of the dashboard card imports the publications of
-the page. Without this module that button refreshes the daily series
-of the page and the figures of the publications of the last 30 days;
-with it, it also brings in the publications Odoo does not have yet and
-the figures of the ones older than that window.</li>
+<li>The <em>Update</em> button of the dashboard imports the publications of the
+pages. Without this module that button refreshes the daily series of
+the page and the figures of the publications of the last 30 days; with
+it, it also brings in the publications Odoo does not have yet and the
+figures of the ones older than that window.</li>
 <li>The import discovers the publications three ways: one publication by
 its reference, the whole feed page by page, or — the ordinary path —
 the first page of the feed sorted by last modification, which is what
@@ -556,12 +559,17 @@ Odoo, so those images appear on the dashboard only after the import.</li>
 on LinkedIn is dropped from the dashboard card on the next import.
 Only the medias downloaded from LinkedIn are managed this way, so a
 file attached by hand in Odoo is never removed.</li>
-<li>Every import leaves a mark with the figures of the last watched days.
-The bihourly check compares against that mark, which is why importing
-is what turns the <em>Update</em> badge off.</li>
-<li>The first import also fills the time series of the account backwards,
-as far back as LinkedIn answers by day. Without this module the series
-only holds the rewrite window the connector refreshes.</li>
+<li>An import of the whole page leaves a mark with the figures of the last
+watched days. The bihourly check compares against that mark, which is
+why importing is what takes the notice down; refreshing a single
+publication takes it down too but leaves the mark alone, since one
+publication says nothing about the rest of the page.</li>
+<li>The first import asks for the time series again on an account whose
+association could not read it, which is the retry of a backfill that
+failed and not a repetition of it. How far back the series goes is the
+connector’s business: <em>Social Media Linkedin</em> fills it as far back as
+LinkedIn answers by day the moment the account is linked, and rebuilds
+it from the <em>Rebuild statistics history</em> button of the account form.</li>
 </ul>
 </div>
 <div class="section" id="comments-and-reactions">
@@ -628,14 +636,18 @@ so what matters is not the total number of calls but how they spread.</p>
 <ul>
 <li><p class="first">The scheduled action checking for updates costs <strong>two calls per
 account and run</strong>, whatever the number of publications, one when it
-does find something, and none at all for an account already announcing
-publications to import, for one whose credentials expired —what it is
-waiting for is a new authorization, and the call could only end in a
-refusal— or for one with no organization linked. It reads the figures
-LinkedIn reports for the whole page day by day and compares them
-against the ones the last import left: no publication is read one by
-one to decide whether the dashboard should announce updates. Running
-every two hours, that is around 24 calls a day per account.</p>
+does find something, and only one for an account already announcing
+publications to import or for one whose credentials expired: the daily
+series of the page is written for them all the same, and what is
+skipped is the second call, the peek at the feed that could only
+confirm what the dashboard already says or fail on a token known to be
+dead. No call at all is spent on an account with no organization
+linked, since the finder is addressed by organization and there is
+nothing to ask. It reads the figures LinkedIn reports for the whole
+page day by day and compares them against the ones the last import
+left: no publication is read one by one to decide whether the
+dashboard should announce updates. Running every two hours, that is
+around 24 calls a day per account.</p>
 </li>
 <li><p class="first">The <strong>Update</strong> button does not walk the feed. The statistics are asked
 for by publication identifier, and those identifiers are already
@@ -658,14 +670,15 @@ one call, so a full feed takes several.</p>
 <li><p class="first"><em>Full resync</em> is the expensive pass, one call per hundred
 publications. The button does it for the account it is pressed on; the
 weekly scheduled action does it for every account of the database. It
-walks the feed page by page (<tt class="docutils literal">count=100</tt>) up to <strong>50 pages</strong>, that
-is 5000 publications, and a page is only taken as the last one when it
-comes back empty, because LinkedIn documents that a page may carry
-fewer publications than asked while more are left. On an account whose
-feed is longer than that, the answer is incomplete and the sweep that
-marks as <em>Deleted</em> what is no longer on LinkedIn is skipped for that
-run: reporting nothing is preferable to marking a publication that is
-still online.</p>
+walks the feed page by page (<tt class="docutils literal">count=100</tt>) up to as many pages as
+<tt class="docutils literal">social_media_linkedin_sync.posts_max_pages</tt> allows, <strong>fifty by
+default</strong>, that is 5000 publications, and a page is only taken as the
+last one when it comes back empty, because LinkedIn documents that a
+page may carry fewer publications than asked while more are left. On
+an account whose feed is longer than that, the answer is incomplete
+and the sweep that marks as <em>Deleted</em> what is no longer on LinkedIn is
+skipped for that run: reporting nothing is preferable to marking a
+publication that is still online.</p>
 </li>
 </ul>
 </div>
@@ -680,18 +693,13 @@ and another one added, leaves the figures of the page where they were
 and goes unnoticed until the next synchronization.</li>
 <li>It watches the <strong>daily</strong> figures of the page, over a window of the
 last seven days, and not the lifetime totals the same endpoint answers
-when no time interval is given. Those lifetime totals lag behind:
-measured against a real account, a reaction was already counted in the
-daily buckets while the lifetime figures still ignored it an hour and
-a half later. Two consequences worth knowing:<ul>
-<li>Activity older than the seven-day window is not announced. It is
-imported all the same when the user synchronizes, because the import
-reads the publications themselves and not this window.</li>
-<li>Impressions reach the daily buckets later than reactions do, so a
-publication that only gained views may be announced a run or two
-later than one that gained a reaction.</li>
-</ul>
-</li>
+when no time interval is given. The two are two separate reads of
+LinkedIn’s own data, so they are not guaranteed to agree at every
+instant; this module only relies on the daily buckets. One consequence
+worth knowing: activity older than the seven-day window is not
+announced. It is imported all the same when the user synchronizes,
+because the import reads the publications themselves and not this
+window.</li>
 <li>The engagement is not compared. It is a ratio of the clicks,
 reactions, comments and shares over the impressions, so it cannot move
 without one of those moving, and it is the only non-integer figure of
@@ -726,27 +734,24 @@ the same language.</p>
 declares an empty hook — <tt class="docutils literal">_linkedin_check_updates</tt> — and this module
 overrides it.</p>
 </div>
-<div class="section" id="the-history-of-the-daily-series-needs-this-module">
-<h2><a class="toc-backref" href="#toc-entry-14">The history of the daily series needs this module</a></h2>
-<p><tt class="docutils literal">_backfill_statistics</tt>, which fills the time series of a page as far
-back as LinkedIn answers, lives here because its only caller is the
-initial synchronization of <em>Social Media Sync</em>. It costs one call per
-account, the same as the ordinary refresh, so what puts it here is where
-it is called from and not what it costs.</p>
-<p>The consequence is worth writing down, because it changes a figure and
-not only a depth. Without this module an account gets the rewrite window
-of the series, a handful of days, and the card of the dashboard adds up
-every row there is with no date filter: it shows the impressions and
-interactions of those days, and the engagement derived from them. That
-is the figure of a week, not a partial figure of a year. The graph view
-starts with as many points as the window has days.</p>
-<p>Either way they are the figures of the whole page –what the finder
-answers without a list of URNs counts what was published before Odoo and
-outside of it– so what the depth changes is how many days are covered,
-not what is being counted.</p>
+<div class="section" id="where-the-daily-series-is-filled">
+<h2><a class="toc-backref" href="#toc-entry-14">Where the daily series is filled</a></h2>
+<p><tt class="docutils literal">_backfill_statistics</tt> is the empty hook of <em>Social Media Base</em> and
+<em>Social Media Linkedin</em> implements it, so neither the method nor the
+calls it spends belong to this module. Base asks for it the moment an
+account is associated, the <em>Rebuild statistics history</em> button of the
+account form asks for it again with <tt class="docutils literal">force=True</tt>, and the initial
+synchronization of <em>Social Media Sync</em> asks for it once more, which on
+an account that already holds its series is the retry of an association
+whose history could not be read rather than a repetition of it.</p>
+<p>They are the figures of the whole page –what the finder answers without
+a list of URNs counts what was published before Odoo and outside of it–
+so what this module changes is when the series is asked for again, not
+what is being counted.</p>
 <p><tt class="docutils literal">_snapshot_statistics</tt>, <tt class="docutils literal">_linkedin_backfill_window</tt> and
-<tt class="docutils literal">_STATISTICS_HISTORY_MONTHS_LINKEDIN</tt> stay in the connector and are
-asked for from here, so they have no caller of their own over there.</p>
+<tt class="docutils literal">_STATISTICS_HISTORY_MONTHS_LINKEDIN</tt> stay in the connector, and so do
+the calls that use them: <tt class="docutils literal">_backfill_statistics</tt> is the only caller of
+the three. This module asks for none of them.</p>
 </div>
 <div class="section" id="who-wrote-a-comment">
 <h2><a class="toc-backref" href="#toc-entry-15">Who wrote a comment</a></h2>

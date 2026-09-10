@@ -7,7 +7,6 @@ The LinkedIn application.
   own. Ask for them on the *Products* tab of your LinkedIn Developer App,
   following the configuration steps of that module:
   * Advertising API
-  * LinkedIn Ad Library
 
   The access levels of those products are described in the
   [LinkedIn Marketing API documentation](https://learn.microsoft.com/en-us/linkedin/marketing/getting-started).
@@ -42,28 +41,24 @@ Re-authorize the already associated accounts.
   granted; uninstalling this module takes nothing away from a token LinkedIn
   already issued. To really drop them, empty them from the *Granted Scopes*
   field of the account and authorize it again.
-- **LinkedIn does not refuse an authorization that asks for a scope the
-  application has no product for: it answers a token without it.** So an
-  application without the *Advertising API* product authorizes normally and
-  every Ads call is then refused with a `Not enough permissions to access`
-  error. The Advertising tab of the account shows which scopes are missing,
-  which is the sign the product is not granted on the application rather
-  than something to fix in Odoo.
+- An application that was not granted the *Advertising API* product leaves
+  the account without the `r_ads`, `rw_ads` and `r_ads_reporting` scopes,
+  and every Ads call is then refused with a `Not enough permissions to
+  access` error. What LinkedIn does with an authorization asking for a scope
+  no product of the application grants is described in the configuration of
+  *Social Media Linkedin*, which is where the scopes are negotiated. A
+  warning banner at the top of the account form lists the scopes LinkedIn did
+  not grant and tells you to add the *Advertising API* product to the
+  application and authorize the account again, which is the sign the product
+  is not granted on the application rather than something to fix in Odoo.
 
 Test and production advertising accounts.
 ---------------
 
-- The *Environment* of the account maps to the `test` flag
-  LinkedIn puts on an advertising account. **LinkedIn sets that flag when the
-  advertising account is created and it can never be changed afterwards**, so
-  a test advertising account stays a test one for good.
-- A test advertising account can only be created through the API, never from
-  the Campaign Manager, and **each developer application may only have one**.
-  Only `BUSINESS` advertising accounts can be test ones: `ENTERPRISE` cannot.
-- Inside a test advertising account the creatives are **never served and are
-  automatically rejected** in the review process, and `/adAnalytics` returns
-  no data at all. Empty statistics in *Test* are therefore expected, not a
-  failure of the module.
+- The *Environment* of an advertising account is the `test` flag LinkedIn
+  answers for it: it is read on every *Fetch advertising accounts* and never
+  chosen in Odoo, so an advertising account is shown as *Test* for as long
+  as LinkedIn reports it that way.
 - The role requirement above is what makes the list of advertising accounts
   return anything: LinkedIn only answers the advertising accounts the
   authorized member holds a role on.

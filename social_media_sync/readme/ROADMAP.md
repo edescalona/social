@@ -26,8 +26,13 @@ media is downloaded once and not on every pass. The bytes of two identical
 images still land on the same file, because the filestore keys its files by
 the hash of their content; what multiplies is the rows.
 
-Nothing ages them out. There is no retention policy, and the only deletions
-are the cascade that takes the medias of a publication when the publication is
-deleted and `social.account.action_purge_account`, which drops an account with
-its history. Serving those bytes from somewhere else is configured at the
-level of Odoo, through `ir_attachment.location`, not from here.
+What ages them out is one number for the whole database.
+`social_media_sync.media_max_age_days` reaches every imported publication
+older than it, whatever its account, so there is no way to keep the medias of
+one account and age out those of another, and a publication kept only for its
+figures still costs its images until that age is reached. The deletion itself
+belongs to the vacuum: `_gc_aged_post_medias` releases what the policy
+reaches, the next synchronization releases what the social media no longer
+serves, and `_gc_lost_media_attachments` deletes both a day later. Serving
+those bytes from somewhere else is configured at the level of Odoo, through
+`ir_attachment.location`, not from here.

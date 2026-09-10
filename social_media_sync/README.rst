@@ -42,9 +42,9 @@ per page of posts, one call per publication to check it is still there,
 one call per comment thread. An installation that only writes and
 publishes does not have to pay for any of it.
 
-*Social Media Base* never names this module. Where base needs something
-only the synchronization knows how to do, it declares an empty hook and
-carries on, so base works installed alone.
+*Social Media Base* never depends on this module nor calls into it.
+Where base needs something only the synchronization knows how to do, it
+declares an empty hook and carries on, so base works installed alone.
 
 Main features:
 
@@ -53,27 +53,36 @@ Main features:
   publications of the last 30 days on its own and draws them in the
   *Statistics* dialog; what this module adds are the views that span the
   whole history — the list of publications, its search filters and the
-  ordinary form — where a publication older than that window only
-  carries figures once this import has run.
-- Initial synchronization right after an account is linked, which also
-  fills the daily statistics series of the account backwards as far as
-  the social media answers. A monthly cron picks up the accounts still
-  waiting for it.
+  ordinary form — and the likes and the comments the footer of a
+  dashboard card draws for the social media whose connector reports
+  them. A publication older than that window only carries figures once
+  this import has run.
+- Initial synchronization right after an account is linked, which
+  imports what the account already published. A monthly cron picks up
+  the accounts still waiting for it, and that same pass asks for the
+  daily statistics series again for an account whose history could not
+  be read when *Social Media Base* filled it at association.
 - A weekly full resynchronization, the only pass that notices a post
   deleted on the social media side.
-- Verification that a publication still exists remotely, before its
-  thread is read.
+- Verification that a publication still exists remotely, for the ones
+  nobody opens: the weekly pass asks the social media about them, and a
+  reaction or a comment answered with a *not found* has the publication
+  itself asked about before the line is marked. Asking about the one
+  publication a user opens is *Social Media Base*'s and costs the same
+  call with or without this module.
 - Comment thread of a publication, read from the dashboard: a comment is
   written under the account of the publication, a comment is answered
-  where the social media serves the replies, and *Recommend* toggles the
-  reaction of the account on the publication and on each of its
-  comments. Which of them a social media really serves is declared by
-  its connector, and only then is the entry offered.
+  where the social media serves the replies, a comment of the thread is
+  deleted after a confirmation, and *Recommend* toggles the reaction of
+  the account on the publication and on each of its comments. Which of
+  them a social media really serves is declared by its connector, and
+  only then is the entry offered.
 
-This module does not connect to any social media by itself: it brings
-the scheduled actions, the frontend and the common interface, and a
-synchronization connector is what implements the calls for one social
-media in particular.
+This module implements the API of no social media in particular: it
+brings the scheduled actions, the frontend and the common interface, and
+a synchronization connector is what implements the calls for one social
+media. The only thing it fetches on its own is the media of an imported
+publication, from the URL the connector hands it.
 
 **Table of contents**
 
@@ -122,15 +131,18 @@ module installs it at ``0``, so it is there to be found, and zero is no
 policy at all: no media is ever released.
 
 A system parameter holds text, and this one is read as a number of days.
-Anything that cannot be read as one — a word, an empty value — is taken
-as no policy and leaves a warning in the log; zero and any negative
-number are no policy too, and those are not worth a warning. No media is
+A value that cannot be read as one — a word — is taken as no policy and
+leaves a warning in the log; an empty value, zero and any negative
+number are no policy too and are not worth a warning. No media is
 released in any of those cases.
 
 Written as a positive number of days, the daily vacuum releases the
 images and videos this module downloaded for the imported publications
-older than that, and the files are deleted a day later. Two things to
-weigh before writing a number:
+older than that, and the files are deleted a day later. One run reaches
+a thousand publications and takes them in the order they were created,
+so a database holding more aged publications than that keeps the medias
+of the ones beyond the first thousand. Two things to weigh before
+writing a number:
 
 - *What is lost* is the media itself. The card of an aged publication is
   drawn with no image and no placeholder in its place. The link to the
@@ -174,13 +186,16 @@ Importing what an account already published.
   the import has to download, and so the only ones whose images appear
   on the dashboard after it rather than before: a publication sent from
   Odoo already shares the medias of its post.
-- The first import fills the time series of the account backwards, as
-  far back as the social media answers by day. How far that is belongs
-  to the social media, not to Odoo, so two accounts may well start with
-  a different depth of history.
+- The time series of the account is filled backwards when the account is
+  linked, by *Social Media Base*, as far back as the social media
+  answers by day; the first import only asks for it again when that fill
+  could not be read then. How far back that is belongs to the social
+  media, not to Odoo, so two accounts may well start with a different
+  depth of history.
 - Afterwards, the *Update* button of the dashboard imports again on
-  demand. Without this module that button only refreshes the daily
-  series; with it, it does both.
+  demand. Without this module that button refreshes the daily series of
+  the account and the figures of the publications of the last 30 days;
+  with it, the same press also imports the publications.
 - Pressed with no account picked, the button imports only the accounts
   known to be behind: the ones announcing publications to import and the
   ones whose first import never ran. Pressed on a single account, it
@@ -193,10 +208,17 @@ Importing what an account already published.
   did not bring in.
 - The figures imported for a publication — impressions, social media
   clicks, shares, likes, comments, interactions and engagement — are
-  added by this module to the list of publications, to their form and to
-  the *Statistics* dialog of a card. Without it those views show only
-  the tracked clicks, which are counted by the link tracker of *Social
-  Media Base*.
+  added by this module to the list of publications and to their form,
+  which span the whole history. The *Statistics* dialog of a card
+  belongs to *Social Media Base*, which reads those figures back for the
+  publications of the last 30 days on its own; without this module the
+  list and the form show only the tracked clicks, counted by the link
+  tracker.
+- The totals a post adds up from its publications — likes, comments,
+  clicks, shares, interactions and engagement — are drawn by this module
+  on the list of posts, and Clicks, Interactions and Engagement on the
+  kanban card of a post; without it those columns and that card carry a
+  zero nothing can turn into a number.
 
 What each notice on a card announces.
 -------------------------------------
@@ -246,8 +268,10 @@ Comments and reactions.
   the social media, under the account of the publication, which is what
   the composer announces.
 - Answering a comment moves the composer under it, so the reply is
-  written where it will be read, and it stays there afterwards for the
-  next one. Pressing the entry again hands the composer back to the head
+  written where it will be read. Once the reply is published the
+  composer returns to the head of the dialog; only a reply the social
+  media rejected keeps the aim, so the retry starts under the same
+  comment. Pressing the entry again hands the composer back to the head
   of the dialog, which also holds it while the answered comment is not
   on the list.
 - A comment is answered where the social media serves the replies. Where
@@ -299,11 +323,16 @@ bytes of two identical images still land on the same file, because the
 filestore keys its files by the hash of their content; what multiplies
 is the rows.
 
-Nothing ages them out. There is no retention policy, and the only
-deletions are the cascade that takes the medias of a publication when
-the publication is deleted and ``social.account.action_purge_account``,
-which drops an account with its history. Serving those bytes from
-somewhere else is configured at the level of Odoo, through
+What ages them out is one number for the whole database.
+``social_media_sync.media_max_age_days`` reaches every imported
+publication older than it, whatever its account, so there is no way to
+keep the medias of one account and age out those of another, and a
+publication kept only for its figures still costs its images until that
+age is reached. The deletion itself belongs to the vacuum:
+``_gc_aged_post_medias`` releases what the policy reaches, the next
+synchronization releases what the social media no longer serves, and
+``_gc_lost_media_attachments`` deletes both a day later. Serving those
+bytes from somewhere else is configured at the level of Odoo, through
 ``ir_attachment.location``, not from here.
 
 Bug Tracker

@@ -35,13 +35,13 @@ comments.
 It is the X half of *Social Media Sync*, split from *Social Media X*
 along the same line: what a call costs. The connector asks X for a fixed
 number of things per account — link it, refresh its card, publish,
-delete, read the figures of the publications of the last 30 days — and
-that number does not change whether the account published once or ten
-thousand times. Everything whose cost grows with the history of the
-account lives here: the timeline that answers up to a hundred
-publications and one download per media not stored yet, one call per
-publication whose comments are read, and one call per publication that
-is verified.
+delete, read the figures of the publications of the last 30 days, read
+the single publication that is being opened — and that number does not
+change whether the account published once or ten thousand times.
+Everything whose cost grows with the history of the account lives here:
+the timeline that answers up to a hundred publications and one download
+per media not stored yet, and up to five calls per publication whose
+comments are read, one per page of the conversation.
 
 An Odoo that only publishes on X installs *Social Media X* alone and
 pays for none of it.
@@ -49,15 +49,14 @@ pays for none of it.
 Main features:
 
 - Import of the publications of the timeline and of the figures each of
-  them collected, on demand and through the scheduled actions of *Social
-  Media Sync*.
+  them collected, on demand, through the scheduled actions of *Social
+  Media Sync* and through the check for updates of *Social Media Base*,
+  which on X imports instead of flagging the account.
 - Comments of a publication, read from the dashboard: the conversation
   is walked page by page up to a ceiling, and the replies of a comment
   are nested from what was read instead of being asked for apart. A
   comment answers the publication, and answering a comment answers that
   comment, which on X is a post like any other.
-- Verification that a publication still exists on X before the dashboard
-  acts on it.
 - Reading only what was published after a chosen publication, with
   *Enable since*, for an account that does not need its whole history
   read again.
@@ -74,24 +73,28 @@ rendered for the X publications. The roadmap says the rest.
 Statistics account
 ------------------
 
-In the case of X statistics, only current posts are taken into account;
-if some are deleted, the metrics also decrease, that is, it is not a
-history of the account's posts.
+The figures of the account are the sum of the publications Odoo holds
+for it. A publication deleted on X is marked *Deleted* and keeps the
+figures of the last read, so it goes on counting; the figures only fall
+when the record itself is removed in Odoo.
 
-The metrics are computed on the **100 most recent publications** X
-answers in a single request, and only on original publications:
-retweets, replies and quotes are discarded both when importing and when
-computing. The publications older than those 100 are not counted,
-because the timeline (``GET /2/users/:id/tweets``) is read once and not
-paginated, in order to spare the requests of the plan.
+The figures of the card are the sum of every publication of the account
+stored in Odoo, with no window and no ceiling. What the hundred
+publications of one timeline page limit is how far back an import
+reaches, and what the 30-day window of *Social Media X* limits is which
+publications get their figures read back from X; anything older keeps
+the last figures that were read for it and keeps being counted. Only
+original publications are stored and counted: retweets, replies and
+quotes are discarded on import.
 
 1. The eye icon: Total number of views, which may include multiple views
    by the same user.
 
-2. The hand icon: means the interactions (likes, comments, retweets and
-   quotes) of current posts. They are the
-   `metrics <https://docs.x.com/x-api/fundamentals/metrics>`__ X returns
-   for a post.
+2. The hand icon: the interactions (likes, comments, retweets and
+   quotes) of every publication stored for the account, a publication
+   deleted on X included, which keeps the figures of the last read. They
+   are the `metrics <https://docs.x.com/x-api/fundamentals/metrics>`__ X
+   returns for a post.
 
 3. The star icon: the engagement of the account, the interactions of its
    publications over their impressions. X reports no rate of its own, so
@@ -122,7 +125,9 @@ Media Sync*, and this only keeps an X account from being left without
 the half that belongs to it.
 
 Installing *Social Media X* alone is a valid installation: the account
-is linked, publishes and deletes.
+is linked, publishes and deletes, reads back the figures of the
+publications of the last 30 days, and marks as *Deleted* the publication
+that is opened after being deleted on X.
 
 It adds no Python dependency of its own: it asks the connector for the
 tweepy client and never builds one.
@@ -151,9 +156,11 @@ Enable since
 - Select *Enable since*
 
 - The *Post since* field is then enabled, allowing you to select the
-  post to start the search for in the next post retrieval. Note that
-  metrics for older posts will not be updated if this option is
-  selected.
+  post to start the search for in the next post retrieval. The import no
+  longer reads what is older than that publication, but the figures of
+  the publications of the last 30 days are read back all the same by
+  *Social Media X*; older than that, each publication keeps the last
+  figures that were read for it.
 
   |ENABLE_SINCE|
 
@@ -161,17 +168,25 @@ Scheduled actions
 -----------------
 
 The passes over an X account are the ones *Social Media Sync* declares,
-plus the check for updates of *Social Media Base*:
+plus two of *Social Media Base*: the check for updates and the daily
+refresh of the figures of the recent publications.
 
-- *Check media updates*, every 2 hours, reads the timeline of every X
-  account. X has no cheap answer to whether anything moved — the only
-  endpoint that knows is the timeline, and reading it is already the
-  import — so this pass imports instead of flagging the account.
+- *Social: Checking social media updates*, every 2 hours, reads the
+  timeline of every X account. X has no cheap answer to whether anything
+  moved — the only endpoint that knows is the timeline, and reading it
+  is already the import — so this pass imports instead of flagging the
+  account.
 - *Initial sync of the new accounts*, monthly, imports the timeline of
   an account that was just linked. Linking one triggers this action
   immediately as well, so its card is filled from the first moment.
-- *Full resync*, weekly, is the only pass that notices a publication
-  deleted on X.
+- *Full resync*, weekly, reads the timeline of an X account exactly as
+  the ordinary import does, so it notices nothing that was deleted
+  there. A publication deleted on X is marked *Deleted* when someone
+  opens it from the dashboard or from its form, which is a check of
+  *Social Media X*.
+- *Social: Refresh the statistics of the recent publications*, daily,
+  reads the publications of the last 30 days by identifier, which is a
+  call of *Social Media X* and not of this module.
 
 An account whose first import has not run yet is left out of the
 bihourly check, because that check and the initial import write the same
@@ -191,10 +206,14 @@ Importing the publications
   paginated: what is older than those hundred is not imported, in order
   to spare the requests of the plan. Retweets and replies are excluded,
   so only the original publications of the account are stored.
-- Each media of an imported publication is downloaded once and stored as
-  an attachment. A media already stored is not asked for again.
-- The *Update* button of the dashboard card runs the same import on
-  demand.
+- Each media X answers with a direct address is downloaded once and
+  stored as an attachment; one it answers without a direct address is
+  not stored. A media already stored is not asked for again.
+- The *Update* button of the dashboard runs the same import on demand,
+  over every account shown.
+- The module adds the *With Reposts* and *With Quotes* filters to the
+  search panel of the dashboard, next to the filters of impressions and
+  interactions of *Social Media Sync*.
 - With *Enable since* the import only asks for what was published after
   the stored publication, so the older publications are no longer read
   by this import. The ones published in the last 30 days are refreshed
@@ -206,6 +225,9 @@ Importing the publications
 Comments
 --------
 
+- A comment or a reply written on an X thread may carry images. The
+  composer offers the upload, the files travel to X with the reply and
+  are shown on the published comment.
 - The comments of a publication are read with the `recent
   search <https://docs.x.com/x-api/posts/recent-search>`__ endpoint of
   X, which only covers the **last 7 days**: the replies to older
@@ -222,26 +244,23 @@ Comments
   call to X: on X a comment is a post like any other, and what changes
   is the post being replied to.
 
-Verification of a publication
------------------------------
+What this module does not detect
+--------------------------------
 
-- Before acting on a publication from the dashboard, Odoo checks on X
-  that the post still exists. If it was deleted directly on X, the
-  action stops, the publication is marked as *Deleted* in Odoo and the
-  notice *The post does not exist or has been deleted.* is shown.
-- Only the *Not Found* answer of X marks the publication as deleted. A
-  throttled application, or any other failure, means the post could not
-  be read and the publication is left untouched.
+- Its own passes do not detect a publication deleted on X: a publication
+  deleted there is marked *Deleted* only by the check *Social Media X*
+  makes when the publication is opened.
 
 Rate limits
 -----------
 
 The endpoints this module spends from the plan of the account are the
-timeline of the user, the recent search of the comments, the publication
-of a reply and the read of a single post. Each of them has its own
-window on the account, the same record where *Social Media X* stores the
-ones it spends, and when X answers that one is exhausted Odoo stops
-calling that endpoint until the window expires.
+timeline of the user, the recent search of the comments and the
+publication of a reply. Each of them has its own window on the account,
+the same record where *Social Media X* stores the windows of the
+endpoints it spends —the read of a single post and the read of the
+figures by identifier—, and when X answers that one is exhausted Odoo
+stops calling that endpoint until the window expires.
 
 While the window of the comments lasts, opening the conversation of a
 publication shows the notice *The comments could not be read from X. The
@@ -251,8 +270,9 @@ on screen untouched.
 
 While the window of the replies lasts, publishing a comment answers *The
 comment could not be published on X. The account may have reached the
-limit of requests of its plan.* and the text stays in the composer,
-instead of reporting a reply X never received.
+limit of requests of its plan.* instead of reporting a reply X never
+received. The text of the composer is not kept, but the comment being
+answered stays aimed at, so the retry starts under the same comment.
 
 Uninstalling
 ------------
