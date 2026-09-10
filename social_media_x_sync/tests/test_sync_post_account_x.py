@@ -273,6 +273,7 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         fake_response = MagicMock()
         fake_response.data = [comment, reply]
         fake_response.includes = {"users": [fake_user]}
+        fake_response.meta = {}
         fake_client = MagicMock()
         fake_client.search_recent_tweets.return_value = fake_response
         (
@@ -470,6 +471,7 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         fake_response.data = [fake_comment]
         fake_response.includes = {"users": [fake_user], "media": [fake_media]}
         fake_response.errors = self.test_response_errors
+        fake_response.meta = {}
         fake_client = MagicMock()
         fake_client.search_recent_tweets.return_value = fake_response
         (
@@ -502,6 +504,7 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
         fake_response.data = [fake_comment]
         fake_response.includes = {"users": [fake_user]}
         fake_response.errors = self.test_response_errors
+        fake_response.meta = {}
         fake_client = MagicMock()
         fake_client.search_recent_tweets.return_value = fake_response
         (
