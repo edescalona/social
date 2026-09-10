@@ -10,7 +10,7 @@ from odoo.addons.social_media_sync.tests.test_social_sync_common import (
     PATCH_SYNC_POST_ACCOUNT,
 )
 
-from ..social_x_sync_utils import _SEARCH_MAX_RESULTS_X
+from ..social_x_sync_utils import _COMMENTS_MAX_PAGES_X, _SEARCH_MAX_RESULTS_X
 from .test_sync_x_common import LOGGER_POST_ACCOUNT_X_SYNC, TestSocialSyncCommonX
 
 
@@ -419,6 +419,65 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             comments = self.SocialPostAccountX.get_comments()
         by_ref = {comment["remote_ref"]: comment for comment in comments["data"]}
         self.assertEqual(by_ref["100"]["reply_count"], 12)
+
+    def test_get_comments_truncated_states_no_reply_count(self):
+        """A walk stopped by the ceiling states no total it cannot back."""
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x(
+                [self._fake_tweet_x(f"{page}00")], next_token=f"page_{page + 1}"
+            )
+            for page in range(_COMMENTS_MAX_PAGES_X)
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        self.assertEqual(
+            fake_client.search_recent_tweets.call_count,
+            _COMMENTS_MAX_PAGES_X,
+            msg="The ceiling is what stops the walk, and X still had more "
+            "pages to answer.",
+        )
+        self.assertTrue(comments["data"])
+        for comment in comments["data"]:
+            self.assertIsNone(
+                comment["reply_count"],
+                msg="Counted over an unfinished walk the total would be a "
+                "number X never said.",
+            )
+
+    def test_get_comments_rate_limited_keeps_the_pages_already_read(self):
+        """The quota reached on a later page does not undo the earlier ones.
+
+        Their cost is already paid, and the window of the endpoint is written
+        the same, so throwing them away would only leave the user with an
+        empty thread.
+        """
+        fake_client = MagicMock()
+        fake_client.search_recent_tweets.side_effect = [
+            self._fake_page_x([self._fake_tweet_x("100")], next_token="page_2"),
+            self.get_exception_manyrequests(),
+        ]
+        (
+            mock_get_client_api,
+            mock_valid_time_request,
+        ) = self.get_patch_exceptions_x(fake_client)
+        with mock_get_client_api, mock_valid_time_request:
+            comments = self.SocialPostAccountX.get_comments()
+        self.assertTrue(comments["success"])
+        self.assertEqual(len(comments["data"]), 1)
+        self.assertIsNone(comments["data"][0]["reply_count"])
+        self.assertEqual(
+            self.SocialPostAccountX.account_id.rate_limit_endpoint["get_comments"][
+                "x-rate-limit-reset"
+            ],
+            9999999999,
+            msg="The window of the endpoint is written even though the read "
+            "answered what it had.",
+        )
 
     @mute_logger(LOGGER_POST_ACCOUNT_X_SYNC)
     def test_create_x_comment_exception(self):

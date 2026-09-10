@@ -88,40 +88,54 @@ class SocialPostAccount(models.Model):
         The walk stops at :data:`_COMMENTS_MAX_PAGES_X`, which is what keeps
         one dialog from spending the quota of the whole database.
 
+        The quota is what else cuts it short. Reaching it on a later page
+        keeps the pages already read, because throwing them away pays their
+        cost for nothing; on the first one there is nothing to keep, so the
+        error travels up and the caller answers what it always answered.
+
         :param client_api: the client of X the account speaks through.
         :param query: the search query naming the conversation.
         :return: the tweets read, the authors and the media by their key, and
             whether the conversation was left unfinished.
         :rtype: tuple(list, dict, dict, bool)
+        :raise TooManyRequests: when the quota stopped the very first page.
         """
         tweets = []
         users = {}
         media_urls = {}
         next_token = None
         for _page in range(_COMMENTS_MAX_PAGES_X):
-            response = client_api.search_recent_tweets(
-                query=query,
-                tweet_fields=[
-                    "id",
-                    "text",
-                    "author_id",
-                    "created_at",
-                    "conversation_id",
-                    "attachments",
-                    "in_reply_to_user_id",
-                ],
-                expansions=[
-                    "author_id",
-                    "in_reply_to_user_id",
-                    "referenced_tweets.id",
-                    "attachments.media_keys",
-                    "referenced_tweets.id.author_id",
-                ],
-                user_fields="id,name,username,profile_image_url",
-                media_fields=["media_key", "type", "url"],
-                max_results=_SEARCH_MAX_RESULTS_X,
-                next_token=next_token,
-            )
+            try:
+                response = client_api.search_recent_tweets(
+                    query=query,
+                    tweet_fields=[
+                        "id",
+                        "text",
+                        "author_id",
+                        "created_at",
+                        "conversation_id",
+                        "attachments",
+                        "in_reply_to_user_id",
+                    ],
+                    expansions=[
+                        "author_id",
+                        "in_reply_to_user_id",
+                        "referenced_tweets.id",
+                        "attachments.media_keys",
+                        "referenced_tweets.id.author_id",
+                    ],
+                    user_fields="id,name,username,profile_image_url",
+                    media_fields=["media_key", "type", "url"],
+                    max_results=_SEARCH_MAX_RESULTS_X,
+                    next_token=next_token,
+                )
+            except TooManyRequests as exManyRequest:
+                if not tweets:
+                    raise
+                self.account_id._get_message_many_requests(
+                    exManyRequest, endpoint="get_comments"
+                )
+                return tweets, users, media_urls, True
             tweets.extend(response.data or [])
             includes = getattr(response, "includes", None) or {}
             # Merged by key instead of concatenated: the same author or the
@@ -205,18 +219,27 @@ class SocialPostAccount(models.Model):
                                 ],
                             }
                         )
-                    # The walk that read them reached the end, so how many
-                    # replies each comment has is counted here and never
-                    # asked to X again.
-                    reply_counts = Counter(
-                        comment["parent_ref"]
-                        for comment in comments
-                        if comment["parent_ref"]
-                    )
-                    for comment in comments:
-                        comment["reply_count"] = reply_counts.get(
-                            comment["remote_ref"], 0
+                    if truncated:
+                        # The replies of a comment may be on the page that
+                        # was never read, so there is no total to state.
+                        # ``None`` is what the contract reserves for it, and
+                        # the client offers to unfold the replies instead of
+                        # hiding them behind a zero it cannot back.
+                        for comment in comments:
+                            comment["reply_count"] = None
+                    else:
+                        # The walk reached the end, so how many replies each
+                        # comment has is counted here and never asked to X
+                        # again.
+                        reply_counts = Counter(
+                            comment["parent_ref"]
+                            for comment in comments
+                            if comment["parent_ref"]
                         )
+                        for comment in comments:
+                            comment["reply_count"] = reply_counts.get(
+                                comment["remote_ref"], 0
+                            )
 
             except TooManyRequests as exManyRequest:
                 self.account_id._get_message_many_requests(
