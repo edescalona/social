@@ -254,7 +254,7 @@ class SocialAdvertisingCampaign(models.Model):
         if not self.campaign_group_id:
             raise UserError(
                 _(
-                    "The campaign %(campaign)s does not belong to a campaign " "group.",
+                    "The campaign %(campaign)s does not belong to a campaign group.",
                     campaign=self.display_name,
                 )
             )
@@ -280,7 +280,7 @@ class SocialAdvertisingCampaign(models.Model):
         else:
             raise UserError(
                 _(
-                    "The campaign group could not be checked on LinkedIn: " "%(error)s",
+                    "The campaign group could not be checked on LinkedIn: %(error)s",
                     error=self.env["social.account"]._linkedin_error_message(
                         group_campaign
                     ),
