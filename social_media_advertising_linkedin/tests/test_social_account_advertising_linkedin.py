@@ -378,6 +378,83 @@ class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
         self.assertEqual(res["ads"], 0)
         self.assertFalse(self.SocialPostAccountLinkedin.social_campaign_id)
 
+    @patch(PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"))
+    @patch(
+        PATCH_ADVERTISING_ACCOUNT_LINKEDIN.format("_get_linkedin_advertising_account")
+    )
+    def test_action_import_campaigns_pairs_every_new_group(
+        self, mock_advertising, mock_request_linkedin
+    ):
+        """Each new group keeps its own reference, whatever the model order.
+
+        The groups arrive in an order that is not the alphabetical one of
+        the model, so pairing the created records with the wrong reference
+        would show up as a name, a budget or a currency that does not match.
+        """
+        advertising = "urn:li:sponsoredAccount:999"
+        mock_advertising.return_value = advertising
+        (self.env.ref("base.EUR") | self.env.ref("base.GBP")).active = True
+        groups = [
+            (70, "Zeta Group", "300", "USD"),
+            (71, "Alpha Group", "100", "EUR"),
+            (72, "Mid Group", "200", "GBP"),
+        ]
+        groups_response = MagicMock(status_code=200)
+        groups_response.json.return_value = {
+            "elements": [
+                {
+                    "id": group_id,
+                    "name": name,
+                    "account": advertising,
+                    "totalBudget": {"amount": amount, "currencyCode": currency},
+                }
+                for group_id, name, amount, currency in groups
+            ],
+            "metadata": {},
+        }
+        campaigns = [(82, 72), (80, 70), (81, 71)]
+        campaigns_response = MagicMock(status_code=200)
+        campaigns_response.json.return_value = {
+            "elements": [
+                {
+                    "id": campaign_id,
+                    "name": f"Campaign {campaign_id}",
+                    "account": advertising,
+                    "campaignGroup": f"urn:li:sponsoredCampaignGroup:{group_id}",
+                    "unitCost": {"amount": "1", "currencyCode": "USD"},
+                    "dailyBudget": {"amount": "10", "currencyCode": "USD"},
+                }
+                for campaign_id, group_id in campaigns
+            ],
+            "paging": {"total": len(campaigns)},
+        }
+        creatives_response = MagicMock(status_code=200)
+        creatives_response.json.return_value = {"elements": [], "metadata": {}}
+        mock_request_linkedin.side_effect = [
+            groups_response,
+            campaigns_response,
+            creatives_response,
+        ]
+        res = self.SocialAccountLinkedin.action_import_campaigns()
+        self.assertTrue(res["success"])
+        self.assertEqual(res["groups"], 3)
+        self.assertEqual(res["campaigns"], 3)
+        for group_id, name, amount, currency in groups:
+            group = self.SocialAdvertisingCampaignGroup.search(
+                [("remote_ref", "=", f"urn:li:sponsoredCampaignGroup:{group_id}")]
+            )
+            self.assertEqual(group.name, name)
+            self.assertEqual(group.total_budget, float(amount))
+            self.assertEqual(group.currency_id.name, currency)
+        for campaign_id, group_id in campaigns:
+            campaign = self.SocialAdvertisingCampaign.search(
+                [("remote_ref", "=", f"urn:li:sponsoredCampaign:{campaign_id}")]
+            )
+            self.assertEqual(
+                campaign.campaign_group_id.remote_ref,
+                f"urn:li:sponsoredCampaignGroup:{group_id}",
+            )
+
     def _import_creatives_response(self, reference, campaign_urn):
         """Return the three responses of an import with a single creative."""
         advertising = "urn:li:sponsoredAccount:999"
