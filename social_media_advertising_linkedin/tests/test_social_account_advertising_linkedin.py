@@ -50,6 +50,41 @@ class TestSocialAccountAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
             account._require_linkedin_ad_account_id()
         self.assertIn("No LinkedIn advertising account is in use", str(error.exception))
 
+    def test_advertising_account_of_a_record_is_the_stored_one(self):
+        """A record on LinkedIn ignores the advertising account in use."""
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = self.OtherAdvertisingAccountLinkedin
+        self.assertEqual(
+            self.SocialAccountLinkedin._require_linkedin_advertising_account_of(
+                campaign
+            ),
+            "urn:li:sponsoredAccount:888",
+        )
+
+    def test_advertising_account_of_a_record_that_lost_it(self):
+        """The account in use never stands in for the one a record lost."""
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = False
+        with self.assertRaises(UserError) as error:
+            self.SocialAccountLinkedin._require_linkedin_advertising_account_of(
+                campaign
+            )
+        self.assertIn("no longer available on LinkedIn", str(error.exception))
+
+    def test_advertising_account_of_a_new_record_is_the_one_in_use(self):
+        group = self.SocialAdvertisingCampaignGroup.create({"name": "New Group"})
+        self.assertEqual(
+            self.SocialAccountLinkedin._require_linkedin_advertising_account_of(group),
+            "urn:li:sponsoredAccount:999",
+        )
+
+    def test_advertising_account_of_a_new_record_without_one_in_use(self):
+        group = self.SocialAdvertisingCampaignGroup.create({"name": "New Group"})
+        self.AdvertisingAccountLinkedin.write({"is_current": False})
+        with self.assertRaises(UserError) as error:
+            self.SocialAccountLinkedin._require_linkedin_advertising_account_of(group)
+        self.assertIn("No LinkedIn advertising account is in use", str(error.exception))
+
     def test_environment_change_drops_the_account_in_use(self):
         """A production account never keeps the test advertising account."""
         account = self.SocialAccountLinkedin

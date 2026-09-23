@@ -140,17 +140,15 @@ class SocialAdvertisingAd(models.Model):
     def _linkedin_creative_endpoint(self):
         """Return the Creatives API endpoint of this ad.
 
-        The advertising account is the one of the ad and not the one in use:
-        an ad fetched before choosing another advertising account still
-        belongs to the one it was served from.
+        The advertising account is the one stored on the ad and not the one
+        in use: an ad fetched before choosing another advertising account
+        still belongs to the one it was served from, and an ad that lost it
+        cannot be addressed at all.
 
         :rtype: str
         """
-        ad_account_urn = self.advertising_account_id.remote_ref
-        ad_account_id = (
-            linkedin_urn_id(ad_account_urn)
-            if ad_account_urn
-            else self.account_id._require_linkedin_ad_account_id()
+        ad_account_id = linkedin_urn_id(
+            self.account_id._require_linkedin_advertising_account_of(self)
         )
         return (
             f"{_ENDPOINT_AD_CREATIVES_LINKEDIN % ad_account_id}/"

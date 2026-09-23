@@ -45,12 +45,23 @@ class TestSocialCommonAdvertisingLinkedin(TestSocialCommonLinkedin):
                 "is_current": True,
             }
         )
+        cls.OtherAdvertisingAccountLinkedin = cls.env[
+            "social.advertising.account"
+        ].create(
+            {
+                "account_id": cls.SocialAccountLinkedin.id,
+                "name": "Other LinkedIn Ads",
+                "remote_ref": "urn:li:sponsoredAccount:888",
+                "environment": "test",
+            }
+        )
 
         cls.SocialAdvertisingCampaignGroupLinkedin = (
             cls.SocialAdvertisingCampaignGroup.create(
                 {
                     "name": "Campaign Group 1",
                     "remote_ref": "urn:li:sponsoredCampaignGroup:456",
+                    "advertising_account_id": cls.AdvertisingAccountLinkedin.id,
                     "total_budget": 10000,
                     "currency_id": cls.env.ref("base.USD").id,
                 }
@@ -62,6 +73,7 @@ class TestSocialCommonAdvertisingLinkedin(TestSocialCommonLinkedin):
                 "name": "Campaign 1",
                 "campaign_group_id": cls.SocialAdvertisingCampaignGroupLinkedin.id,
                 "remote_ref": "urn:li:sponsoredCampaign:001",
+                "advertising_account_id": cls.AdvertisingAccountLinkedin.id,
                 "media_id": cls.media_linkedin_data_id.id,
                 "account_ids": [Command.link(cls.SocialAccountLinkedin.id)],
             }
@@ -72,6 +84,7 @@ class TestSocialCommonAdvertisingLinkedin(TestSocialCommonLinkedin):
                 "name": "Campaign 2",
                 "campaign_group_id": cls.SocialAdvertisingCampaignGroupLinkedin.id,
                 "remote_ref": "urn:li:sponsoredCampaign:002",
+                "advertising_account_id": cls.AdvertisingAccountLinkedin.id,
             }
         )
 

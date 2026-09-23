@@ -208,6 +208,13 @@ class TestSocialAdvertisingAdLinkedin(TestSocialCommonAdvertisingLinkedin):
             self.ad_linkedin.action_delete_remote_ad()
         self.assertIn("/adAccounts/111/", mock_request.call_args.kwargs["endpoint"])
 
+    def test_creative_endpoint_without_the_advertising_account_of_the_ad(self):
+        """The account in use never stands in for the one the ad lost."""
+        self.ad_linkedin.advertising_account_id = False
+        with self.assertRaises(UserError) as error:
+            self.ad_linkedin._linkedin_creative_endpoint()
+        self.assertIn("no longer available on LinkedIn", str(error.exception))
+
     def test_web_url_points_to_the_creative_in_the_campaign_manager(self):
         self.assertEqual(
             self.ad_linkedin.web_url,

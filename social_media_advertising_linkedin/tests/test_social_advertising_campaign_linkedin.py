@@ -293,7 +293,12 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
         )
         with self.assertRaises(UserError):
             campaign.action_archive_linkedin()
-        campaign.write({"remote_ref": "urn:li:sponsoredCampaign:003"})
+        campaign.write(
+            {
+                "remote_ref": "urn:li:sponsoredCampaign:003",
+                "advertising_account_id": self.AdvertisingAccountLinkedin.id,
+            }
+        )
         campaign.account_ids = [Command.clear()]
         with self.assertRaises(UserError):
             campaign.action_archive_linkedin()
@@ -528,6 +533,7 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
 
     def test_web_url_is_empty_without_an_advertising_account(self):
         """Nothing to build the address from means no button at all."""
+        self.SocialAdvertisingCampaignLinkedin.advertising_account_id = False
         self.assertFalse(self.SocialAdvertisingCampaignLinkedin.web_url)
 
     def test_publish_campaign_group_without_a_group(self):
@@ -653,6 +659,124 @@ class TestSocialAdvertisingCampaignLinkedin(TestSocialCommonAdvertisingLinkedin)
                 campaign.action_update_linkedin()
         self.assertIn("could not be updated on LinkedIn", str(error.exception))
         self.assertTrue(campaign.linkedin_needs_update)
+
+    def test_verify_campaign_uses_its_advertising_account(self):
+        """A 404 only means gone when asked to the account of the campaign."""
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = self.OtherAdvertisingAccountLinkedin
+        with self.get_patch_exceptions_linkedin(
+            MagicMock(status_code=200)
+        ) as mock_request:
+            campaign._linkedin_verify_campaign(self.SocialAccountLinkedin)
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"], "/adAccounts/888/adCampaigns/001"
+        )
+
+    def test_verify_campaign_without_its_advertising_account(self):
+        """Nothing is asked, so nothing is created again."""
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = False
+        with self.get_patch_exceptions_linkedin() as mock_request:
+            with self.assertRaises(UserError) as error:
+                campaign._linkedin_verify_campaign(self.SocialAccountLinkedin)
+        self.assertIn("no longer available on LinkedIn", str(error.exception))
+        mock_request.assert_not_called()
+
+    def test_action_update_linkedin_uses_its_advertising_account(self):
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = self.OtherAdvertisingAccountLinkedin
+        with self._mock_linkedin(
+            MagicMock(status_code=204), self.SocialAccountLinkedin
+        ) as mock_request:
+            campaign.action_update_linkedin()
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"], "/adAccounts/888/adCampaigns/001"
+        )
+
+    def test_campaign_archive_linkedin_uses_its_advertising_account(self):
+        campaign = self.SocialAdvertisingCampaignLinkedin
+        campaign.advertising_account_id = self.OtherAdvertisingAccountLinkedin
+        with self._mock_linkedin(
+            MagicMock(status_code=204), self.SocialAccountLinkedin
+        ) as mock_request:
+            campaign.action_archive_linkedin()
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"], "/adAccounts/888/adCampaigns/001"
+        )
+
+    def test_action_publish_linkedin_in_the_advertising_account_of_the_group(self):
+        """A new campaign joins its group in the account the group lives in."""
+        group = self.SocialAdvertisingCampaignGroup.create(
+            {
+                "name": "Group of the other account",
+                "remote_ref": "urn:li:sponsoredCampaignGroup:70",
+                "advertising_account_id": self.OtherAdvertisingAccountLinkedin.id,
+                "total_budget": 100,
+                "currency_id": self.env.ref("base.USD").id,
+            }
+        )
+        campaign = self.SocialAdvertisingCampaign.create(
+            {
+                "name": "New Campaign",
+                "campaign_group_id": group.id,
+                "media_id": self.media_linkedin_data_id.id,
+                "account_ids": [Command.link(self.SocialAccountLinkedin.id)],
+                "unit_cost": 1,
+                "daily_budget": 10,
+            }
+        )
+        groups = self.SocialAdvertisingCampaignGroup.search_count([])
+        with self.get_patch_exceptions_linkedin(
+            side_effect=[
+                MagicMock(status_code=200),
+                MagicMock(status_code=201, headers={"x-restli-id": "67"}),
+            ]
+        ) as mock_request:
+            campaign.action_publish_linkedin()
+        verify_call, create_call = mock_request.call_args_list
+        self.assertEqual(
+            verify_call.kwargs["endpoint"], "/adAccounts/888/adCampaignGroups/70"
+        )
+        self.assertEqual(create_call.kwargs["endpoint"], "/adAccounts/888/adCampaigns")
+        self.assertEqual(
+            create_call.kwargs["json_data"]["account"], "urn:li:sponsoredAccount:888"
+        )
+        self.assertEqual(
+            create_call.kwargs["json_data"]["campaignGroup"], group.remote_ref
+        )
+        self.assertEqual(self.SocialAdvertisingCampaignGroup.search_count([]), groups)
+        self.assertEqual(campaign.remote_ref, "urn:li:sponsoredCampaign:67")
+        self.assertEqual(
+            campaign.advertising_account_id, self.OtherAdvertisingAccountLinkedin
+        )
+
+    def test_action_publish_linkedin_group_without_its_advertising_account(self):
+        """A group that lost its account is neither checked nor duplicated."""
+        group = self.SocialAdvertisingCampaignGroup.create(
+            {
+                "name": "Group that lost its account",
+                "remote_ref": "urn:li:sponsoredCampaignGroup:70",
+                "total_budget": 100,
+                "currency_id": self.env.ref("base.USD").id,
+            }
+        )
+        campaign = self.SocialAdvertisingCampaign.create(
+            {
+                "name": "New Campaign",
+                "campaign_group_id": group.id,
+                "media_id": self.media_linkedin_data_id.id,
+                "account_ids": [Command.link(self.SocialAccountLinkedin.id)],
+                "unit_cost": 1,
+                "daily_budget": 10,
+            }
+        )
+        with self.get_patch_exceptions_linkedin() as mock_request:
+            with self.assertRaises(UserError) as error:
+                campaign.action_publish_linkedin()
+        self.assertIn("no longer available on LinkedIn", str(error.exception))
+        mock_request.assert_not_called()
+        self.assertEqual(group.remote_ref, "urn:li:sponsoredCampaignGroup:70")
+        self.assertFalse(campaign.remote_ref)
 
 
 @tagged("post_install", "-at_install")

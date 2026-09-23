@@ -306,7 +306,9 @@ class SocialAdvertisingCampaignGroup(models.Model):
             raise UserError(
                 _("No LinkedIn social account is available to update the group.")
             )
-        ad_account_id = account._require_linkedin_ad_account_id()
+        ad_account_id = linkedin_urn_id(
+            account._require_linkedin_advertising_account_of(self)
+        )
         response = account._patch_linkedin(
             f"{_ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN % ad_account_id}/"
             f"{linkedin_urn_id(self.remote_ref)}",
@@ -356,7 +358,9 @@ class SocialAdvertisingCampaignGroup(models.Model):
                 _("No LinkedIn social account is available to archive the group.")
             )
         stage = self.env["social.stage"]._require_linkedin_stage("group", "ARCHIVED")
-        ad_account_id = account._require_linkedin_ad_account_id()
+        ad_account_id = linkedin_urn_id(
+            account._require_linkedin_advertising_account_of(self)
+        )
         response = account._patch_linkedin(
             f"{_ENDPOINT_AD_CAMPAIGN_GROUPS_LINKEDIN % ad_account_id}/"
             f"{linkedin_urn_id(self.remote_ref)}",

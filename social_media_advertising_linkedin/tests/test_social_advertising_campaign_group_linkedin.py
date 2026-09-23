@@ -180,7 +180,12 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
         )
         with self.assertRaises(UserError):
             group.action_archive_linkedin()
-        group.write({"remote_ref": "urn:li:sponsoredCampaignGroup:457"})
+        group.write(
+            {
+                "remote_ref": "urn:li:sponsoredCampaignGroup:457",
+                "advertising_account_id": self.AdvertisingAccountLinkedin.id,
+            }
+        )
         with patch(
             PATCH_ADVERTISING_CAMPAIGN_GROUP_LINKEDIN.format("_get_linkedin_account"),
             autospec=True,
@@ -206,6 +211,7 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
 
     def test_web_url_is_empty_without_an_advertising_account(self):
         """Nothing to build the address from means no button at all."""
+        self.SocialAdvertisingCampaignGroupLinkedin.advertising_account_id = False
         self.assertFalse(self.SocialAdvertisingCampaignGroupLinkedin.web_url)
 
     def test_runschedule_is_refreshed_only_for_a_draft(self):
@@ -247,7 +253,12 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
         with self.assertRaises(UserError) as error:
             group.action_update_linkedin()
         self.assertIn("does not exist on LinkedIn yet", str(error.exception))
-        group.write({"remote_ref": "urn:li:sponsoredCampaignGroup:458"})
+        group.write(
+            {
+                "remote_ref": "urn:li:sponsoredCampaignGroup:458",
+                "advertising_account_id": self.AdvertisingAccountLinkedin.id,
+            }
+        )
         with self.assertRaises(UserError) as error:
             group.action_update_linkedin()
         self.assertIn("must have a currency", str(error.exception))
@@ -285,4 +296,28 @@ class TestSocialAdvertisingCampaignGroupLinkedin(TestSocialCommonAdvertisingLink
         self.assertEqual(
             mock_request.call_args.kwargs["endpoint"],
             "/adAccounts/999/adCampaignGroups/456",
+        )
+
+    def test_group_update_linkedin_uses_its_advertising_account(self):
+        group = self.SocialAdvertisingCampaignGroupLinkedin
+        group.advertising_account_id = self.OtherAdvertisingAccountLinkedin
+        with self._mock_linkedin(
+            MagicMock(status_code=204), self.SocialAccountLinkedin
+        ) as mock_request:
+            group.action_update_linkedin()
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"],
+            "/adAccounts/888/adCampaignGroups/456",
+        )
+
+    def test_group_archive_linkedin_uses_its_advertising_account(self):
+        group = self.SocialAdvertisingCampaignGroupLinkedin
+        group.advertising_account_id = self.OtherAdvertisingAccountLinkedin
+        with self._mock_linkedin(
+            MagicMock(status_code=204), self.SocialAccountLinkedin
+        ) as mock_request:
+            group.action_archive_linkedin()
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"],
+            "/adAccounts/888/adCampaignGroups/456",
         )

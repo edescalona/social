@@ -414,6 +414,26 @@ class TestSocialPostAdvertisingLinkedin(TestSocialCommonAdvertisingLinkedin):
             post_account._action_campaign_post(False)
         self.assertIn("could not be generated for the post", str(error.exception))
 
+    def test_action_campaign_post_uses_the_advertising_account_of_the_campaign(self):
+        """The creative goes where the campaign it sponsors lives."""
+        post_account = self.SocialPostAccountCampaignLinkedin
+        post_account.social_campaign_id.advertising_account_id = (
+            self.OtherAdvertisingAccountLinkedin
+        )
+        created = MagicMock(
+            status_code=201, headers={"x-restli-id": "urn:li:sponsoredCreative:5"}
+        )
+        with self.get_patch_exceptions_linkedin(created) as mock_request:
+            creative = post_account._action_campaign_post("urn:li:share:1")
+        self.assertEqual(creative, "urn:li:sponsoredCreative:5")
+        self.assertEqual(
+            mock_request.call_args.kwargs["endpoint"], "/adAccounts/888/creatives"
+        )
+        self.assertEqual(
+            mock_request.call_args.kwargs["json_data"]["campaign"],
+            "urn:li:sponsoredCampaign:001",
+        )
+
     @mute_logger(LOGGER_POST_ACCOUNT_ADVERTISING_LINKEDIN)
     def test_published_values_report_a_creative_failure(self):
         """The post is already online, so the failure is told, never raised."""

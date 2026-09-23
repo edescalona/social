@@ -248,6 +248,33 @@ class SocialAccount(models.Model):
             raise UserError(self._linkedin_no_advertising_account_message())
         return advertising_account_urn
 
+    def _require_linkedin_advertising_account_of(self, record):
+        """Return the advertising account URN a LinkedIn record belongs to, or raise.
+
+        A campaign, a campaign group or an ad already on LinkedIn lives in
+        the advertising account stored on it, whichever one is in use now:
+        addressing another one answers 404, which would read as a record
+        gone from LinkedIn and lead to creating a duplicate. A record on
+        LinkedIn without a stored account lost it when the account vanished
+        from LinkedIn, and nothing else can stand in for it. A record not
+        on LinkedIn yet goes to the advertising account in use.
+
+        :param record: The campaign, campaign group or ad.
+        :rtype: str
+        """
+        advertising_account_urn = record.advertising_account_id.remote_ref
+        if advertising_account_urn:
+            return advertising_account_urn
+        if record.remote_ref:
+            raise UserError(
+                _(
+                    "The advertising account of %(record)s is no longer "
+                    "available on LinkedIn.",
+                    record=record.display_name,
+                )
+            )
+        return self._require_linkedin_advertising_account()
+
     def _require_linkedin_ad_account_id(self):
         """Return the identifier of the advertising account, or raise.
 

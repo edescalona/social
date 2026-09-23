@@ -298,7 +298,9 @@ class SocialAdvertisingCampaign(models.Model):
         self.ensure_one()
         if not self.remote_ref:
             return False
-        ad_account_id = account._require_linkedin_ad_account_id()
+        ad_account_id = linkedin_urn_id(
+            account._require_linkedin_advertising_account_of(self)
+        )
         campaign = account._request_linkedin(
             endpoint=(
                 f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
@@ -460,7 +462,11 @@ class SocialAdvertisingCampaign(models.Model):
         self.ensure_one()
         self._validate_publish_linkedin()
         account = self._linkedin_account()
-        advertising_account_urn = account._require_linkedin_advertising_account()
+        # What is already on LinkedIn fixes the advertising account the rest
+        # is created in: the campaign first, then its group.
+        advertising_account_urn = account._require_linkedin_advertising_account_of(
+            self if self.remote_ref else self.campaign_group_id
+        )
         group_urn = self._linkedin_publish_campaign_group(
             account, advertising_account_urn
         )
@@ -540,7 +546,9 @@ class SocialAdvertisingCampaign(models.Model):
         if self.linkedin_political_intent:
             values["politicalIntent"] = self.linkedin_political_intent
         values.update(self._linkedin_runschedule_values())
-        ad_account_id = account._require_linkedin_ad_account_id()
+        ad_account_id = linkedin_urn_id(
+            account._require_linkedin_advertising_account_of(self)
+        )
         response = account._patch_linkedin(
             f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
             f"{linkedin_urn_id(self.remote_ref)}",
@@ -591,7 +599,9 @@ class SocialAdvertisingCampaign(models.Model):
         if not account:
             raise UserError(_("The campaign must have a social account."))
         stage = self.env["social.stage"]._require_linkedin_stage("campaign", "ARCHIVED")
-        ad_account_id = account._require_linkedin_ad_account_id()
+        ad_account_id = linkedin_urn_id(
+            account._require_linkedin_advertising_account_of(self)
+        )
         response = account._patch_linkedin(
             f"{_ENDPOINT_AD_CAMPAIGNS_LINKEDIN % ad_account_id}/"
             f"{linkedin_urn_id(self.remote_ref)}",

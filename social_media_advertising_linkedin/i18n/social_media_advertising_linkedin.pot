@@ -786,6 +786,14 @@ msgstr ""
 #. module: social_media_advertising_linkedin
 #. odoo-python
 #: code:addons/social_media_advertising_linkedin/models/social_account.py:0
+#, python-format
+msgid ""
+"The advertising account of %(record)s is no longer available on LinkedIn."
+msgstr ""
+
+#. module: social_media_advertising_linkedin
+#. odoo-python
+#: code:addons/social_media_advertising_linkedin/models/social_account.py:0
 #: code:addons/social_media_advertising_linkedin/models/social_account.py:0
 #, python-format
 msgid "The advertising accounts could not be read from LinkedIn: %(error)s"
@@ -1175,12 +1183,12 @@ msgid "Update in LinkedIn"
 msgstr ""
 
 #. module: social_media_advertising_linkedin
-#: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_campaign__linkedin_objective__video_view
+#: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_campaign__linkedin_objective__video_views
 msgid "Video views"
 msgstr ""
 
 #. module: social_media_advertising_linkedin
-#: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_campaign__linkedin_objective__website_visit
+#: model:ir.model.fields.selection,name:social_media_advertising_linkedin.selection__social_advertising_campaign__linkedin_objective__website_visits
 msgid "Website visits"
 msgstr ""
 

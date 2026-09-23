@@ -9,6 +9,10 @@ from odoo import _, fields, models
 from odoo.exceptions import UserError
 from odoo.service.model import PG_CONCURRENCY_ERRORS_TO_RETRY
 
+from odoo.addons.social_media_linkedin.social_linkedin_utils import (
+    linkedin_urn_id,
+)
+
 from ..social_advertising_linkedin_utils import _ENDPOINT_AD_CREATIVES_LINKEDIN
 
 _logger = logging.getLogger(__name__)
@@ -67,7 +71,11 @@ class SocialPostAccount(models.Model):
                         "please try again later."
                     )
                 )
-            ad_account_id = self.account_id._require_linkedin_ad_account_id()
+            ad_account_id = linkedin_urn_id(
+                self.account_id._require_linkedin_advertising_account_of(
+                    self.social_campaign_id
+                )
+            )
             response = self.account_id._request_linkedin(
                 method="POST",
                 endpoint=_ENDPOINT_AD_CREATIVES_LINKEDIN % ad_account_id,
