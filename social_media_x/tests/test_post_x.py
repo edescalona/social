@@ -1,7 +1,9 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+from tweepy.errors import Forbidden
 
 from odoo import Command
 from odoo.exceptions import UserError
@@ -352,6 +354,41 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertEqual(line.state, "failed")
         self.assertIn("X Premium", line.failed_description)
         self.assertFalse(line.remote_ref)
+
+    @mute_logger("odoo.addons.social_media_base.models.social_post_account")
+    def test_action_post_forbidden_by_x_leaves_the_account_alone(self):
+        """A 403 fails the line with its reason and flags nothing on the account.
+
+        X answers a long post of an account marked X Premium without the
+        subscription with a 403, which authorizing the account again does not
+        fix: the line tells the user to check the setting, the post goes back
+        to draft and the account is not asked to be authorized again.
+        """
+        self.SocialAccountX.x_premium = True
+        post = self._draft_post(message="x" * 329)
+        fake_client = MagicMock()
+        fake_client.create_tweet.side_effect = self.get_x_refusal(
+            Forbidden, 403, "You are not permitted to perform this action."
+        )
+        with self.get_patch_exceptions_x(
+            fake_client=fake_client, valid_time_request=False
+        ), patch.object(
+            type(self.SocialAccountX),
+            "_flag_credentials_expired",
+            autospec=True,
+        ) as mock_flag:
+            post._action_create_post_account()
+        line = post.post_account_ids
+        self.assertEqual(line.state, "failed")
+        self.assertIn("X Premium", line.failed_description)
+        self.assertIn(
+            "You are not permitted to perform this action.",
+            line.failed_description,
+        )
+        self.assertFalse(line.remote_ref)
+        self.assertEqual(post.state, "draft")
+        self.assertFalse(self.SocialAccountX.need_update)
+        mock_flag.assert_not_called()
 
     def test_action_post_fails_only_the_account_the_message_is_too_long_for(self):
         """A limit of one account stops that account and nothing else.

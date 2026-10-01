@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from freezegun import freeze_time
-from tweepy.errors import BadRequest, Unauthorized
+from tweepy.errors import BadRequest, Forbidden, Unauthorized
 
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
@@ -35,6 +35,13 @@ from .test_common_x import (
 )
 
 LOGGER_ACCOUNT_X = "odoo.addons.social_media_x.models.social_account"
+NOT_PERMITTED_X = "You are not permitted to perform this action."
+NOT_ATTACHED_TO_A_PROJECT_X = (
+    "When authenticating requests to the X API v2 endpoints, you must use "
+    "keys and tokens from a developer App that is attached to a Project. You "
+    "can create a project via the developer portal."
+)
+PREMIUM_HINT_X = "check the X Premium setting of the account"
 
 
 class _FakeResponse:
@@ -1143,25 +1150,131 @@ class TestSocialAccountX(TestSocialCommonX):
         with mock_get_client_api, self.assertRaises(SocialCredentialsError):
             self.SocialAccount.create_tweet("Message Test", [], [], None, {})
 
+    def _create_tweet_refused(self, error, message="Message Test"):
+        """Publish ``message`` while X answers ``error``, return what is raised."""
+        fake_client = MagicMock()
+        fake_client.create_tweet.side_effect = error
+        mock_get_client_api = self.get_patch_exceptions_x(
+            fake_client=fake_client, valid_time_request=False
+        )
+        with mock_get_client_api, self.assertRaises(Exception) as raised:
+            self.SocialAccountX.create_tweet(message, [], [], None, {})
+        return raised.exception
+
     @mute_logger(LOGGER_ACCOUNT_X)
     def test_create_tweet_refused_post(self):
-        """A post X refuses names the plan of the account as the reason.
+        """A long post of an account marked X Premium names the plan.
 
         The characters an account may publish are declared on the account, so
         a subscription marked on one that does not hold it is only found out
         here, and the user reads why instead of the raw answer of X.
         """
-        fake_client = MagicMock()
-        fake_client.create_tweet.side_effect = BadRequest(
-            self.generate_magic_mock(status_code=400, json_return_value={})
+        self.SocialAccountX.x_premium = True
+        error = self._create_tweet_refused(
+            self.get_x_refusal(BadRequest, 400, "Invalid Request"), "x" * 329
         )
-        mock_get_client_api = self.get_patch_exceptions_x(
-            fake_client=fake_client, valid_time_request=False
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertIn(PREMIUM_HINT_X, str(error))
+        self.assertIn(self.SocialAccountX.display_name, str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_refused_post_without_premium(self):
+        """A refused post of an account without X Premium keeps the text of X."""
+        error = self._create_tweet_refused(
+            self.get_x_refusal(BadRequest, 400, "Invalid Request"), "x" * 329
         )
-        with mock_get_client_api, self.assertRaises(UserError) as error:
-            self.SocialAccountX.create_tweet("Message Test", [], [], None, {})
-        self.assertIn("X Premium", str(error.exception))
-        self.assertIn(self.SocialAccountX.display_name, str(error.exception))
+        self.assertIsInstance(error, UserError)
+        self.assertNotIn(PREMIUM_HINT_X, str(error))
+        self.assertIn("Invalid Request", str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_forbidden_is_not_a_credentials_error(self):
+        """A 403 is a post X refuses, not a token it no longer accepts."""
+        error = self._create_tweet_refused(
+            self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X), "x" * 100
+        )
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertNotIn(PREMIUM_HINT_X, str(error))
+        self.assertIn(NOT_PERMITTED_X, str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_forbidden_long_post_of_a_premium_account(self):
+        """The 403 X answers a long post of a Premium account names the plan."""
+        self.SocialAccountX.x_premium = True
+        error = self._create_tweet_refused(
+            self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X), "x" * 329
+        )
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertIn(PREMIUM_HINT_X, str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_forbidden_app_without_paid_plan(self):
+        """An App that cannot spend is explained with the pricing address."""
+        error = self._create_tweet_refused(
+            self.get_x_refusal(Forbidden, 403, NOT_ATTACHED_TO_A_PROJECT_X)
+        )
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertIn("cannot spend against the API", str(error))
+        self.assertIn(_URL_PRICING_X, str(error))
+
+    def test_refused_post_of_an_app_without_paid_plan(self):
+        """The App that cannot spend is explained, with the pricing address.
+
+        The message ends on the failed publication, stored as plain text, so
+        the address is written as it is and not as an anchor.
+        """
+        error = self.get_x_refusal(Forbidden, 403, NOT_ATTACHED_TO_A_PROJECT_X)
+        message = self.SocialAccountX._x_refused_post_message(error, "Message Test")
+        self.assertIn("cannot spend against the API", message)
+        self.assertIn(_URL_PRICING_X, message)
+        self.assertNotIn("<a ", message)
+        self.assertNotIn(PREMIUM_HINT_X, message)
+
+    def test_refused_long_post_of_a_premium_account_is_forbidden(self):
+        """A 403 for a long post of an account marked Premium names the plan."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
+        message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
+        self.assertIn(PREMIUM_HINT_X, message)
+        self.assertIn(self.SocialAccountX.display_name, message)
+        self.assertIn(NOT_PERMITTED_X, message)
+
+    def test_refused_long_post_of_a_premium_account_is_bad_request(self):
+        """A 400 for a long post of an account marked Premium names the plan."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(BadRequest, 400, "Invalid Request")
+        message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
+        self.assertIn(PREMIUM_HINT_X, message)
+
+    def test_refused_post_without_premium_keeps_the_text_of_x(self):
+        """Without X Premium the plan has nothing to do with the refusal."""
+        for error_class, status_code in ((Forbidden, 403), (BadRequest, 400)):
+            error = self.get_x_refusal(error_class, status_code, NOT_PERMITTED_X)
+            message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
+            self.assertNotIn(PREMIUM_HINT_X, message)
+            self.assertIn(self.SocialAccountX.display_name, message)
+            self.assertIn(NOT_PERMITTED_X, message)
+
+    def test_refused_post_does_not_repeat_the_full_stop_of_x(self):
+        """The text of X ends in a full stop, and the message closes it once."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
+        for message in ("x" * 329, "x" * 100):
+            reason = self.SocialAccountX._x_refused_post_message(error, message)
+            self.assertNotIn("..", reason)
+            self.assertIn("You are not permitted to perform this action.", reason)
+
+    def test_refused_short_post_of_a_premium_account_keeps_the_text_of_x(self):
+        """A post within the limit of any plan was not refused for its length."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
+        message = self.SocialAccountX._x_refused_post_message(error, "x" * 100)
+        self.assertNotIn(PREMIUM_HINT_X, message)
+        self.assertIn(NOT_PERMITTED_X, message)
 
     def test_refresh_credentials_is_not_possible_on_x(self):
         """X gives no way to renew the token from Odoo."""

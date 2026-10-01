@@ -425,6 +425,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
+msgid "X refused the post of %(account)s: %(error)s."
+msgstr "X ha rechazado la publicación de %(account)s: %(error)s."
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
 msgid ""
 "X refused the post of %(account)s: %(error)s. What an account may publish "
 "depends on its plan, so check the X Premium setting of the account before "

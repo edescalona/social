@@ -273,6 +273,44 @@ class SocialAccount(models.Model):
             )
         return escape(str(error))
 
+    def _x_refused_post_message(self, error, message):
+        """Explain why X refused a post of this account.
+
+        X answers a refused post with a ``400`` or a ``403`` that says little
+        about the cause, so the reason is told from what Odoo knows. An App
+        that cannot spend against the API is explained as such. A post longer
+        than what X allows without a subscription, sent by an account marked
+        as X Premium, points at that setting, since a subscription marked on
+        an account that does not hold it only shows up here. Any other refusal
+        names the account and keeps the text of X, without its final full
+        stop, since the message closes the sentence itself.
+
+        The message ends on the failed publication, which stores it as plain
+        text, so the link to the pricing page is written as its address.
+
+        :param error: the ``BadRequest`` or ``Forbidden`` raised by tweepy.
+        :param str message: the text of the post, as it was sent to X.
+        :return: the reason to show to the user, as plain text.
+        :rtype: str
+        """
+        self.ensure_one()
+        if isinstance(error, Forbidden) and _is_app_without_paid_plan(error):
+            return str(self._x_error_message(error, pricing_link=_URL_PRICING_X))
+        reason = str(error).rstrip().rstrip(".")
+        if self.x_premium and len(message or "") > _MAX_MESSAGE_LENGTH_X:
+            return _(
+                "X refused the post of %(account)s: %(error)s. What an "
+                "account may publish depends on its plan, so check the X "
+                "Premium setting of the account before trying again.",
+                account=self.display_name,
+                error=reason,
+            )
+        return _(
+            "X refused the post of %(account)s: %(error)s.",
+            account=self.display_name,
+            error=reason,
+        )
+
     @api.model
     def _get_x_oauth_wizard(self, kwargs):
         """Return the association wizard that started this OAuth flow.
@@ -524,15 +562,18 @@ class SocialAccount(models.Model):
         post but a time to wait, and the user is told when to try again.
         Everything else is left to the caller: the publication guard records
         it on the line, with its reason, which is where the user looks for it
-        afterwards. An authorization refused by X is raised as a credentials
-        error, and since X has no way to renew the token from Odoo, the
-        account is flagged for the user to authorize it again.
+        afterwards. A ``401`` is raised as a credentials error: X answers it
+        for a token it no longer accepts, and since X has no way to renew the
+        token from Odoo, the account is flagged for the user to authorize it
+        again.
 
-        A post X itself refuses is answered with the reason of the account
-        instead of the raw text of the network: how many characters an
-        account may publish depends on its plan, which is declared here, so a
-        subscription marked on an account that does not hold it reaches X as
-        a post too long and comes back as this refusal.
+        A ``400`` or a ``403`` is a post X refuses, not a token it rejects:
+        the cause is the plan of the App, the plan of the account, the
+        permissions of the App or the content, and none of them is fixed by
+        authorizing the account again. They are raised as a user error with
+        the reason told by :meth:`~._x_refused_post_message`, and the account
+        is left as it is. The upload of the medias runs inside the same
+        guard, so a media X refuses is explained the same way.
 
         The references of the medias travel back with the identifier of the
         tweet, so the publication stores in one write what it published and
@@ -563,20 +604,12 @@ class SocialAccount(models.Model):
                     str(exManyRequest), post_account_id.media_type
                 )
             return False, media_refs
-        except (Unauthorized, Forbidden) as error:
+        except Unauthorized as error:
             raise SocialCredentialsError(
                 _("PUBLISHING ON X: %(error)s", error=error)
             ) from error
-        except BadRequest as error:
-            raise UserError(
-                _(
-                    "X refused the post of %(account)s: %(error)s. What an "
-                    "account may publish depends on its plan, so check the X "
-                    "Premium setting of the account before trying again.",
-                    account=self.display_name,
-                    error=error,
-                )
-            ) from error
+        except (BadRequest, Forbidden) as error:
+            raise UserError(self._x_refused_post_message(error, message)) from error
 
     def _run_check_media_updates(self):
         """Check the X accounts for updates on the social media.
