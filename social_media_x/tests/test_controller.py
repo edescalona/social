@@ -72,6 +72,8 @@ class TestSociaXlController(HttpCase):
             "_x_download_profile_image",
             autospec=True,
             return_value=False,
+        ), patch.object(
+            SocialAccount, "_x_refresh_credit_balance", autospec=True
         ), patch.object(SocialAccount, "_on_account_associated", autospec=True), patch(
             PATCH_SOCIAL_BASE_MIXIN.format("_notify_user_session"),
             autospec=True,
