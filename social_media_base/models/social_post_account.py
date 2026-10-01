@@ -501,9 +501,8 @@ class SocialPostAccount(models.Model):
         self.account_id.with_context(not_notify=True).validate_access_token()
         try:
             return publish(**kwargs)
-        except SocialCredentialsError as error:
+        except SocialCredentialsError:
             if not self.account_id._refresh_credentials():
-                self.account_id._flag_credentials_expired(str(error))
                 raise
             _logger.info(
                 "Credentials renewed while publishing on %(media)s for account "
@@ -573,6 +572,8 @@ class SocialPostAccount(models.Model):
                 "failed_description": plaintext2html(str(error)),
             }
         )
+        if isinstance(error, SocialCredentialsError):
+            self.account_id._flag_credentials_expired(str(error))
         if self.post_id:
             self.post_id._message_error_post(str(error), self.media_type)
 
