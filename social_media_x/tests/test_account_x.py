@@ -1150,25 +1150,76 @@ class TestSocialAccountX(TestSocialCommonX):
         with mock_get_client_api, self.assertRaises(SocialCredentialsError):
             self.SocialAccount.create_tweet("Message Test", [], [], None, {})
 
+    def _create_tweet_refused(self, error, message="Message Test"):
+        """Publish ``message`` while X answers ``error``, return what is raised."""
+        fake_client = MagicMock()
+        fake_client.create_tweet.side_effect = error
+        mock_get_client_api = self.get_patch_exceptions_x(
+            fake_client=fake_client, valid_time_request=False
+        )
+        with mock_get_client_api, self.assertRaises(Exception) as raised:
+            self.SocialAccountX.create_tweet(message, [], [], None, {})
+        return raised.exception
+
     @mute_logger(LOGGER_ACCOUNT_X)
     def test_create_tweet_refused_post(self):
-        """A post X refuses names the plan of the account as the reason.
+        """A long post of an account marked X Premium names the plan.
 
         The characters an account may publish are declared on the account, so
         a subscription marked on one that does not hold it is only found out
         here, and the user reads why instead of the raw answer of X.
         """
-        fake_client = MagicMock()
-        fake_client.create_tweet.side_effect = BadRequest(
-            self.generate_magic_mock(status_code=400, json_return_value={})
+        self.SocialAccountX.x_premium = True
+        error = self._create_tweet_refused(
+            self.get_x_refusal(BadRequest, 400, "Invalid Request"), "x" * 329
         )
-        mock_get_client_api = self.get_patch_exceptions_x(
-            fake_client=fake_client, valid_time_request=False
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertIn(PREMIUM_HINT_X, str(error))
+        self.assertIn(self.SocialAccountX.display_name, str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_refused_post_without_premium(self):
+        """A refused post of an account without X Premium keeps the text of X."""
+        error = self._create_tweet_refused(
+            self.get_x_refusal(BadRequest, 400, "Invalid Request"), "x" * 329
         )
-        with mock_get_client_api, self.assertRaises(UserError) as error:
-            self.SocialAccountX.create_tweet("Message Test", [], [], None, {})
-        self.assertIn("X Premium", str(error.exception))
-        self.assertIn(self.SocialAccountX.display_name, str(error.exception))
+        self.assertIsInstance(error, UserError)
+        self.assertNotIn(PREMIUM_HINT_X, str(error))
+        self.assertIn("Invalid Request", str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_forbidden_is_not_a_credentials_error(self):
+        """A 403 is a post X refuses, not a token it no longer accepts."""
+        error = self._create_tweet_refused(
+            self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X), "x" * 100
+        )
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertNotIn(PREMIUM_HINT_X, str(error))
+        self.assertIn(NOT_PERMITTED_X, str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_forbidden_long_post_of_a_premium_account(self):
+        """The 403 X answers a long post of a Premium account names the plan."""
+        self.SocialAccountX.x_premium = True
+        error = self._create_tweet_refused(
+            self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X), "x" * 329
+        )
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertIn(PREMIUM_HINT_X, str(error))
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_tweet_forbidden_app_without_paid_plan(self):
+        """An App that cannot spend is explained with the pricing address."""
+        error = self._create_tweet_refused(
+            self.get_x_refusal(Forbidden, 403, NOT_ATTACHED_TO_A_PROJECT_X)
+        )
+        self.assertIsInstance(error, UserError)
+        self.assertNotIsInstance(error, SocialCredentialsError)
+        self.assertIn("cannot spend against the API", str(error))
+        self.assertIn(_URL_PRICING_X, str(error))
 
     def test_refused_post_of_an_app_without_paid_plan(self):
         """The App that cannot spend is explained, with the pricing address.
