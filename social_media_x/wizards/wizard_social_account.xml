@@ -17,9 +17,10 @@
                     role="alert"
                     invisible="media_type != 'x'"
                 >
-                    The X API no longer has a free access tier. The developer
-                    App must belong to a Project and be enrolled in a paid
-                    plan, otherwise X rejects every request of this module.
+                    The X API has no free access tier. The developer App must
+                    be connected, under Project Access in the Developer
+                    Console, to a Pay Per Use project with credit: an App left
+                    on the Default project (Standard Basic) is refused by X.
                     See the
                     <a
                         href="https://docs.x.com/x-api/getting-started/pricing"

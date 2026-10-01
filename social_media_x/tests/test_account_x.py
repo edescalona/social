@@ -427,6 +427,8 @@ class TestSocialAccountX(TestSocialCommonX):
         )
         message = self.SocialAccount._x_error_message(error)
         self.assertIn("cannot spend against the API", message)
+        self.assertIn("Pay Per Use project", message)
+        self.assertIn("has credit", message)
         self.assertIn(_URL_PRICING_X, message)
 
     def test_x_error_message_keeps_other_errors(self):

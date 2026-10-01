@@ -188,9 +188,10 @@ msgstr ""
 #. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.wizard_social_account_view_form_inherit
 msgid ""
-"The X API no longer has a free access tier. The developer\n"
-"                    App must belong to a Project and be enrolled in a paid\n"
-"                    plan, otherwise X rejects every request of this module.\n"
+"The X API has no free access tier. The developer App must\n"
+"                    be connected, under Project Access in the Developer\n"
+"                    Console, to a Pay Per Use project with credit: an App left\n"
+"                    on the Default project (Standard Basic) is refused by X.\n"
 "                    See the"
 msgstr ""
 
@@ -391,9 +392,9 @@ msgstr ""
 #, python-format
 msgid ""
 "X rejected the request because the developer App cannot spend against the "
-"API. The X API has no free access tier: connect the App to a Project, add a "
-"payment method and buy credits in the Developer Console, see "
-"%(pricing_link)s, then try again."
+"API. Connect the App to a Pay Per Use project in Project Access > Manage, "
+"not the Default project on Standard Basic, make sure the account has credit "
+"in the Developer Console, see %(pricing_link)s, then try again."
 msgstr ""
 
 #. module: social_media_x
