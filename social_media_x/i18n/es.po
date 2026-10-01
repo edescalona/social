@@ -73,6 +73,13 @@ msgstr "Contenido para publicar en redes sociales"
 #. odoo-python
 #: code:addons/social_media_x/models/social_post_account.py:0
 #, python-format
+msgid "DELETING POST ON X: %(error)s"
+msgstr "ELIMINANDO PUBLICACIÓN EN X: %(error)s"
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_post_account.py:0
+#, python-format
 msgid "ERROR DELETE POST X: %(error)s"
 msgstr "ERROR AL ELIMINAR LA PUBLICACIÓN EN X: %(error)s"
 
@@ -171,6 +178,30 @@ msgid "Social Media Supported by the System"
 msgstr "Red social admitida por el sistema"
 
 #. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_api_secret
+#: model:ir.model.fields,help:social_media_x.field_wizard_social_account__x_api_secret
+msgid ""
+"The API Key Secret of the developer App, shown by the X Developer Console "
+"only when the Consumer Key is generated. Regenerating it in the Console "
+"invalidates the one stored here."
+msgstr ""
+"El API Key Secret de la App de desarrollador, que la X Developer Console "
+"solo muestra al generar la Consumer Key. Regenerarlo en la Console invalida "
+"el que se guarda aquí."
+
+#. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_api_key
+#: model:ir.model.fields,help:social_media_x.field_wizard_social_account__x_api_key
+msgid ""
+"The API Key of the developer App, which the X Developer Console lists under "
+"OAuth 1.0 Keys as the Consumer Key. Regenerating it in the Console "
+"invalidates the one stored here."
+msgstr ""
+"La API Key de la App de desarrollador, que la X Developer Console muestra en "
+"OAuth 1.0 Keys como Consumer Key. Regenerarla en la Console invalida la que "
+"se guarda aquí."
+
+#. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.wizard_social_account_view_form_inherit
 msgid ""
 "The X API no longer has a free access tier. The developer\n"
@@ -187,10 +218,24 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
+msgid "The account was associated successfully"
+msgstr "La cuenta se ha asociado correctamente"
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
 msgid ""
 "The account was not created: the OAuth2 access token could not be obtained."
 msgstr ""
 "La cuenta no se ha creado: no se ha podido obtener el token de acceso OAuth2."
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/wizards/wizard_social_account.py:0
+#, python-format
+msgid "The account was updated successfully"
+msgstr "La cuenta se ha actualizado correctamente"
 
 #. module: social_media_x
 #. odoo-python
@@ -241,6 +286,11 @@ msgid ""
 "that does not hold the subscription, the post is sent and X refuses it, and "
 "the publication fails with the reason X gives."
 msgstr ""
+"Indica si esta cuenta tiene una suscripción a X Premium, que amplía el "
+"mensaje de una publicación de 280 a 25 000 caracteres. Desactivado, una "
+"publicación de más de 280 caracteres se rechaza antes de enviarse. Activado "
+"en una cuenta que no tiene la suscripción, la publicación se envía, X la "
+"rechaza y la publicación falla con el motivo que da X."
 
 #. module: social_media_x
 #: model:ir.model.fields.selection,name:social_media_x.selection__social_media__media_type__x
@@ -264,7 +314,7 @@ msgstr "Secreto de acceso OAuth1 de X"
 #. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_premium
 msgid "X Premium"
-msgstr ""
+msgstr "X Premium"
 
 #. module: social_media_x
 #. odoo-python
@@ -380,20 +430,24 @@ msgid ""
 "depends on its plan, so check the X Premium setting of the account before "
 "trying again."
 msgstr ""
+"X ha rechazado la publicación de %(account)s: %(error)s. Lo que una cuenta "
+"puede publicar depende de su plan, así que revise el ajuste X Premium de la "
+"cuenta antes de volver a intentarlo."
 
 #. module: social_media_x
 #. odoo-python
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
 msgid ""
-"X rejected the request because the developer App is not enrolled in a paid "
-"plan. The X API no longer has a free access tier: attach the App to a "
-"Project and subscribe a plan at %(pricing_link)s, then try again."
+"X rejected the request because the developer App cannot spend against the "
+"API. The X API has no free access tier: connect the App to a Project, add a "
+"payment method and buy credits in the Developer Console, see "
+"%(pricing_link)s, then try again."
 msgstr ""
-"X ha rechazado la petición porque la App de desarrollador no está suscrita a "
-"un plan de pago. La API de X ya no dispone de un nivel de acceso gratuito: "
-"asocie la App a un Proyecto y contrate un plan en %(pricing_link)s, y vuelva "
-"a intentarlo."
+"X ha rechazado la petición porque la App de desarrollador no puede consumir "
+"la API. La API de X no tiene un nivel de acceso gratuito: asocie la App a un "
+"Proyecto, añada un método de pago y compre créditos en la Developer Console, "
+"consulte %(pricing_link)s, y vuelva a intentarlo."
 
 #. module: social_media_x
 #. odoo-python

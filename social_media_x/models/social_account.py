@@ -440,6 +440,7 @@ class SocialAccount(models.Model):
                     "media_id": self.env.ref("social_media_x.social_media_x").id,
                     "x_access_token_oauth1": x_access_token_oauth1,
                     "x_access_secret_oauth1": x_access_secret_oauth1,
+                    "last_update_account": fields.Datetime.now(),
                 }
                 access_token_oauth2 = self._get_access_token_oauth2(
                     wizard_social_account
@@ -448,6 +449,17 @@ class SocialAccount(models.Model):
                     values.update({"x_access_token_oauth2": access_token_oauth2})
                     account = self._associate_account(
                         "x", str(data.id), values, username=data.username
+                    )
+                    # Before reading the figures: X refusing them leaves its
+                    # own message, which must not hide that the account was
+                    # associated.
+                    self._notify_user_session(
+                        self._format_user_notification(
+                            _("The account was associated successfully"),
+                            media="X",
+                            message_type="success",
+                        ),
+                        message_type="success",
                     )
                     account._on_account_associated()
                 else:

@@ -67,6 +67,13 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_x/models/social_post_account.py:0
 #, python-format
+msgid "DELETING POST ON X: %(error)s"
+msgstr ""
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_post_account.py:0
+#, python-format
 msgid "ERROR DELETE POST X: %(error)s"
 msgstr ""
 
@@ -161,6 +168,24 @@ msgid "Social Media Supported by the System"
 msgstr ""
 
 #. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_api_secret
+#: model:ir.model.fields,help:social_media_x.field_wizard_social_account__x_api_secret
+msgid ""
+"The API Key Secret of the developer App, shown by the X Developer Console "
+"only when the Consumer Key is generated. Regenerating it in the Console "
+"invalidates the one stored here."
+msgstr ""
+
+#. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_api_key
+#: model:ir.model.fields,help:social_media_x.field_wizard_social_account__x_api_key
+msgid ""
+"The API Key of the developer App, which the X Developer Console lists under "
+"OAuth 1.0 Keys as the Consumer Key. Regenerating it in the Console "
+"invalidates the one stored here."
+msgstr ""
+
+#. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.wizard_social_account_view_form_inherit
 msgid ""
 "The X API no longer has a free access tier. The developer\n"
@@ -173,8 +198,22 @@ msgstr ""
 #. odoo-python
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
+msgid "The account was associated successfully"
+msgstr ""
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
 msgid ""
 "The account was not created: the OAuth2 access token could not be obtained."
+msgstr ""
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/wizards/wizard_social_account.py:0
+#, python-format
+msgid "The account was updated successfully"
 msgstr ""
 
 #. module: social_media_x
@@ -344,9 +383,10 @@ msgstr ""
 #: code:addons/social_media_x/models/social_account.py:0
 #, python-format
 msgid ""
-"X rejected the request because the developer App is not enrolled in a paid "
-"plan. The X API no longer has a free access tier: attach the App to a "
-"Project and subscribe a plan at %(pricing_link)s, then try again."
+"X rejected the request because the developer App cannot spend against the "
+"API. The X API has no free access tier: connect the App to a Project, add a "
+"payment method and buy credits in the Developer Console, see "
+"%(pricing_link)s, then try again."
 msgstr ""
 
 #. module: social_media_x

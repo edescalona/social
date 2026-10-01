@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
+from freezegun import freeze_time
 from tweepy.errors import BadRequest, Unauthorized
 
 from odoo.exceptions import UserError
@@ -539,6 +540,86 @@ class TestSocialAccountX(TestSocialCommonX):
             self.assertEqual(result["url"], "https://example.com")
             self.assertEqual(result["target"], "self")
 
+    def _get_wizard_update_x(self, **values):
+        """Return an update wizard on the X account, with ``values`` on it."""
+        return self.WizardAccount.create(
+            dict(
+                {"media_id": self.media_x_id.id, "account_id": self.SocialAccountX.id},
+                **values,
+            )
+        )
+
+    @freeze_time("2026-09-30 10:00:00")
+    def test_wizard_update_account_stamps_the_last_update(self):
+        """Reading the account again is what the form calls its last update."""
+        wizard = self._get_wizard_update_x()
+        with patch.object(type(self.SocialAccountX), "_update_account_data"):
+            wizard._update_account()
+        self.assertEqual(
+            self.SocialAccountX.last_update_account, datetime(2026, 9, 30, 10, 0)
+        )
+
+    @freeze_time("2026-09-30 10:00:00")
+    def test_wizard_update_account_says_it_succeeded(self):
+        wizard = self._get_wizard_update_x()
+        with patch.object(
+            type(self.SocialAccountX), "_update_account_data"
+        ), patch.object(
+            type(wizard), "_notify_user_client", autospec=True
+        ) as mock_notify:
+            wizard._update_account()
+        mock_notify.assert_called_once()
+        kwargs = mock_notify.call_args.kwargs
+        self.assertEqual(kwargs["notif_type"], "social_form_success")
+        self.assertEqual(
+            kwargs["notif_message"], "The account was updated successfully"
+        )
+        self.assertEqual(kwargs["media"], "x")
+        self.assertEqual(kwargs["account_name"], self.SocialAccountX.name)
+
+    @freeze_time("2026-09-30 10:00:00")
+    def test_wizard_update_account_not_notify_still_stamps_the_date(self):
+        """``not_notify`` silences the notice, not the update it reports."""
+        wizard = self._get_wizard_update_x().with_context(not_notify=True)
+        with patch.object(
+            type(self.SocialAccountX), "_update_account_data"
+        ), patch.object(
+            type(wizard), "_notify_user_client", autospec=True
+        ) as mock_notify:
+            wizard._update_account()
+        mock_notify.assert_not_called()
+        self.assertEqual(
+            self.SocialAccountX.last_update_account, datetime(2026, 9, 30, 10, 0)
+        )
+
+    def test_wizard_update_credentials_does_not_say_it_succeeded(self):
+        """The notice belongs to the association X answers with."""
+        fake_url = {"type": "ir.actions.act_url", "url": "https://example.com"}
+        for flag in ("update_token", "update_keys"):
+            wizard = self._get_wizard_update_x(**{flag: True})
+            with patch.object(
+                type(wizard), "_get_url_authorize", return_value=fake_url
+            ), patch.object(
+                type(wizard), "_notify_user_client", autospec=True
+            ) as mock_notify:
+                wizard._update_account()
+            mock_notify.assert_not_called()
+
+    def test_wizard_update_credentials_leaves_the_last_update_to_x(self):
+        """Renewing the token or the keys only redirects to X.
+
+        The account is read again when X answers, through the association,
+        which is the one that stamps the date.
+        """
+        fake_url = {"type": "ir.actions.act_url", "url": "https://example.com"}
+        for flag in ("update_token", "update_keys"):
+            wizard = self._get_wizard_update_x(**{flag: True})
+            with patch.object(
+                type(wizard), "_get_url_authorize", return_value=fake_url
+            ):
+                self.assertEqual(wizard._update_account(), fake_url)
+            self.assertFalse(self.SocialAccountX.last_update_account, msg=flag)
+
     def test_wizard_action_valid_add_account(self):
         wizard_id = self.WizardAccount.create(
             {
@@ -876,6 +957,135 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertIn("cannot spend against the API", message)
         self.assertIn(_URL_PRICING_X, message)
         self.assertIn("Social Media X", message)
+
+    def _run_create_account_x(
+        self,
+        username,
+        user_id="12345",
+        on_associated=None,
+        access_token_oauth2="fake_access_token_oauth2",
+        get_me_error=None,
+    ):
+        """Associate ``username`` through the OAuth callback of X.
+
+        X, the avatar download and the OAuth2 token are patched, and so is
+        ``_on_account_associated``, which reads the figures of the account.
+
+        :param username: user name X answers for the authorized user.
+        :param user_id: identifier X answers for the authorized user.
+        :param on_associated: side effect of ``_on_account_associated``.
+        :param access_token_oauth2: OAuth2 token X answers, if any.
+        :param get_me_error: exception X raises when asked for the user.
+        :return: the X account with that user name, archived or not.
+        """
+        self.WizardAccountX.write({"oauth_token": "wiz-token-create"})
+        fake_client = MagicMock()
+        fake_client.get_me.side_effect = get_me_error
+        data = fake_client.get_me.return_value.data
+        data.id = user_id
+        data.name = username
+        data.username = username
+        data.profile_image_url = "https://example.com/img_url"
+        with self.get_patch_exceptions_x(
+            fake_client=fake_client, valid_time_request=False
+        ), patch(
+            PATCH_ACCOUNT_X.format("requests.get"),
+            autospec=True,
+            return_value=MagicMock(status_code=404),
+        ), patch.object(
+            type(self.SocialAccount),
+            "_get_access_token_oauth2",
+            autospec=True,
+            return_value=access_token_oauth2,
+        ), patch.object(
+            type(self.SocialAccount),
+            "_on_account_associated",
+            autospec=True,
+            side_effect=on_associated,
+        ):
+            self.SocialAccount.create_account_x(
+                "x_access_token_oauth1",
+                "x_access_secret_oauth1",
+                {"oauth_token": "wiz-token-create"},
+            )
+        return self.SocialAccount.with_context(active_test=False).search(
+            [("username", "=", username), ("media_type", "=", "x")]
+        )
+
+    @freeze_time("2026-09-30 10:00:00")
+    def test_create_account_x_stamps_the_last_update(self):
+        account = self._run_create_account_x("stamped-x-user")
+        self.assertEqual(len(account), 1)
+        self.assertEqual(account.last_update_account, datetime(2026, 9, 30, 10, 0))
+
+    def test_reassociating_an_account_x_stamps_the_last_update(self):
+        """Renewing the token or the keys comes back through the association."""
+        existing = self.SocialAccount.create(
+            {
+                "name": "Reassociated X",
+                "username": "reassociated-x-user",
+                "remote_ref": "67890",
+                "media_id": self.env.ref("social_media_x.social_media_x").id,
+                "last_update_account": datetime(2026, 1, 1, 8, 0),
+            }
+        )
+        with freeze_time("2026-09-30 10:00:00"):
+            account = self._run_create_account_x("reassociated-x-user", user_id="67890")
+        self.assertEqual(account, existing)
+        self.assertEqual(account.last_update_account, datetime(2026, 9, 30, 10, 0))
+
+    def _run_create_account_x_in_session(self, username, **kwargs):
+        """Associate ``username`` and return the messages kept in the session.
+
+        :param username: user name X answers for the authorized user.
+        :param kwargs: the options of :meth:`_run_create_account_x`.
+        :return: the notifications the web client shows once reloaded.
+        """
+        mock_request = MagicMock(session={})
+        with patch(PATCH_MIXIN_REQUEST, new=mock_request):
+            self._run_create_account_x(username, **kwargs)
+        return mock_request.session.get("social_media_notification", [])
+
+    def test_create_account_x_says_it_succeeded(self):
+        """The callback reloads the client, so the success waits in the session."""
+        with patch.object(
+            type(self.SocialAccount),
+            "_notify_user_client",
+            autospec=True,
+        ) as mock_client:
+            kept = self._run_create_account_x_in_session("announced-x-user")
+        mock_client.assert_not_called()
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(kept[0]["message_type"], "success")
+        self.assertIn("The account was associated successfully", kept[0]["message"])
+        self.assertIn("X", kept[0]["message"])
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_account_x_success_survives_refused_figures(self):
+        """X refusing the figures does not hide that the account was linked."""
+        kept = self._run_create_account_x_in_session(
+            "refused-figures-x-user",
+            on_associated=Exception("X refused the figures"),
+        )
+        self.assertEqual(
+            [message["message_type"] for message in kept], ["success", "danger"]
+        )
+        self.assertIn("The account was associated successfully", kept[0]["message"])
+        self.assertIn("X refused the figures", kept[1]["message"])
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_account_x_failures_do_not_say_it_succeeded(self):
+        failures = {
+            "no_oauth2_token": {"access_token_oauth2": False},
+            "x_error": {"get_me_error": Exception("X is down")},
+        }
+        for failure, kwargs in failures.items():
+            kept = self._run_create_account_x_in_session(
+                f"failed-x-user-{failure}", **kwargs
+            )
+            self.assertEqual(len(kept), 1, msg=failure)
+            self.assertEqual(kept[0]["message_type"], "danger", msg=failure)
+            self.assertNotIn("associated successfully", kept[0]["message"], msg=failure)
 
     def test_create_tweet(self):
         fake_client = MagicMock()

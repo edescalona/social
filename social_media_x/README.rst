@@ -126,20 +126,19 @@ reading the figures of the recent ones.
 What each call of the module costs, according to the `pricing of
 X <https://docs.x.com/x-api/getting-started/pricing>`__:
 
-+-------------------------+-------------------------+-----------------+
-| What the module does    | Endpoint                | Price           |
-+=========================+=========================+=================+
-| Publish a post          | Post creation           | $0.015          |
-+-------------------------+-------------------------+-----------------+
-| Publish a post carrying | Post creation with URL  | $0.200          |
-| a link                  |                         |                 |
-+-------------------------+-------------------------+-----------------+
-| Read the figures of its | Owned read              | $0.001 per post |
-| own publications        |                         |                 |
-+-------------------------+-------------------------+-----------------+
-| Read the authorized     | Users                   | $0.010          |
-| user                    |                         |                 |
-+-------------------------+-------------------------+-----------------+
++---------------------------+------------------------+-----------------+
+| What the module does      | Endpoint               | Price           |
++===========================+========================+=================+
+| Publish a post            | Post creation          | $0.015          |
++---------------------------+------------------------+-----------------+
+| Publish a post carrying a | Post creation with URL | $0.200          |
+| link                      |                        |                 |
++---------------------------+------------------------+-----------------+
+| Read the figures of its   | Owned read             | $0.001 per post |
+| own publications          |                        |                 |
++---------------------------+------------------------+-----------------+
+| Read the authorized user  | Users                  | $0.010          |
++---------------------------+------------------------+-----------------+
 
 **A post that carries a link costs more than ten times a post that does
 not.** ``social_media_base`` rewrites the links of a post through
@@ -433,6 +432,15 @@ Update token, API Key, API Secret and account data
 - Selecting the *Update token* checkbox will update the current token.
 
   |UPDATE_TOKEN|
+
+- Associating the account and updating it end with a success notice and
+  stamp the date of *Last Update Account* on the account form.
+  Associating it, associating it again, *Update token* and *Update keys*
+  show *The account was associated successfully* on the Dashboard once X
+  sends the user back; *Update* with no checkbox selected shows *The
+  account was updated successfully*. If X refuses the figures of the
+  account right after associating it, its error is shown after the
+  success notice.
 
 Archive Account X
 -----------------
