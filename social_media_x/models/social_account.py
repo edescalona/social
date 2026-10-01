@@ -17,7 +17,7 @@ from tweepy.errors import BadRequest, Forbidden, TooManyRequests, Unauthorized
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
-from odoo.tools import split_every
+from odoo.tools import float_compare, float_is_zero, split_every
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
@@ -106,6 +106,13 @@ class SocialAccount(models.Model):
         default=1.0,
         help="The responsible of the account is warned when the credit "
         "balance drops under this amount. At 0, only when it is used up.",
+    )
+    x_credit_warned = fields.Boolean(
+        readonly=True,
+        copy=False,
+        help="Whether the responsible was already warned that the credit "
+        "balance is under the warning threshold. Cleared when the balance is "
+        "read again at or over it, so the warning is given once per drop.",
     )
     rate_limit_endpoint = fields.Json(copy=False, default=dict)
 
@@ -337,11 +344,72 @@ class SocialAccount(models.Model):
                 error,
             )
             return
+        previous_balances = {
+            account: account.x_credit_balance if account.x_credit_balance_date else None
+            for account in self
+        }
         self.write(
             {
                 "x_credit_balance": balance,
                 "x_credit_balance_date": fields.Datetime.now(),
             }
+        )
+        for account in self:
+            account._x_warn_credit_balance(previous_balances[account])
+
+    def _x_warn_credit_balance(self, previous_balance):
+        """Warn the responsible when the credit balance has just gone down.
+
+        Read every 2 hours, the balance would repeat the same warning all day,
+        so it is given only when the balance crosses the line. Used up, when
+        it reaches 0 coming from more or from never having been read. Low,
+        when it is under the warning threshold of the account and the
+        responsible was not warned of it yet; reading it again at or over the
+        threshold clears that, so the next drop warns again. Raising the
+        threshold over the balance is a drop as well.
+
+        The warning goes to the chatter of the account, which keeps it for a
+        responsible who is not connected when the cron reads the balance, and
+        to the bus, for the one who is.
+
+        :param previous_balance: the balance before this read, ``None`` when
+            it had never been read.
+        """
+        self.ensure_one()
+        balance = self.x_credit_balance
+        used_up = float_is_zero(balance, precision_digits=2)
+        below = used_up or (
+            float_compare(balance, self.x_credit_warning, precision_digits=2) < 0
+        )
+        message = notif_type = None
+        if used_up:
+            if previous_balance is None or not float_is_zero(
+                previous_balance, precision_digits=2
+            ):
+                notif_type = "social_kanban_danger"
+                message = _(
+                    "The X API credit balance of this App is used up. X blocks "
+                    "every call until credits are bought in the Developer Console."
+                )
+        elif below and not self.x_credit_warned:
+            notif_type = "social_kanban_info"
+            message = _(
+                "The X API credit balance of this App is down to USD "
+                "%(balance)s, under the warning threshold of USD %(threshold)s.",
+                balance=f"{balance:.2f}",
+                threshold=f"{self.x_credit_warning:.2f}",
+            )
+        if self.x_credit_warned != below:
+            self.x_credit_warned = below
+        if not message:
+            return
+        self.message_post(body=message, partner_ids=self.user_id.partner_id.ids)
+        self._notify_user_client(
+            target=self.user_id.partner_id,
+            notif_type=notif_type,
+            notif_message=message,
+            media="X",
+            account_name=self.name,
         )
 
     def _x_store_credit_rate_limit(self, headers):

@@ -13,6 +13,7 @@ from tweepy.errors import BadRequest, Forbidden, Unauthorized
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
+from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 from odoo.addons.social_media_base.models.social_account import (
     SocialAccount as SocialAccountBaseCls,
@@ -1524,6 +1525,16 @@ class TestSocialAccountCreditX(TestSocialCommonX):
             }
         )
         cls.accounts_credit = cls.account_a1 + cls.account_a2 + cls.account_b
+        cls.user_a1, cls.user_a2 = (
+            mail_new_test_user(
+                cls.env,
+                login=login,
+                groups="base.group_user,social_media_base.group_social_media_user",
+            )
+            for login in ("credit_user_a1", "credit_user_a2")
+        )
+        cls.account_a1.user_id = cls.user_a1
+        cls.account_a2.user_id = cls.user_a2
 
     def _credits_response(self, total=4.68, prepaid=None, status_code=200):
         """Build the answer of X to ``GET /2/usage/credits``."""
@@ -1638,6 +1649,107 @@ class TestSocialAccountCreditX(TestSocialCommonX):
                 any((self.account_a1 + self.account_a2).mapped("need_update"))
             )
             self.assertEqual(self.account_b.x_credit_balance, 4.68)
+
+    def _read_balance(self, accounts, total):
+        """Read ``total`` as the balance of ``accounts``, one API Key.
+
+        :return: the mock of the notification on the bus.
+        """
+        bearer = accounts[0].sudo().x_access_token_oauth2
+        with self._patch_credits(
+            **{bearer: self._credits_response(total)}
+        ), patch.object(
+            type(self.SocialAccount), "_notify_user_client", autospec=True
+        ) as mock_notify:
+            accounts._x_refresh_credit_balance()
+        return mock_notify
+
+    def _credit_notes(self, account):
+        return account.message_ids.filtered(
+            lambda message: "credit balance" in (message.body or "")
+        )
+
+    def test_credit_warning_is_given_once_per_drop(self):
+        """Under the threshold warns once, until the balance is over it again."""
+        mock_notify = self._read_balance(self.account_b, 0.8)
+        mock_notify.assert_called_once()
+        self.assertEqual(
+            mock_notify.call_args.kwargs["target"], self.account_b.user_id.partner_id
+        )
+        self.assertEqual(
+            mock_notify.call_args.kwargs["notif_type"], "social_kanban_info"
+        )
+        self.assertIn("USD 0.80", mock_notify.call_args.kwargs["notif_message"])
+        self.assertIn("USD 1.00", mock_notify.call_args.kwargs["notif_message"])
+        note = self._credit_notes(self.account_b)
+        self.assertEqual(len(note), 1)
+        self.assertIn(self.account_b.user_id.partner_id, note.partner_ids)
+
+        self._read_balance(self.account_b, 0.6).assert_not_called()
+        self.assertEqual(len(self._credit_notes(self.account_b)), 1)
+
+        self._read_balance(self.account_b, 2.0).assert_not_called()
+        self.assertFalse(self.account_b.x_credit_warned)
+
+        self._read_balance(self.account_b, 0.5).assert_called_once()
+        self.assertEqual(len(self._credit_notes(self.account_b)), 2)
+
+    def test_credit_warning_of_a_used_up_balance(self):
+        mock_notify = self._read_balance(self.account_b, 0.0)
+        mock_notify.assert_called_once()
+        self.assertEqual(
+            mock_notify.call_args.kwargs["notif_type"], "social_kanban_danger"
+        )
+        self.assertIn("used up", mock_notify.call_args.kwargs["notif_message"])
+        self.assertIn("used up", self._credit_notes(self.account_b).body)
+
+        self._read_balance(self.account_b, 0.0).assert_not_called()
+        self.assertEqual(len(self._credit_notes(self.account_b)), 1)
+
+    def test_credit_warning_of_a_low_balance_then_used_up(self):
+        self._read_balance(self.account_b, 0.5)
+        mock_notify = self._read_balance(self.account_b, 0.0)
+        self.assertEqual(
+            mock_notify.call_args.kwargs["notif_type"], "social_kanban_danger"
+        )
+        self.assertEqual(len(self._credit_notes(self.account_b)), 2)
+
+    def test_credit_warning_at_zero_warns_only_when_used_up(self):
+        self.account_b.x_credit_warning = 0.0
+        self._read_balance(self.account_b, 0.3).assert_not_called()
+        self._read_balance(self.account_b, 0.0).assert_called_once()
+
+    def test_credit_warning_on_the_first_read(self):
+        """A balance never read counts as over the threshold."""
+        self.account_b.write({"x_credit_balance": 0.0, "x_credit_balance_date": False})
+        self._read_balance(self.account_b, 0.5).assert_called_once()
+
+    def test_credit_warning_on_the_first_read_of_a_used_up_balance(self):
+        self.account_b.write({"x_credit_balance": 0.0, "x_credit_balance_date": False})
+        mock_notify = self._read_balance(self.account_b, 0.0)
+        self.assertEqual(
+            mock_notify.call_args.kwargs["notif_type"], "social_kanban_danger"
+        )
+
+    def test_credit_warning_of_a_raised_threshold(self):
+        """Raising the threshold over the balance warns on the next read."""
+        self._read_balance(self.account_b, 4.68).assert_not_called()
+        self.account_b.x_credit_warning = 10.0
+        self._read_balance(self.account_b, 4.68).assert_called_once()
+        self._read_balance(self.account_b, 4.68).assert_not_called()
+
+    def test_credit_warning_reaches_every_responsible(self):
+        """An API Key shared by two accounts warns the responsible of each."""
+        mock_notify = self._read_balance(self.account_a1 + self.account_a2, 0.5)
+        self.assertEqual(
+            {call.kwargs["target"] for call in mock_notify.call_args_list},
+            {self.user_a1.partner_id, self.user_a2.partner_id},
+        )
+        for account, user in (
+            (self.account_a1, self.user_a1),
+            (self.account_a2, self.user_a2),
+        ):
+            self.assertIn(user.partner_id, self._credit_notes(account).partner_ids)
 
     def test_credit_balance_of_another_media_is_never_asked(self):
         with patch(PATCH_REQUEST_GET) as mock_get:
