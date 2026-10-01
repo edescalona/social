@@ -397,11 +397,15 @@ class SocialAccount(models.Model):
                 )
         elif below and not self.x_credit_warned:
             notif_type = "social_kanban_info"
+            # Formatted apart: an f-string among the arguments of ``_()``
+            # stops the extraction of the terms that follow it.
+            balance_text = f"{balance:.2f}"
+            threshold_text = f"{self.x_credit_warning:.2f}"
             message = _(
                 "The X API credit balance of this App is down to USD "
                 "%(balance)s, under the warning threshold of USD %(threshold)s.",
-                balance=f"{balance:.2f}",
-                threshold=f"{self.x_credit_warning:.2f}",
+                balance=balance_text,
+                threshold=threshold_text,
             )
         if self.x_credit_warned != below:
             self.x_credit_warned = below
