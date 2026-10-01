@@ -977,6 +977,12 @@ replies, impressions, retweets and quotes — are read back from X once
 a day, by the <em>Social: Refresh the statistics of the recent
 publications</em> scheduled action, and on the spot by the <em>Update</em> button
 of the dashboard and <em>Update statistics</em> of the account form.</li>
+<li>The <em>Statistics</em> dialog of a publication, opened from the menu of its
+card on the Dashboard, also shows its <em>Engagement</em>: its likes,
+replies, retweets and quotes over its impressions, as a ratio from 0
+to 1, and 0 while it has no impressions. X reports no rate of its own,
+so it is derived from those figures every time they are read, by this
+refresh or by the import of a synchronization module.</li>
 <li>Nothing walks the timeline to do it: Odoo already knows the identifier
 of every post it asks about, so they are read by batches of <strong>100 ids
 per request</strong> on its own <tt class="docutils literal">get_posts</tt> endpoint. Reading the timeline
