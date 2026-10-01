@@ -297,23 +297,25 @@ class SocialAccount(models.Model):
         limit is kept in silence for the same reason, on every account of the
         API Key, since X counts it for the App and not for the account.
         """
-        account = self[0]
+        first_account = self[0]
         limit_reset = (
-            (account.rate_limit_endpoint or {})
+            (first_account.rate_limit_endpoint or {})
             .get("usage_credits", {})
             .get("x-rate-limit-reset", 0)
         )
         if limit_reset >= time.time():
             _logger.info(
                 "X credit balance not read for account %s: rate limit until %s",
-                account.id,
+                first_account.id,
                 limit_reset,
             )
             return
         try:
             response = requests.get(
                 _URL_USAGE_CREDITS_X,
-                headers={"Authorization": f"Bearer {account.x_access_token_oauth2}"},
+                headers={
+                    "Authorization": f"Bearer {first_account.x_access_token_oauth2}"
+                },
                 timeout=10,
             )
             if response.status_code == 429:
@@ -322,7 +324,7 @@ class SocialAccount(models.Model):
             if response.status_code != 200:
                 _logger.warning(
                     "X refused the credit balance of account %s: %s %s",
-                    account.id,
+                    first_account.id,
                     response.status_code,
                     response.text,
                 )
@@ -331,7 +333,7 @@ class SocialAccount(models.Model):
         except (requests.RequestException, ValueError, KeyError, TypeError) as error:
             _logger.warning(
                 "Could not read the X credit balance of account %s: %s",
-                account.id,
+                first_account.id,
                 error,
             )
             return
