@@ -112,6 +112,7 @@ class WizardSocialAccount(models.TransientModel):
                 return self._get_url_authorize()
             else:
                 self.account_id._update_account_data()
+                self.account_id.write({"last_update_account": fields.Datetime.now()})
                 return super()._update_account()
         else:
             return super()._update_account()

@@ -440,6 +440,7 @@ class SocialAccount(models.Model):
                     "media_id": self.env.ref("social_media_x.social_media_x").id,
                     "x_access_token_oauth1": x_access_token_oauth1,
                     "x_access_secret_oauth1": x_access_secret_oauth1,
+                    "last_update_account": fields.Datetime.now(),
                 }
                 access_token_oauth2 = self._get_access_token_oauth2(
                     wizard_social_account

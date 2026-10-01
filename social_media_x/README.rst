@@ -126,20 +126,19 @@ reading the figures of the recent ones.
 What each call of the module costs, according to the `pricing of
 X <https://docs.x.com/x-api/getting-started/pricing>`__:
 
-+-------------------------+-------------------------+-----------------+
-| What the module does    | Endpoint                | Price           |
-+=========================+=========================+=================+
-| Publish a post          | Post creation           | $0.015          |
-+-------------------------+-------------------------+-----------------+
-| Publish a post carrying | Post creation with URL  | $0.200          |
-| a link                  |                         |                 |
-+-------------------------+-------------------------+-----------------+
-| Read the figures of its | Owned read              | $0.001 per post |
-| own publications        |                         |                 |
-+-------------------------+-------------------------+-----------------+
-| Read the authorized     | Users                   | $0.010          |
-| user                    |                         |                 |
-+-------------------------+-------------------------+-----------------+
++---------------------------+------------------------+-----------------+
+| What the module does      | Endpoint               | Price           |
++===========================+========================+=================+
+| Publish a post            | Post creation          | $0.015          |
++---------------------------+------------------------+-----------------+
+| Publish a post carrying a | Post creation with URL | $0.200          |
+| link                      |                        |                 |
++---------------------------+------------------------+-----------------+
+| Read the figures of its   | Owned read             | $0.001 per post |
+| own publications          |                        |                 |
++---------------------------+------------------------+-----------------+
+| Read the authorized user  | Users                  | $0.010          |
++---------------------------+------------------------+-----------------+
 
 **A post that carries a link costs more than ten times a post that does
 not.** ``social_media_base`` rewrites the links of a post through
