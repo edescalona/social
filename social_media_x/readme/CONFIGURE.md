@@ -3,19 +3,23 @@ To configure this module, you need to:
 Please note that you must have a developer account.
 
 **Important:** the X API v2 endpoints used by this module require a developer
-App **attached to a Project** and an account on the **pay-per-use** pricing of
-X, see [about the X API](https://docs.x.com/x-api/getting-started/about-x-api).
-There is no Free access tier: an App that cannot spend against the API is
-refused, so the account cannot be associated with one. Pay per use is not a
-subscription — there is no monthly fee and no minimum purchase, the App only
-needs a positive credit balance — but the balance has to be there before the
-first call. The association wizard shows this warning, and when X rejects the
-request for this reason the module replaces the raw error with a message
-pointing to the pricing page. Note that such an App can be refused at two
-different moments: when the request token is asked, before any authorization
-screen is shown, and the wizard answers with the pricing notice; or later,
-when the module reads the authorized user, and the message is then delivered
-on the Dashboard.
+App **connected to a Pay Per Use project** and an account with credit on the
+**pay-per-use** pricing of X, see
+[about the X API](https://docs.x.com/x-api/getting-started/about-x-api).
+There is no Free access tier: an App left on the **Default project**, whose
+plan is **Standard Basic**, cannot spend against the API and is refused, so
+the account cannot be associated with it. Pay per use is not a subscription —
+there is no monthly fee and no minimum purchase, the App only needs a
+positive credit balance — but the balance has to be there before the first
+call. The association wizard shows this warning, and when X rejects the
+request for this reason the module replaces the raw error with a message that
+asks to connect the App to a Pay Per Use project in *Project Access* >
+*Manage*, not the Default project on Standard Basic, to make sure the account
+has credit in the Developer Console, and that points to the pricing page.
+Note that such an App can be refused at two different moments: when the
+request token is asked, before any authorization screen is shown, and the
+wizard answers with that message; or later, when the module reads the
+authorized user, and the message is then delivered on the Dashboard.
 
 A call made with an App that cannot spend answers ``403 Forbidden``, either
 with ``"reason": "client-not-enrolled"`` or asking for an App attached to a
@@ -75,13 +79,19 @@ account published from Odoo.
   ![START_BUILDING](../static/img/readme/START_BUILDING.png)
 
 - Create a project. The use case declared here is what X reads if it ever
-  reviews the App.
+  reviews the App. A project starts on the default plan of its product, so
+  it can be born on **Standard Basic**, the plan of the *Default project*
+  that the console may already show with *Plan: Free*. Only a project on
+  **Pay Per Use** spends against the credit balance, so that is the one the
+  App has to be connected to, see *Project Access* below.
 
   ![CREATE_PROJECT](../static/img/readme/CREATE_PROJECT.png)
 
-- Create the App inside that project. The App is the set of keys, and the
-  project is what those keys are allowed to call, so an App connected to no
-  project answers ``403`` to everything.
+- Create the App. The App is the set of keys, and the project is what those
+  keys are allowed to call, so an App connected to no project answers ``403``
+  to everything, and so does an App connected only to the Default project on
+  Standard Basic. Do not take for granted which project a new App is
+  connected to: check what its *Project Access* shows, as described below.
 
   ![CREATE_APP](../static/img/readme/CREATE_APP.png)
 
@@ -111,9 +121,28 @@ The steps required for using it are defined below:
 - Go to the [Developer Console](https://console.x.com)
 - Create a developer account as described above.
 - Once the account is created, go to *Access* > *Apps* and select the App.
-  What it shows as *Project Access* is the project its keys call through.
+  What it shows as *Project Access* is the project its keys call through,
+  with its plan in brackets. An App on *Default project-… (Standard Basic)*,
+  as in the picture below, cannot spend against the API and X refuses it.
 
   ![PROJECT_DEFAULT](../static/img/readme/PROJECT_DEFAULT.png)
+
+- In that case press *Manage* on *Project Access*. The dialog lists the
+  projects of the account, each with its plan and a *Connect* or
+  *Disconnect* button: press *Connect* on the **Pay Per Use** one. The keys
+  work on every project the App is connected to, and the limits and
+  endpoints follow the plan of that project. The keys do not have to be
+  regenerated: an App connected this way associates with the Consumer Key
+  and Secret it already had. *Start a new project*, at the bottom of the same
+  dialog, offers the Ads, Enterprise and Community Notes products, none of
+  which is the Pay Per Use project this module needs.
+
+  ![PROJECT_ACCESS_MANAGE](../static/img/readme/PROJECT_ACCESS_MANAGE.png)
+
+  Once connected, the page of the App shows the Pay Per Use project under
+  *Project Access*.
+
+  ![PROJECT_PAY_PER_USE](../static/img/readme/PROJECT_PAY_PER_USE.png)
 
 - Open *Settings* to reach the authentication settings of the App.
 
@@ -182,8 +211,12 @@ Registering the API Key and API Key Secret. Integration of a user account.
 - An App that cannot spend against the API is refused here, after the
   authorization: X answers the reading of the authorized user with ``403``,
   the account is not created and the Dashboard explains it. The authorization
-  itself is granted, so nothing has to be undone on the X side — add credits
-  and associate again.
+  itself is granted, so nothing has to be undone on the X side. The cause is
+  either the project or the balance, and the Developer Console tells them
+  apart: if the *Project Access* of the App shows the Default project on
+  Standard Basic, connect the App to the Pay Per Use project as described
+  above; if it already shows a Pay Per Use project, the account has no credit
+  left, so buy credits in *Billing* > *Credits*. Then associate again.
 
   ![NO_CREDITS](../static/img/readme/NO_CREDITS.png)
 

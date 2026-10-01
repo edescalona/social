@@ -123,7 +123,10 @@ back to *Draft*. What the reason says depends on the answer of X:
 
 - **The developer App cannot spend against the API.** X answers
   ``403 Forbidden``, either with ``client-not-enrolled`` or asking for an App
-  attached to a Project. The reason explains it and gives the address of the
+  attached to a Project. The reason asks to connect the App to a Pay Per Use
+  project in *Project Access* > *Manage*, not the Default project on Standard
+  Basic, and to make sure the account has credit in the Developer Console,
+  see *Configuration*. It gives the address of the
   [X API pricing](https://docs.x.com/x-api/getting-started/pricing) page,
   written as plain text because the reason of a failed publication is kept as
   text.
@@ -247,3 +250,11 @@ publication history:
   the module back and associating the account again reactivates the archived
   history and updates it, instead of importing everything as duplicated
   records.
+- The server log of the uninstallation shows two ``ERROR`` lines of
+  ``bad query: DELETE FROM "social_media"``, which violates the foreign key
+  ``social_account_media_id_fkey``. They are expected: Odoo tries to delete
+  the *X* record of *Social Media*, the archived accounts still point at it,
+  so the deletion is refused and the uninstallation goes on. That record, its
+  identifier and the *X* value of the media type are kept, and that is what
+  lets the reinstallation reuse the same record instead of creating a second
+  one, and the new association recover the history.

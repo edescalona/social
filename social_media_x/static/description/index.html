@@ -465,20 +465,24 @@ pip install tweepy requests_oauthlib
 <h2><a class="toc-backref" href="#toc-entry-3">To configure this module, you need to:</a></h2>
 <p>Please note that you must have a developer account.</p>
 <p><strong>Important:</strong> the X API v2 endpoints used by this module require a
-developer App <strong>attached to a Project</strong> and an account on the
-<strong>pay-per-use</strong> pricing of X, see <a class="reference external" href="https://docs.x.com/x-api/getting-started/about-x-api">about the X
+developer App <strong>connected to a Pay Per Use project</strong> and an account with
+credit on the <strong>pay-per-use</strong> pricing of X, see <a class="reference external" href="https://docs.x.com/x-api/getting-started/about-x-api">about the X
 API</a>. There is
-no Free access tier: an App that cannot spend against the API is
-refused, so the account cannot be associated with one. Pay per use is
-not a subscription — there is no monthly fee and no minimum purchase,
-the App only needs a positive credit balance — but the balance has to be
-there before the first call. The association wizard shows this warning,
-and when X rejects the request for this reason the module replaces the
-raw error with a message pointing to the pricing page. Note that such an
-App can be refused at two different moments: when the request token is
-asked, before any authorization screen is shown, and the wizard answers
-with the pricing notice; or later, when the module reads the authorized
-user, and the message is then delivered on the Dashboard.</p>
+no Free access tier: an App left on the <strong>Default project</strong>, whose plan
+is <strong>Standard Basic</strong>, cannot spend against the API and is refused, so
+the account cannot be associated with it. Pay per use is not a
+subscription — there is no monthly fee and no minimum purchase, the App
+only needs a positive credit balance — but the balance has to be there
+before the first call. The association wizard shows this warning, and
+when X rejects the request for this reason the module replaces the raw
+error with a message that asks to connect the App to a Pay Per Use
+project in <em>Project Access</em> &gt; <em>Manage</em>, not the Default project on
+Standard Basic, to make sure the account has credit in the Developer
+Console, and that points to the pricing page. Note that such an App can
+be refused at two different moments: when the request token is asked,
+before any authorization screen is shown, and the wizard answers with
+that message; or later, when the module reads the authorized user, and
+the message is then delivered on the Dashboard.</p>
 <p>A call made with an App that cannot spend answers <tt class="docutils literal">403 Forbidden</tt>,
 either with <tt class="docutils literal">&quot;reason&quot;: <span class="pre">&quot;client-not-enrolled&quot;</span></tt> or asking for an App
 attached to a Project, since only an enrolled App can belong to one.
@@ -565,12 +569,20 @@ Policy if X asks for it.</p>
 <p><img alt="START_BUILDING" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/START_BUILDING.png" /></p>
 </li>
 <li><p class="first">Create a project. The use case declared here is what X reads if it
-ever reviews the App.</p>
+ever reviews the App. A project starts on the default plan of its
+product, so it can be born on <strong>Standard Basic</strong>, the plan of the
+<em>Default project</em> that the console may already show with <em>Plan: Free</em>.
+Only a project on <strong>Pay Per Use</strong> spends against the credit balance,
+so that is the one the App has to be connected to, see <em>Project
+Access</em> below.</p>
 <p><img alt="CREATE_PROJECT" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/CREATE_PROJECT.png" /></p>
 </li>
-<li><p class="first">Create the App inside that project. The App is the set of keys, and
-the project is what those keys are allowed to call, so an App
-connected to no project answers <tt class="docutils literal">403</tt> to everything.</p>
+<li><p class="first">Create the App. The App is the set of keys, and the project is what
+those keys are allowed to call, so an App connected to no project
+answers <tt class="docutils literal">403</tt> to everything, and so does an App connected only to
+the Default project on Standard Basic. Do not take for granted which
+project a new App is connected to: check what its <em>Project Access</em>
+shows, as described below.</p>
 <p><img alt="CREATE_APP" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/CREATE_APP.png" /></p>
 </li>
 <li><p class="first">Add a payment method in <em>Billing</em> &gt; <em>Billing information</em> with <strong>Add
@@ -599,8 +611,24 @@ the picture puts them.</p>
 </li>
 <li><p class="first">Once the account is created, go to <em>Access</em> &gt; <em>Apps</em> and select the
 App. What it shows as <em>Project Access</em> is the project its keys call
-through.</p>
+through, with its plan in brackets. An App on <em>Default project-…
+(Standard Basic)</em>, as in the picture below, cannot spend against the
+API and X refuses it.</p>
 <p><img alt="PROJECT_DEFAULT" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/PROJECT_DEFAULT.png" /></p>
+</li>
+<li><p class="first">In that case press <em>Manage</em> on <em>Project Access</em>. The dialog lists the
+projects of the account, each with its plan and a <em>Connect</em> or
+<em>Disconnect</em> button: press <em>Connect</em> on the <strong>Pay Per Use</strong> one. The
+keys work on every project the App is connected to, and the limits and
+endpoints follow the plan of that project. The keys do not have to be
+regenerated: an App connected this way associates with the Consumer
+Key and Secret it already had. <em>Start a new project</em>, at the bottom of
+the same dialog, offers the Ads, Enterprise and Community Notes
+products, none of which is the Pay Per Use project this module needs.</p>
+<p><img alt="PROJECT_ACCESS_MANAGE" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/PROJECT_ACCESS_MANAGE.png" /></p>
+<p>Once connected, the page of the App shows the Pay Per Use project
+under <em>Project Access</em>.</p>
+<p><img alt="PROJECT_PAY_PER_USE" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/PROJECT_PAY_PER_USE.png" /></p>
 </li>
 <li><p class="first">Open <em>Settings</em> to reach the authentication settings of the App.</p>
 <p><img alt="CONFIGURATION_ACCOUNT" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/CONFIGURATION_ACCOUNT.png" /></p>
@@ -665,7 +693,12 @@ and the Dashboard view, where you’ll see your posts.</p>
 authorization: X answers the reading of the authorized user with
 <tt class="docutils literal">403</tt>, the account is not created and the Dashboard explains it. The
 authorization itself is granted, so nothing has to be undone on the X
-side — add credits and associate again.</p>
+side. The cause is either the project or the balance, and the
+Developer Console tells them apart: if the <em>Project Access</em> of the App
+shows the Default project on Standard Basic, connect the App to the
+Pay Per Use project as described above; if it already shows a Pay Per
+Use project, the account has no credit left, so buy credits in
+<em>Billing</em> &gt; <em>Credits</em>. Then associate again.</p>
 <p><img alt="NO_CREDITS" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/NO_CREDITS.png" /></p>
 </li>
 <li><p class="first">Once you have completed these steps and everything is working
@@ -864,8 +897,11 @@ the answer of X:</p>
 <ul class="simple">
 <li><strong>The developer App cannot spend against the API.</strong> X answers
 <tt class="docutils literal">403 Forbidden</tt>, either with <tt class="docutils literal"><span class="pre">client-not-enrolled</span></tt> or asking for
-an App attached to a Project. The reason explains it and gives the
-address of the <a class="reference external" href="https://docs.x.com/x-api/getting-started/pricing">X API
+an App attached to a Project. The reason asks to connect the App to a
+Pay Per Use project in <em>Project Access</em> &gt; <em>Manage</em>, not the Default
+project on Standard Basic, and to make sure the account has credit in
+the Developer Console, see <em>Configuration</em>. It gives the address of
+the <a class="reference external" href="https://docs.x.com/x-api/getting-started/pricing">X API
 pricing</a> page,
 written as plain text because the reason of a failed publication is
 kept as text.</li>
@@ -998,6 +1034,15 @@ that module, not with this one.</li>
 installing the module back and associating the account again
 reactivates the archived history and updates it, instead of importing
 everything as duplicated records.</li>
+<li>The server log of the uninstallation shows two <tt class="docutils literal">ERROR</tt> lines of
+<tt class="docutils literal">bad query: DELETE FROM &quot;social_media&quot;</tt>, which violates the foreign
+key <tt class="docutils literal">social_account_media_id_fkey</tt>. They are expected: Odoo tries to
+delete the <em>X</em> record of <em>Social Media</em>, the archived accounts still
+point at it, so the deletion is refused and the uninstallation goes
+on. That record, its identifier and the <em>X</em> value of the media type
+are kept, and that is what lets the reinstallation reuse the same
+record instead of creating a second one, and the new association
+recover the history.</li>
 </ul>
 </div>
 </div>
