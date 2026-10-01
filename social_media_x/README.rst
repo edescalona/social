@@ -682,7 +682,9 @@ working when the access is revoked from the X application or the keys
 are changed. When that happens X answers ``401 Unauthorized`` to the
 publication, the reason is kept on the failed publication and the
 account is marked as needing an update. Odoo cannot renew it by itself:
-associate the account again from *Update account*.
+associate the account again from *Update account*. Deleting a
+publication from Odoo with such a token does not mark the account: the
+deletion is cancelled and only the error returned by X is shown.
 
 Uninstalling the module
 -----------------------

@@ -3,7 +3,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from tweepy.errors import Forbidden
+from tweepy.errors import Forbidden, Unauthorized
 
 from odoo import Command
 from odoo.exceptions import UserError
@@ -463,6 +463,29 @@ class TestSocialPostX(TestSocialCommonX):
         self.assertEqual(post.state, "draft")
         self.assertFalse(self.SocialAccountX.need_update)
         mock_flag.assert_not_called()
+
+    @mute_logger("odoo.addons.social_media_base.models.social_post_account")
+    def test_action_post_unauthorized_by_x_flags_the_account(self):
+        """A 401 fails the line and asks for the account to be authorized again.
+
+        OAuth1 tokens of X never expire on their own dates, so a publication
+        refused for credentials is how a revoked token shows up: the flag has
+        to outlive the rollback of the publication that found it.
+        """
+        post = self._draft_post(message="Test Message")
+        fake_client = MagicMock()
+        fake_client.create_tweet.side_effect = self.get_x_refusal(
+            Unauthorized, 401, "Unauthorized"
+        )
+        with self.get_patch_exceptions_x(
+            fake_client=fake_client, valid_time_request=False
+        ):
+            post._action_create_post_account()
+        line = post.post_account_ids
+        self.assertEqual(line.state, "failed")
+        self.assertFalse(line.remote_ref)
+        self.assertEqual(post.state, "draft")
+        self.assertTrue(self.SocialAccountX.need_update)
 
     def test_action_post_fails_only_the_account_the_message_is_too_long_for(self):
         """A limit of one account stops that account and nothing else.
