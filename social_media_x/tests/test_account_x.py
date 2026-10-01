@@ -1259,6 +1259,15 @@ class TestSocialAccountX(TestSocialCommonX):
             self.assertIn(self.SocialAccountX.display_name, message)
             self.assertIn(NOT_PERMITTED_X, message)
 
+    def test_refused_post_does_not_repeat_the_full_stop_of_x(self):
+        """The text of X ends in a full stop, and the message closes it once."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
+        for message in ("x" * 329, "x" * 100):
+            reason = self.SocialAccountX._x_refused_post_message(error, message)
+            self.assertNotIn("..", reason)
+            self.assertIn("You are not permitted to perform this action.", reason)
+
     def test_refused_short_post_of_a_premium_account_keeps_the_text_of_x(self):
         """A post within the limit of any plan was not refused for its length."""
         self.SocialAccountX.x_premium = True

@@ -282,7 +282,8 @@ class SocialAccount(models.Model):
         than what X allows without a subscription, sent by an account marked
         as X Premium, points at that setting, since a subscription marked on
         an account that does not hold it only shows up here. Any other refusal
-        names the account and keeps the text of X.
+        names the account and keeps the text of X, without its final full
+        stop, since the message closes the sentence itself.
 
         The message ends on the failed publication, which stores it as plain
         text, so the link to the pricing page is written as its address.
@@ -295,18 +296,19 @@ class SocialAccount(models.Model):
         self.ensure_one()
         if isinstance(error, Forbidden) and _is_app_without_paid_plan(error):
             return str(self._x_error_message(error, pricing_link=_URL_PRICING_X))
+        reason = str(error).rstrip().rstrip(".")
         if self.x_premium and len(message or "") > _MAX_MESSAGE_LENGTH_X:
             return _(
                 "X refused the post of %(account)s: %(error)s. What an "
                 "account may publish depends on its plan, so check the X "
                 "Premium setting of the account before trying again.",
                 account=self.display_name,
-                error=error,
+                error=reason,
             )
         return _(
             "X refused the post of %(account)s: %(error)s.",
             account=self.display_name,
-            error=error,
+            error=reason,
         )
 
     @api.model
