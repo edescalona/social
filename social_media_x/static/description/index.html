@@ -426,20 +426,21 @@ something.</p>
 <li><a class="reference internal" href="#update-token-api-key-api-secret-and-account-data" id="toc-entry-9">Update token, API Key, API Secret and account data</a></li>
 <li><a class="reference internal" href="#archive-account-x" id="toc-entry-10">Archive Account X</a></li>
 <li><a class="reference internal" href="#x-limits-and-validations" id="toc-entry-11">X limits and validations</a></li>
-<li><a class="reference internal" href="#rate-limits" id="toc-entry-12">Rate limits</a></li>
-<li><a class="reference internal" href="#figures-of-a-publication" id="toc-entry-13">Figures of a publication</a></li>
-<li><a class="reference internal" href="#dashboard-actions" id="toc-entry-14">Dashboard actions</a></li>
-<li><a class="reference internal" href="#x-credentials" id="toc-entry-15">X credentials</a></li>
-<li><a class="reference internal" href="#uninstalling-the-module" id="toc-entry-16">Uninstalling the module</a></li>
+<li><a class="reference internal" href="#posts-refused-by-x" id="toc-entry-12">Posts refused by X</a></li>
+<li><a class="reference internal" href="#rate-limits" id="toc-entry-13">Rate limits</a></li>
+<li><a class="reference internal" href="#figures-of-a-publication" id="toc-entry-14">Figures of a publication</a></li>
+<li><a class="reference internal" href="#dashboard-actions" id="toc-entry-15">Dashboard actions</a></li>
+<li><a class="reference internal" href="#x-credentials" id="toc-entry-16">X credentials</a></li>
+<li><a class="reference internal" href="#uninstalling-the-module" id="toc-entry-17">Uninstalling the module</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-17">Known issues / Roadmap</a></li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-18">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-19">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-20">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-21">Contributors</a></li>
-<li><a class="reference internal" href="#other-credits" id="toc-entry-22">Other credits</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-23">Maintainers</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-18">Known issues / Roadmap</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-19">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-20">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-21">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-22">Contributors</a></li>
+<li><a class="reference internal" href="#other-credits" id="toc-entry-23">Other credits</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-24">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -828,7 +829,8 @@ accounts is measured against the strictest of them while it is
 written, and every publication against its own account when it is
 sent, so only the line that cannot publish is refused. An account
 marked as Premium without holding the subscription sends the post and
-X refuses it: that line is left as <em>Failed</em> with the reason.</li>
+X refuses it: that line is left as <em>Failed</em> with the reason and a hint
+to check the <em>X Premium</em> switch, see <em>Posts refused by X</em> below.</li>
 <li>X publishes <strong>4 images or 1 video</strong> per publication and never both
 kinds in the same message, see the <a class="reference external" href="https://docs.x.com/x-api/media/upload-media">media
 upload</a> documentation.
@@ -852,8 +854,41 @@ post</a>, so the
 post is stopped in Odoo instead of failing halfway through.</li>
 </ul>
 </div>
+<div class="section" id="posts-refused-by-x">
+<h2><a class="toc-backref" href="#toc-entry-12">Posts refused by X</a></h2>
+<p>When X refuses a publication, its line is left as <em>Failed</em> with the
+reason, which is also posted on the chatter of the post. The other
+accounts of the post are published as usual, and if every account was
+refused the post goes back to <em>Draft</em>. What the reason says depends on
+the answer of X:</p>
+<ul class="simple">
+<li><strong>The developer App cannot spend against the API.</strong> X answers
+<tt class="docutils literal">403 Forbidden</tt>, either with <tt class="docutils literal"><span class="pre">client-not-enrolled</span></tt> or asking for
+an App attached to a Project. The reason explains it and gives the
+address of the <a class="reference external" href="https://docs.x.com/x-api/getting-started/pricing">X API
+pricing</a> page,
+written as plain text because the reason of a failed publication is
+kept as text.</li>
+<li><strong>A message longer than 280 characters, sent by an account marked as X
+Premium.</strong> X answers <tt class="docutils literal">400 Bad Request</tt> or <tt class="docutils literal">403 Forbidden</tt> and the
+reason is <em>X refused the post of {account}: {answer of X}. What an
+account may publish depends on its plan, so check the X Premium
+setting of the account before trying again.</em> This hint is only given
+when both conditions hold: it is how an account marked as Premium
+without holding the subscription shows up.</li>
+<li><strong>Any other refusal</strong>, a <tt class="docutils literal">400 Bad Request</tt> or a <tt class="docutils literal">403 Forbidden</tt>
+for the permissions of the App or the content of the post: <em>X refused
+the post of {account}: {answer of X}.</em></li>
+</ul>
+<p>The images and the video are uploaded as part of the same publication,
+so an upload X refuses is explained the same way. None of these refusals
+marks the account as needing an update: the plan, the permissions of the
+App or the content of the post are not fixed by authorizing the account
+again. Only a <tt class="docutils literal">401 Unauthorized</tt> is taken as a problem with the
+credentials, see <em>X credentials</em> below.</p>
+</div>
 <div class="section" id="rate-limits">
-<h2><a class="toc-backref" href="#toc-entry-12">Rate limits</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-13">Rate limits</a></h2>
 <ul class="simple">
 <li>The <a class="reference external" href="https://docs.x.com/x-api/fundamentals/rate-limits">rate limit</a>
 is tracked per endpoint. The ones this module spends are linking the
@@ -896,7 +931,7 @@ synchronization module installed nothing happens on that pass.</li>
 </ul>
 </div>
 <div class="section" id="figures-of-a-publication">
-<h2><a class="toc-backref" href="#toc-entry-13">Figures of a publication</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-14">Figures of a publication</a></h2>
 <ul class="simple">
 <li>The figures of the posts published in the last 30 days — likes,
 replies, impressions, retweets and quotes — are read back from X once
@@ -923,7 +958,7 @@ figures are zero, so its line keeps its last figures and its date.</li>
 </ul>
 </div>
 <div class="section" id="dashboard-actions">
-<h2><a class="toc-backref" href="#toc-entry-14">Dashboard actions</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-15">Dashboard actions</a></h2>
 <ul class="simple">
 <li>Deleting a publication from the dashboard deletes the post on X first.
 If X refuses the deletion, the operation is cancelled with the error
@@ -936,18 +971,18 @@ repeated.</li>
 </ul>
 </div>
 <div class="section" id="x-credentials">
-<h2><a class="toc-backref" href="#toc-entry-15">X credentials</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-16">X credentials</a></h2>
 <p>The <a class="reference external" href="https://docs.x.com/resources/fundamentals/authentication/oauth-1-0a/api-key-and-secret">OAuth
 1.0a</a>
 tokens of X do not expire, so there is nothing to renew: they only stop
 working when the access is revoked from the X application or the keys
-are changed. When that happens X refuses the publication, the reason is
-kept on the failed publication and the account is marked as needing an
-update. Odoo cannot renew it by itself: associate the account again from
-<em>Update account</em>.</p>
+are changed. When that happens X answers <tt class="docutils literal">401 Unauthorized</tt> to the
+publication, the reason is kept on the failed publication and the
+account is marked as needing an update. Odoo cannot renew it by itself:
+associate the account again from <em>Update account</em>.</p>
 </div>
 <div class="section" id="uninstalling-the-module">
-<h2><a class="toc-backref" href="#toc-entry-16">Uninstalling the module</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-17">Uninstalling the module</a></h2>
 <p>Uninstalling <em>Social Media X</em> does not delete the accounts nor their
 publication history:</p>
 <ul class="simple">
@@ -967,7 +1002,7 @@ everything as duplicated records.</li>
 </div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-17">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-18">Known issues / Roadmap</a></h1>
 <ul class="simple">
 <li>The <strong>X Premium</strong> switch of an account is declared by hand. Nothing
 reads the plan back from X, so an account marked as Premium that does
@@ -984,7 +1019,7 @@ effect.</li>
 </ul>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-18">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-19">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -992,15 +1027,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-19">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-20">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-20">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-21">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-21">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-22">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -1014,12 +1049,12 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="other-credits">
-<h2><a class="toc-backref" href="#toc-entry-22">Other credits</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Other credits</a></h2>
 <p>This work has been funded by AEOdoo (Asociación Española de Odoo -
 <a class="reference external" href="https://www.aeodoo.org">https://www.aeodoo.org</a>)</p>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-23">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-24">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

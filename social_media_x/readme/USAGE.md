@@ -90,7 +90,8 @@ the publication through an import or an RPC call, so nothing gets past them.
   publication against its own account when it is sent, so only the line that
   cannot publish is refused. An account marked as Premium without holding the
   subscription sends the post and X refuses it: that line is left as *Failed*
-  with the reason.
+  with the reason and a hint to check the *X Premium* switch, see *Posts
+  refused by X* below.
 - X publishes **4 images or 1 video** per publication and never both kinds in
   the same message, see the
   [media upload](https://docs.x.com/x-api/media/upload-media) documentation. A
@@ -111,6 +112,38 @@ the publication through an import or an RPC call, so nothing gets past them.
   for spam reasons, see the
   [creation of a post](https://docs.x.com/x-api/posts/creation-of-a-post), so
   the post is stopped in Odoo instead of failing halfway through.
+
+Posts refused by X
+------------------------
+
+When X refuses a publication, its line is left as *Failed* with the reason,
+which is also posted on the chatter of the post. The other accounts of the
+post are published as usual, and if every account was refused the post goes
+back to *Draft*. What the reason says depends on the answer of X:
+
+- **The developer App cannot spend against the API.** X answers
+  ``403 Forbidden``, either with ``client-not-enrolled`` or asking for an App
+  attached to a Project. The reason explains it and gives the address of the
+  [X API pricing](https://docs.x.com/x-api/getting-started/pricing) page,
+  written as plain text because the reason of a failed publication is kept as
+  text.
+- **A message longer than 280 characters, sent by an account marked as X
+  Premium.** X answers ``400 Bad Request`` or ``403 Forbidden`` and the reason
+  is *X refused the post of {account}: {answer of X}. What an account may
+  publish depends on its plan, so check the X Premium setting of the account
+  before trying again.* This hint is only given when both conditions hold: it
+  is how an account marked as Premium without holding the subscription shows
+  up.
+- **Any other refusal**, a ``400 Bad Request`` or a ``403 Forbidden`` for the
+  permissions of the App or the content of the post: *X refused the post of
+  {account}: {answer of X}.*
+
+The images and the video are uploaded as part of the same publication, so an
+upload X refuses is explained the same way. None of these refusals marks the
+account as needing an update: the plan, the permissions of the App or the
+content of the post are not fixed by authorizing the account again. Only a
+``401 Unauthorized`` is taken as a problem with the credentials, see *X
+credentials* below.
 
 Rate limits
 ------------------------
@@ -192,9 +225,9 @@ X credentials
 The [OAuth 1.0a](https://docs.x.com/resources/fundamentals/authentication/oauth-1-0a/api-key-and-secret)
 tokens of X do not expire, so there is nothing to renew: they
 only stop working when the access is revoked from the X application or the
-keys are changed. When that happens X refuses the publication, the reason is
-kept on the failed publication and the account is marked as needing an
-update. Odoo cannot renew it by itself: associate the account again from
+keys are changed. When that happens X answers ``401 Unauthorized`` to the
+publication, the reason is kept on the failed publication and the account is
+marked as needing an update. Odoo cannot renew it by itself: associate the account again from
 *Update account*.
 
 Uninstalling the module
