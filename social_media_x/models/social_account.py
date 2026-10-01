@@ -450,6 +450,17 @@ class SocialAccount(models.Model):
                     account = self._associate_account(
                         "x", str(data.id), values, username=data.username
                     )
+                    # Before reading the figures: X refusing them leaves its
+                    # own message, which must not hide that the account was
+                    # associated.
+                    self._notify_user_session(
+                        self._format_user_notification(
+                            _("The account was associated successfully"),
+                            media="X",
+                            message_type="success",
+                        ),
+                        message_type="success",
+                    )
                     account._on_account_associated()
                 else:
                     message_error = _(

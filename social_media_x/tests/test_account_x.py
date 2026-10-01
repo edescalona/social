@@ -912,7 +912,14 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertIn(_URL_PRICING_X, message)
         self.assertIn("Social Media X", message)
 
-    def _run_create_account_x(self, username, user_id="12345", on_associated=None):
+    def _run_create_account_x(
+        self,
+        username,
+        user_id="12345",
+        on_associated=None,
+        access_token_oauth2="fake_access_token_oauth2",
+        get_me_error=None,
+    ):
         """Associate ``username`` through the OAuth callback of X.
 
         X, the avatar download and the OAuth2 token are patched, and so is
@@ -921,10 +928,13 @@ class TestSocialAccountX(TestSocialCommonX):
         :param username: user name X answers for the authorized user.
         :param user_id: identifier X answers for the authorized user.
         :param on_associated: side effect of ``_on_account_associated``.
+        :param access_token_oauth2: OAuth2 token X answers, if any.
+        :param get_me_error: exception X raises when asked for the user.
         :return: the X account with that user name, archived or not.
         """
         self.WizardAccountX.write({"oauth_token": "wiz-token-create"})
         fake_client = MagicMock()
+        fake_client.get_me.side_effect = get_me_error
         data = fake_client.get_me.return_value.data
         data.id = user_id
         data.name = username
@@ -940,7 +950,7 @@ class TestSocialAccountX(TestSocialCommonX):
             type(self.SocialAccount),
             "_get_access_token_oauth2",
             autospec=True,
-            return_value="fake_access_token_oauth2",
+            return_value=access_token_oauth2,
         ), patch.object(
             type(self.SocialAccount),
             "_on_account_associated",
@@ -977,6 +987,59 @@ class TestSocialAccountX(TestSocialCommonX):
             account = self._run_create_account_x("reassociated-x-user", user_id="67890")
         self.assertEqual(account, existing)
         self.assertEqual(account.last_update_account, datetime(2026, 9, 30, 10, 0))
+
+    def _run_create_account_x_in_session(self, username, **kwargs):
+        """Associate ``username`` and return the messages kept in the session.
+
+        :param username: user name X answers for the authorized user.
+        :param kwargs: the options of :meth:`_run_create_account_x`.
+        :return: the notifications the web client shows once reloaded.
+        """
+        mock_request = MagicMock(session={})
+        with patch(PATCH_MIXIN_REQUEST, new=mock_request):
+            self._run_create_account_x(username, **kwargs)
+        return mock_request.session.get("social_media_notification", [])
+
+    def test_create_account_x_says_it_succeeded(self):
+        """The callback reloads the client, so the success waits in the session."""
+        with patch.object(
+            type(self.SocialAccount),
+            "_notify_user_client",
+            autospec=True,
+        ) as mock_client:
+            kept = self._run_create_account_x_in_session("announced-x-user")
+        mock_client.assert_not_called()
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(kept[0]["message_type"], "success")
+        self.assertIn("The account was associated successfully", kept[0]["message"])
+        self.assertIn("X", kept[0]["message"])
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_account_x_success_survives_refused_figures(self):
+        """X refusing the figures does not hide that the account was linked."""
+        kept = self._run_create_account_x_in_session(
+            "refused-figures-x-user",
+            on_associated=Exception("X refused the figures"),
+        )
+        self.assertEqual(
+            [message["message_type"] for message in kept], ["success", "danger"]
+        )
+        self.assertIn("The account was associated successfully", kept[0]["message"])
+        self.assertIn("X refused the figures", kept[1]["message"])
+
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_account_x_failures_do_not_say_it_succeeded(self):
+        failures = {
+            "no_oauth2_token": {"access_token_oauth2": False},
+            "x_error": {"get_me_error": Exception("X is down")},
+        }
+        for failure, kwargs in failures.items():
+            kept = self._run_create_account_x_in_session(
+                f"failed-x-user-{failure}", **kwargs
+            )
+            self.assertEqual(len(kept), 1, msg=failure)
+            self.assertEqual(kept[0]["message_type"], "danger", msg=failure)
+            self.assertNotIn("associated successfully", kept[0]["message"], msg=failure)
 
     def test_create_tweet(self):
         fake_client = MagicMock()
