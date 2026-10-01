@@ -113,6 +113,13 @@ class WizardSocialAccount(models.TransientModel):
             else:
                 self.account_id._update_account_data()
                 self.account_id.write({"last_update_account": fields.Datetime.now()})
+                if not self.env.context.get("not_notify"):
+                    self._notify_user_client(
+                        notif_type="social_form_success",
+                        notif_message=_("The account was updated successfully"),
+                        media="x",
+                        account_name=self.account_id.name,
+                    )
                 return super()._update_account()
         else:
             return super()._update_account()

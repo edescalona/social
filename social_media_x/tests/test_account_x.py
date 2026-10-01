@@ -559,6 +559,52 @@ class TestSocialAccountX(TestSocialCommonX):
             self.SocialAccountX.last_update_account, datetime(2026, 9, 30, 10, 0)
         )
 
+    @freeze_time("2026-09-30 10:00:00")
+    def test_wizard_update_account_says_it_succeeded(self):
+        wizard = self._get_wizard_update_x()
+        with patch.object(
+            type(self.SocialAccountX), "_update_account_data"
+        ), patch.object(
+            type(wizard), "_notify_user_client", autospec=True
+        ) as mock_notify:
+            wizard._update_account()
+        mock_notify.assert_called_once()
+        kwargs = mock_notify.call_args.kwargs
+        self.assertEqual(kwargs["notif_type"], "social_form_success")
+        self.assertEqual(
+            kwargs["notif_message"], "The account was updated successfully"
+        )
+        self.assertEqual(kwargs["media"], "x")
+        self.assertEqual(kwargs["account_name"], self.SocialAccountX.name)
+
+    @freeze_time("2026-09-30 10:00:00")
+    def test_wizard_update_account_not_notify_still_stamps_the_date(self):
+        """``not_notify`` silences the notice, not the update it reports."""
+        wizard = self._get_wizard_update_x().with_context(not_notify=True)
+        with patch.object(
+            type(self.SocialAccountX), "_update_account_data"
+        ), patch.object(
+            type(wizard), "_notify_user_client", autospec=True
+        ) as mock_notify:
+            wizard._update_account()
+        mock_notify.assert_not_called()
+        self.assertEqual(
+            self.SocialAccountX.last_update_account, datetime(2026, 9, 30, 10, 0)
+        )
+
+    def test_wizard_update_credentials_does_not_say_it_succeeded(self):
+        """The notice belongs to the association X answers with."""
+        fake_url = {"type": "ir.actions.act_url", "url": "https://example.com"}
+        for flag in ("update_token", "update_keys"):
+            wizard = self._get_wizard_update_x(**{flag: True})
+            with patch.object(
+                type(wizard), "_get_url_authorize", return_value=fake_url
+            ), patch.object(
+                type(wizard), "_notify_user_client", autospec=True
+            ) as mock_notify:
+                wizard._update_account()
+            mock_notify.assert_not_called()
+
     def test_wizard_update_credentials_leaves_the_last_update_to_x(self):
         """Renewing the token or the keys only redirects to X.
 
