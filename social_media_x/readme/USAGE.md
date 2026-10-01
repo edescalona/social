@@ -96,7 +96,10 @@ the publication through an import or an RPC call, so nothing gets past them.
   the same message, see the
   [media upload](https://docs.x.com/x-api/media/upload-media) documentation. A
   post mixing them is refused instead of being warned about, and so is one
-  carrying more than four images or more than one video.
+  carrying more than four images or more than one video. When the post
+  carries a video, the preview of X shows the video alone, without its
+  images, while the form keeps warning that X refuses the post; the preview
+  of any other social media of the same post is not affected.
 - The images are checked against the formats X publishes, **JPG, PNG, WEBP and
   GIF**, and against **5 MB** each, **15 MB** for a GIF. The video is checked
   against **MP4** and **512 MB**. The message names the files that cannot be
