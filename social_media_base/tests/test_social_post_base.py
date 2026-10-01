@@ -304,25 +304,22 @@ class TestSocialPostBase(TestSocialMediaBaseCommon):
         self.assertEqual(calls, [{"message": "Hello"}, {"message": "Hello"}])
 
     def test_publish_attempt_flags_the_account_it_cannot_renew(self):
-        """The error is caught by hand: ``assertRaises`` would undo the flag."""
+        """The flag survives the rollback of the guard the connectors use."""
         post_account = self.social_post_account_id
         account = self.social_account_id
 
         def publish(**kwargs):
             raise SocialCredentialsError(_("The access token was revoked"))
 
-        refused = False
-        with patch.object(
+        with mute_logger(LOGGER_POST_ACCOUNT), patch.object(
             type(account),
             "_refresh_credentials",
             autospec=True,
             return_value=False,
-        ):
-            try:
-                post_account._publish_attempt(publish)
-            except SocialCredentialsError:
-                refused = True
-        self.assertTrue(refused)
+        ), post_account._publish_guard():
+            post_account._publish_attempt(publish)
+        self.assertEqual(post_account.state, "failed")
+        self.assertIn("The access token was revoked", post_account.failed_description)
         self.assertTrue(account.need_update)
         self.assertTrue(
             account.message_ids.filtered(
