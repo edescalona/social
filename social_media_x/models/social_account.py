@@ -90,9 +90,9 @@ class SocialAccount(models.Model):
         copy=False,
         help="What is left of the credits the developer App bought to pay "
         "for the calls to the X API. It is the balance of the App and not of "
-        "this account, so every account holding the same API Key shows the "
-        "same figure. It is read again every 2 hours and when the account is "
-        "associated, updated or its statistics refreshed.",
+        "this account, so the accounts holding the same API Key share it. It "
+        "is read again every 2 hours and when the account is associated, "
+        "updated or its statistics refreshed.",
     )
     x_credit_balance_date = fields.Datetime(
         string="Credit Balance Read On",
@@ -370,7 +370,11 @@ class SocialAccount(models.Model):
 
         The warning goes to the chatter of the account, which keeps it for a
         responsible who is not connected when the cron reads the balance, and
-        to the bus, for the one who is.
+        to the bus, for the one who is. Read while answering the OAuth
+        callback, the warning of the user who is associating the account is
+        kept in the session instead, since the redirect of the callback would
+        outrun the bus; the responsibles of the other accounts holding the
+        same API Key are not the ones reloading, so they keep the bus.
 
         :param previous_balance: the balance before this read, ``None`` when
             it had never been read.
@@ -404,6 +408,15 @@ class SocialAccount(models.Model):
         if not message:
             return
         self.message_post(body=message, partner_ids=self.user_id.partner_id.ids)
+        if (
+            self.env.context.get("social_media_oauth_callback")
+            and self.user_id == self.env.user
+        ):
+            message_type, notification = self._prepare_user_notification(
+                notif_type, message, media="X", account_name=self.name
+            )
+            self._notify_user_session(notification, message_type=message_type)
+            return
         self._notify_user_client(
             target=self.user_id.partner_id,
             notif_type=notif_type,
@@ -696,6 +709,10 @@ class SocialAccount(models.Model):
                         ),
                         message_type="success",
                     )
+                    # After the success, so that a low balance is told once
+                    # the user knows the account is there, and before the
+                    # figures, whose failure ends the callback.
+                    account._x_refresh_credit_balance()
                     account._on_account_associated()
                 else:
                     message_error = _(
@@ -817,7 +834,9 @@ class SocialAccount(models.Model):
         accounts themselves, which are searched here and handed over to
         :meth:`~._x_check_updates` — an empty hook, because reading back what an
         account already published is the business of a synchronization module
-        and not of the connector.
+        and not of the connector. Before handing them over, the credit balance
+        of their App is read: one call per API Key, whatever the history of
+        the account.
 
         Which accounts are checked is asked to
         :meth:`~._get_check_media_updates_domain`, so the module with a reason to
@@ -833,6 +852,7 @@ class SocialAccount(models.Model):
         )
         if not accounts:
             return update
+        accounts._x_refresh_credit_balance()
         return accounts._x_check_updates() or update
 
     def _x_check_updates(self):
@@ -983,6 +1003,13 @@ class SocialAccount(models.Model):
             )
             answered |= line
         return answered
+
+    def action_refresh_statistics(self):
+        """Read the credit balance of the App as well, for an X account."""
+        res = super().action_refresh_statistics()
+        if self.media_type == "x":
+            self._x_refresh_credit_balance()
+        return res
 
     def action_update_account(self):
         res = super().action_update_account()

@@ -818,7 +818,11 @@ class TestSocialAccountX(TestSocialCommonX):
             type(self.SocialAccount),
             "_on_account_associated",
             autospec=True,
-        ) as mock_on_associated:
+        ) as mock_on_associated, patch.object(
+            type(self.SocialAccount),
+            "_x_refresh_credit_balance",
+            autospec=True,
+        ):
             self.SocialAccount.create_account_x(
                 "x_access_token_oauth1", "x_access_secret_oauth1", callback_kwargs
             )
@@ -1099,6 +1103,18 @@ class TestSocialAccountX(TestSocialCommonX):
             self.assertEqual(kept[0]["message_type"], "danger", msg=failure)
             self.assertNotIn("associated successfully", kept[0]["message"], msg=failure)
 
+    @mute_logger(LOGGER_ACCOUNT_X)
+    def test_create_account_x_reads_the_credit_balance(self):
+        """Read on the new account, even when its figures fail afterwards."""
+        with patch.object(
+            type(self.SocialAccount), "_x_refresh_credit_balance", autospec=True
+        ) as mock_refresh:
+            account = self._run_create_account_x(
+                "credit-x-user", on_associated=Exception("X refused the figures")
+            )
+        mock_refresh.assert_called_once()
+        self.assertEqual(mock_refresh.call_args.args[0], account)
+
     def test_create_tweet(self):
         fake_client = MagicMock()
         fake_client.create_tweet.return_value.data = {"id": "tweet_idX"}
@@ -1362,9 +1378,12 @@ class TestSocialAccountX(TestSocialCommonX):
         The connector has nothing to check on X: its token does not expire and
         the API reports no figures by day. The hook is stubbed because a
         synchronization module installed on top answers it with an import,
-        and what is fixed here is the cost of the pass on its own.
+        and what is fixed here is the cost of the pass on its own. So is the
+        credit balance, a single request per API Key with tests of its own.
         """
         with self._patch_x_check_updates(), patch.object(
+            type(self.SocialAccount), "_x_refresh_credit_balance", autospec=True
+        ), patch.object(
             type(self.SocialAccount), "get_client_api", autospec=True
         ) as mock_client:
             result = self.SocialAccount._run_check_media_updates()
@@ -1750,6 +1769,90 @@ class TestSocialAccountCreditX(TestSocialCommonX):
             (self.account_a2, self.user_a2),
         ):
             self.assertIn(user.partner_id, self._credit_notes(account).partner_ids)
+
+    def test_credit_warning_of_the_callback_waits_in_the_session(self):
+        """The redirect of the OAuth callback would outrun the bus."""
+        self.account_b.user_id = self.env.user
+        mock_request = MagicMock(session={})
+        with patch(PATCH_MIXIN_REQUEST, new=mock_request):
+            mock_notify = self._read_balance(
+                self.account_b.with_context(social_media_oauth_callback=True), 0.5
+            )
+        mock_notify.assert_not_called()
+        kept = mock_request.session.get("social_media_notification", [])
+        self.assertEqual([message["message_type"] for message in kept], ["info"])
+        self.assertIn("USD 0.50", kept[0]["message"])
+        self.assertEqual(len(self._credit_notes(self.account_b)), 1)
+
+    def test_credit_warning_of_the_callback_reaches_the_others_on_the_bus(self):
+        """Only the user reloading the client reads the session."""
+        mock_request = MagicMock(session={})
+        accounts = (self.account_a1 + self.account_a2).with_context(
+            social_media_oauth_callback=True
+        )
+        with patch(PATCH_MIXIN_REQUEST, new=mock_request):
+            mock_notify = self._read_balance(accounts, 0.5)
+        self.assertFalse(mock_request.session.get("social_media_notification"))
+        self.assertEqual(
+            {call.kwargs["target"] for call in mock_notify.call_args_list},
+            {self.user_a1.partner_id, self.user_a2.partner_id},
+        )
+
+    def _patch_refresh_credit_balance(self):
+        return patch.object(
+            type(self.SocialAccount), "_x_refresh_credit_balance", autospec=True
+        )
+
+    def test_credit_balance_is_read_by_the_cron_on_its_domain(self):
+        """The cron reads the accounts base allows, all of them in one call."""
+        with patch.object(
+            type(self.SocialAccount),
+            "_get_check_media_updates_domain",
+            autospec=True,
+            return_value=[("id", "in", (self.account_a1 + self.account_b).ids)],
+        ), patch.object(
+            type(self.SocialAccount), "_x_check_updates", autospec=True
+        ), self._patch_refresh_credit_balance() as mock_refresh:
+            self.SocialAccount._run_check_media_updates()
+        mock_refresh.assert_called_once()
+        self.assertEqual(
+            mock_refresh.call_args.args[0], self.account_a1 + self.account_b
+        )
+
+    def test_credit_balance_is_read_by_update_account(self):
+        wizard = self.WizardAccount.create(
+            {"media_id": self.media_x_id.id, "account_id": self.account_b.id}
+        )
+        with patch.object(
+            type(self.account_b), "_update_account_data"
+        ), self._patch_refresh_credit_balance() as mock_refresh:
+            wizard._update_account()
+        mock_refresh.assert_called_once()
+        self.assertEqual(mock_refresh.call_args.args[0], self.account_b)
+
+    def test_credit_balance_is_not_read_when_the_keys_are_updated(self):
+        """Updating keys or token goes through X first; nothing is read yet."""
+        wizard = self.WizardAccount.create(
+            {
+                "media_id": self.media_x_id.id,
+                "account_id": self.account_b.id,
+                "update_keys": True,
+            }
+        )
+        with patch.object(
+            type(wizard), "_get_url_authorize", return_value={}
+        ), self._patch_refresh_credit_balance() as mock_refresh:
+            wizard._update_account()
+        mock_refresh.assert_not_called()
+
+    def test_credit_balance_is_read_by_refresh_statistics(self):
+        for account, calls in ((self.account_b, 1), (self.social_account_id, 0)):
+            with self.subTest(account=account.name), self.get_patch_super_x(
+                account, SocialAccountXCls, "action_refresh_statistics", autospec=True
+            ) as mock_super, self._patch_refresh_credit_balance() as mock_refresh:
+                account.action_refresh_statistics()
+            mock_super.assert_called_once()
+            self.assertEqual(mock_refresh.call_count, calls)
 
     def test_credit_balance_of_another_media_is_never_asked(self):
         with patch(PATCH_REQUEST_GET) as mock_get:

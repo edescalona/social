@@ -112,6 +112,7 @@ class WizardSocialAccount(models.TransientModel):
                 return self._get_url_authorize()
             else:
                 self.account_id._update_account_data()
+                self.account_id._x_refresh_credit_balance()
                 self.account_id.write({"last_update_account": fields.Datetime.now()})
                 if not self.env.context.get("not_notify"):
                     self._notify_user_client(
