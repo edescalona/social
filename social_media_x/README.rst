@@ -433,6 +433,15 @@ Update token, API Key, API Secret and account data
 
   |UPDATE_TOKEN|
 
+- Associating the account and updating it end with a success notice and
+  stamp the date of *Last Update Account* on the account form.
+  Associating it, associating it again, *Update token* and *Update keys*
+  show *The account was associated successfully* on the Dashboard once X
+  sends the user back; *Update* with no checkbox selected shows *The
+  account was updated successfully*. If X refuses the figures of the
+  account right after associating it, its error is shown after the
+  success notice.
+
 Archive Account X
 -----------------
 
