@@ -26,18 +26,17 @@
                         readonly="1"
                         invisible="media_type != 'x'"
                     />
-                    <label for="x_credit_balance" invisible="media_type != 'x'" />
-                    <div class="o_row" invisible="media_type != 'x'">
+                    <label
+                        for="x_credit_balance"
+                        invisible="media_type != 'x' or not x_credit_balance_date"
+                    />
+                    <div
+                        class="o_row"
+                        invisible="media_type != 'x' or not x_credit_balance_date"
+                    >
                         <field name="x_credit_balance" />
-                        <span
-                            class="text-muted"
-                            invisible="not x_credit_balance_date"
-                        >read on</span>
-                        <field
-                            name="x_credit_balance_date"
-                            class="text-muted"
-                            invisible="not x_credit_balance_date"
-                        />
+                        <span class="text-muted">read on</span>
+                        <field name="x_credit_balance_date" class="text-muted" />
                     </div>
                     <field name="x_credit_warning" invisible="media_type != 'x'" />
                 </group>
