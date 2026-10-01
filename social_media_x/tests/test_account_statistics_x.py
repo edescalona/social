@@ -68,6 +68,19 @@ class TestXPostStatistics(TestSocialCommonX):
         res = self.SocialAccountX._get_public_metrics(metrics)
         self.assertEqual(res, (5, 40, 10, 15, 20))
 
+    def test_the_statistics_values_give_the_engagement(self):
+        """Interactions over impressions, as a ratio from 0 to 1.
+
+        One like, one reply and one repost in six impressions read 0.5, not 50.
+        """
+        values = self.SocialAccountX._x_statistics_values((1, 6, 1, 1, 0))
+        self.assertEqual(values["engagement"], 0.5)
+
+    def test_the_engagement_without_impressions_is_zero(self):
+        """A post nobody saw yet has no rate, and no division by zero."""
+        values = self.SocialAccountX._x_statistics_values((3, 0, 1, 0, 0))
+        self.assertEqual(values["engagement"], 0)
+
     def test_refresh_post_statistics_writes_what_x_answered(self):
         """The metrics of the answer land on the line, with the date read.
 
@@ -100,6 +113,7 @@ class TestXPostStatistics(TestSocialCommonX):
         self.assertEqual(line.retweet_count, 15)
         self.assertEqual(line.quote_count, 20)
         self.assertEqual(line.impression_count, 40)
+        self.assertEqual(line.engagement, (5 + 10 + 15 + 20) / 40)
         self.assertTrue(line.statistics_date)
 
     def test_a_hundred_ids_travel_in_one_call(self):

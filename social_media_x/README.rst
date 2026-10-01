@@ -636,6 +636,12 @@ Figures of a publication
   a day, by the *Social: Refresh the statistics of the recent
   publications* scheduled action, and on the spot by the *Update* button
   of the dashboard and *Update statistics* of the account form.
+- The *Statistics* dialog of a publication, opened from the menu of its
+  card on the Dashboard, also shows its *Engagement*: its likes,
+  replies, retweets and quotes over its impressions, as a ratio from 0
+  to 1, and 0 while it has no impressions. X reports no rate of its own,
+  so it is derived from those figures every time they are read, by this
+  refresh or by the import of a synchronization module.
 - Nothing walks the timeline to do it: Odoo already knows the identifier
   of every post it asks about, so they are read by batches of **100 ids
   per request** on its own ``get_posts`` endpoint. Reading the timeline

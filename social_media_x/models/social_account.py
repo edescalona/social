@@ -675,16 +675,23 @@ class SocialAccount(models.Model):
         so a second copy of this mapping is what would let them stop speaking
         the same language.
 
+        Also gives the engagement rate of the post, which X does not report:
+        its interactions over its impressions, as a ratio from 0 to 1. The
+        interactions are the ones ``interactions_count`` adds for X, since X
+        fills in neither clicks nor shares.
+
         :param public_metrics: the five figures ``_get_public_metrics`` builds.
         :rtype: dict
         """
         likes, impressions, replies, retweets, quotes = public_metrics
+        interactions = likes + replies + retweets + quotes
         return {
             "like_count": likes,
             "impression_count": impressions,
             "comment_count": replies,
             "retweet_count": retweets,
             "quote_count": quotes,
+            "engagement": interactions / impressions if impressions else 0,
         }
 
     def _get_posts_metrics(self, refs):

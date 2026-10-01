@@ -173,6 +173,12 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertEqual(post_account.comment_count, 15)
         self.assertEqual(post_account.retweet_count, 20)
         self.assertEqual(post_account.quote_count, 25)
+        self.assertEqual(
+            post_account.engagement,
+            (5 + 15 + 20 + 25) / 10,
+            msg="The import stores the same rate as the refresh: the "
+            "interactions over the impressions.",
+        )
         self.assertEqual(post_account.message, "Tweet text ")
         self.assertEqual(
             self.SocialAccountX.read(
