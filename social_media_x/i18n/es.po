@@ -16,12 +16,8 @@ msgstr ""
 
 #. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.social_account_view_form_inherit
-msgid ""
-"<span class=\"text-muted\" invisible=\"not x_credit_balance_date\">read on</"
-"span>"
-msgstr ""
-"<span class=\"text-muted\" invisible=\"not x_credit_balance_date\">leído el</"
-"span>"
+msgid "<span class=\"text-muted\">read on</span>"
+msgstr "<span class=\"text-muted\">leído el</span>"
 
 #. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_api_key
@@ -307,8 +303,8 @@ msgid ""
 "The responsible of the account is warned when the credit balance drops under "
 "this amount. At 0, only when it is used up."
 msgstr ""
-"Se avisa al responsable de la cuenta cuando el saldo de créditos baja de este "
-"importe. Con 0, solo cuando se agota."
+"Se avisa al responsable de la cuenta cuando el saldo de créditos baja de "
+"este importe. Con 0, solo cuando se agota."
 
 #. module: social_media_x
 #. odoo-python
@@ -364,9 +360,9 @@ msgid ""
 "the warning threshold. Cleared when the balance is read again at or over it, "
 "so the warning is given once per drop."
 msgstr ""
-"Si ya se avisó al responsable de que el saldo de créditos está por debajo del "
-"umbral de aviso. Se limpia cuando el saldo se vuelve a leer en el umbral o "
-"por encima, así que se avisa una vez por cada bajada."
+"Si ya se avisó al responsable de que el saldo de créditos está por debajo "
+"del umbral de aviso. Se limpia cuando el saldo se vuelve a leer en el umbral "
+"o por encima, así que se avisa una vez por cada bajada."
 
 #. module: social_media_x
 #: model:ir.model.fields,help:social_media_x.field_social_account__x_premium

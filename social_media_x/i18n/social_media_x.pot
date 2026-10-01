@@ -15,9 +15,7 @@ msgstr ""
 
 #. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.social_account_view_form_inherit
-msgid ""
-"<span class=\"text-muted\" invisible=\"not x_credit_balance_date\">read "
-"on</span>"
+msgid "<span class=\"text-muted\">read on</span>"
 msgstr ""
 
 #. module: social_media_x
