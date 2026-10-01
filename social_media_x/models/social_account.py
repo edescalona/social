@@ -264,10 +264,11 @@ class SocialAccount(models.Model):
             return Markup(
                 _(
                     "X rejected the request because the developer App cannot "
-                    "spend against the API. The X API has no free access "
-                    "tier: connect the App to a Project, add a payment method "
-                    "and buy credits in the Developer Console, see "
-                    "%(pricing_link)s, then try again.",
+                    "spend against the API. Connect the App to a Pay Per Use "
+                    "project in Project Access > Manage, not the Default "
+                    "project on Standard Basic, make sure the account has "
+                    "credit in the Developer Console, see %(pricing_link)s, "
+                    "then try again.",
                     pricing_link=pricing_link,
                 )
             )
