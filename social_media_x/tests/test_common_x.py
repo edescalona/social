@@ -18,6 +18,7 @@ from odoo.addons.social_media_base.tests.test_social_common import (
 PATCH_ACCOUNT_X = "odoo.addons.social_media_x.models.social_account.{}"
 PATCH_SOCIAL_X_WIZARDS = "odoo.addons.social_media_x.wizards"
 PATCH_REQUEST_POST = PATCH_ACCOUNT_X.format("requests.post")
+PATCH_REQUEST_GET = PATCH_ACCOUNT_X.format("requests.get")
 
 PATCH_WIZARD_ACCOUNT_X = "{}.wizard_social_account.{}".format(
     PATCH_SOCIAL_X_WIZARDS, "{}"

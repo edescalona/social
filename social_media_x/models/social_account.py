@@ -30,6 +30,7 @@ from ..social_x_utils import (
     _URL_OAUTH_X,
     _URL_PRICING_X,
     _URL_RATE_LIMITS_X,
+    _URL_USAGE_CREDITS_X,
     _URL_X,
     _is_app_without_paid_plan,
 )
@@ -81,6 +82,30 @@ class SocialAccount(models.Model):
         "Turned on for an account that does not hold the subscription, the "
         "post is sent and X refuses it, and the publication fails with the "
         "reason X gives.",
+    )
+    x_credit_balance = fields.Float(
+        string="Credit Balance (USD)",
+        digits=(16, 2),
+        readonly=True,
+        copy=False,
+        help="What is left of the credits the developer App bought to pay "
+        "for the calls to the X API. It is the balance of the App and not of "
+        "this account, so every account holding the same API Key shows the "
+        "same figure. It is read again every 2 hours and when the account is "
+        "associated, updated or its statistics refreshed.",
+    )
+    x_credit_balance_date = fields.Datetime(
+        string="Credit Balance Read On",
+        readonly=True,
+        copy=False,
+        help="When X last answered the credit balance.",
+    )
+    x_credit_warning = fields.Float(
+        string="Credit Warning (USD)",
+        digits=(16, 2),
+        default=1.0,
+        help="The responsible of the account is warned when the credit "
+        "balance drops under this amount. At 0, only when it is used up.",
     )
     rate_limit_endpoint = fields.Json(copy=False, default=dict)
 
@@ -239,6 +264,107 @@ class SocialAccount(models.Model):
         response = requests.post(url, headers=headers, data=data, timeout=10)
         token = response.json().get("access_token", False)
         return token
+
+    def _x_refresh_credit_balance(self):
+        """Read the credit balance of the developer App of these accounts.
+
+        The balance belongs to the App that pays the calls and not to the
+        account, so X is asked once per API Key and the answer is written on
+        every account holding it. Each API Key in its own savepoint: a group
+        that fails must not undo what was written for the previous ones.
+
+        The accounts are read and written with ``sudo()``: the API Key is
+        restricted to the administrators, and an API Key may be shared with
+        the accounts of another responsible, whose balance is the same one.
+        The accounts of any other social media are left out.
+        """
+        accounts_x = self.sudo().filtered(lambda account: account.media_type == "x")
+        for accounts in accounts_x.grouped("x_api_key").values():
+            with accounts[0]._account_guard(
+                "Error reading the X API credit balance of the account %s"
+            ):
+                accounts._x_write_credit_balance()
+
+    def _x_write_credit_balance(self):
+        """Ask X for the credit balance of these accounts and write it.
+
+        Every account here holds the same API Key, so the bearer of the first
+        one answers for all of them.
+
+        The balance is only something to look at, so a failure to read it is
+        logged and nothing else: it never hides what the user was doing, the
+        previous balance stays and its date tells how old it is. The rate
+        limit is kept in silence for the same reason, on every account of the
+        API Key, since X counts it for the App and not for the account.
+        """
+        account = self[0]
+        limit_reset = (
+            (account.rate_limit_endpoint or {})
+            .get("usage_credits", {})
+            .get("x-rate-limit-reset", 0)
+        )
+        if limit_reset >= time.time():
+            _logger.info(
+                "X credit balance not read for account %s: rate limit until %s",
+                account.id,
+                limit_reset,
+            )
+            return
+        try:
+            response = requests.get(
+                _URL_USAGE_CREDITS_X,
+                headers={"Authorization": f"Bearer {account.x_access_token_oauth2}"},
+                timeout=10,
+            )
+            if response.status_code == 429:
+                self._x_store_credit_rate_limit(response.headers)
+                return
+            if response.status_code != 200:
+                _logger.warning(
+                    "X refused the credit balance of account %s: %s %s",
+                    account.id,
+                    response.status_code,
+                    response.text,
+                )
+                return
+            balance = response.json()["data"]["total_balance"]
+        except (requests.RequestException, ValueError, KeyError, TypeError) as error:
+            _logger.warning(
+                "Could not read the X credit balance of account %s: %s",
+                account.id,
+                error,
+            )
+            return
+        self.write(
+            {
+                "x_credit_balance": balance,
+                "x_credit_balance_date": fields.Datetime.now(),
+            }
+        )
+
+    def _x_store_credit_rate_limit(self, headers):
+        """Keep the rate limit window X answered for the credit balance.
+
+        :param headers: the headers of the ``429`` answer of X.
+        """
+        window = {
+            "x-rate-limit-limit": int(headers.get("x-rate-limit-limit", 0)),
+            "x-rate-limit-remaining": int(headers.get("x-rate-limit-remaining", 0)),
+            "x-rate-limit-reset": int(
+                headers.get("x-rate-limit-reset", time.time() + 60)
+            ),
+        }
+        for account in self:
+            account.rate_limit_endpoint = {
+                **(account.rate_limit_endpoint or {}),
+                "usage_credits": window,
+            }
+        _logger.info(
+            "X rate limit reached on the credit balance of accounts %s, "
+            "next request at %s",
+            self.ids,
+            window["x-rate-limit-reset"],
+        )
 
     @api.model
     def _x_error_message(self, error, pricing_link=None):

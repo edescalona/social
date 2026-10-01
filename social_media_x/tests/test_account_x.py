@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
+import requests
 from freezegun import freeze_time
 from tweepy.errors import BadRequest, Forbidden, Unauthorized
 
@@ -23,12 +24,13 @@ from odoo.addons.social_media_base.tests.test_social_common import (
 )
 
 from ..models.social_account import SocialAccount as SocialAccountXCls
-from ..social_x_utils import _URL_PRICING_X
+from ..social_x_utils import _URL_PRICING_X, _URL_USAGE_CREDITS_X
 from ..wizards.wizard_social_account import (
     WizardSocialAccount as WizardSocialAccountXCls,
 )
 from .test_common_x import (
     PATCH_ACCOUNT_X,
+    PATCH_REQUEST_GET,
     PATCH_REQUEST_POST,
     PATCH_WIZARD_ACCOUNT_X,
     TestSocialCommonX,
@@ -1484,6 +1486,163 @@ class TestSocialAccountX(TestSocialCommonX):
             }
         )
         self.assertEqual(self.SocialAccountX.interactions_count, 21)
+
+
+class TestSocialAccountCreditX(TestSocialCommonX):
+    """The credit balance of the developer App, read from ``/2/usage/credits``."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        values = {
+            "media_id": cls.media_x_id.id,
+            "x_credit_balance": 3.0,
+            "x_credit_balance_date": datetime(2026, 9, 1),
+        }
+        cls.account_a1 = cls.SocialAccount.create(
+            {
+                **values,
+                "name": "A1",
+                "x_api_key": "KEY_A",
+                "x_access_token_oauth2": "BEARER_A1",
+            }
+        )
+        cls.account_a2 = cls.SocialAccount.create(
+            {
+                **values,
+                "name": "A2",
+                "x_api_key": "KEY_A",
+                "x_access_token_oauth2": "BEARER_A2",
+            }
+        )
+        cls.account_b = cls.SocialAccount.create(
+            {
+                **values,
+                "name": "B",
+                "x_api_key": "KEY_B",
+                "x_access_token_oauth2": "BEARER_B",
+            }
+        )
+        cls.accounts_credit = cls.account_a1 + cls.account_a2 + cls.account_b
+
+    def _credits_response(self, total=4.68, prepaid=None, status_code=200):
+        """Build the answer of X to ``GET /2/usage/credits``."""
+        response = self.generate_magic_mock(
+            status_code=status_code,
+            json_return_value={
+                "data": {
+                    "free_balance": 0.0,
+                    "free_grants": [],
+                    "prepaid_balance": total if prepaid is None else prepaid,
+                    "total_balance": total,
+                }
+            },
+        )
+        response.headers = {}
+        response.text = "answer of X"
+        return response
+
+    def _patch_credits(self, **answer_by_bearer):
+        """Patch the call, answering by the bearer token it carries."""
+
+        def get(url, headers=None, timeout=None):
+            answer = answer_by_bearer[headers["Authorization"].split()[-1]]
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        return patch(PATCH_REQUEST_GET, side_effect=get)
+
+    def _assert_balance(self, accounts, balance, date):
+        for account in accounts:
+            self.assertEqual(account.x_credit_balance, balance, msg=account.name)
+            self.assertEqual(account.x_credit_balance_date, date, msg=account.name)
+
+    @freeze_time("2026-09-30 23:37:00")
+    def test_credit_balance_is_written_with_its_date(self):
+        with self._patch_credits(BEARER_B=self._credits_response(4.68)) as mock_get:
+            self.account_b._x_refresh_credit_balance()
+        mock_get.assert_called_once_with(
+            _URL_USAGE_CREDITS_X,
+            headers={"Authorization": "Bearer BEARER_B"},
+            timeout=10,
+        )
+        self._assert_balance(self.account_b, 4.68, datetime(2026, 9, 30, 23, 37))
+
+    @freeze_time("2026-09-30 23:37:00")
+    def test_credit_balance_is_asked_once_per_api_key(self):
+        """The balance is the one of the App, so an API Key is one call."""
+        with self._patch_credits(
+            BEARER_A1=self._credits_response(4.68),
+            BEARER_B=self._credits_response(12.5),
+        ) as mock_get:
+            self.accounts_credit._x_refresh_credit_balance()
+        self.assertEqual(mock_get.call_count, 2)
+        read_on = datetime(2026, 9, 30, 23, 37)
+        self._assert_balance(self.account_a1 + self.account_a2, 4.68, read_on)
+        self._assert_balance(self.account_b, 12.5, read_on)
+
+    def test_credit_balance_of_a_negative_prepaid_is_zero(self):
+        """X compares ``total_balance``, never negative, to block the calls."""
+        with self._patch_credits(BEARER_B=self._credits_response(0.0, prepaid=-0.4)):
+            self.account_b._x_refresh_credit_balance()
+        self.assertEqual(self.account_b.x_credit_balance, 0.0)
+        self.assertNotEqual(self.account_b.x_credit_balance_date, datetime(2026, 9, 1))
+
+    def test_credit_balance_rate_limit_waits_for_the_window(self):
+        """A ``429`` keeps the window on the API Key and the balance as it was."""
+        response = self._credits_response(status_code=429)
+        response.headers = {
+            "x-rate-limit-limit": "30",
+            "x-rate-limit-remaining": "0",
+            "x-rate-limit-reset": "9999999999",
+        }
+        accounts_a = self.account_a1 + self.account_a2
+        with self._patch_credits(BEARER_A1=response) as mock_get, patch.object(
+            type(self.env["bus.bus"]), "_sendone", autospec=True
+        ) as mock_sendone:
+            accounts_a._x_refresh_credit_balance()
+            self.account_a2._x_refresh_credit_balance()
+        mock_get.assert_called_once()
+        mock_sendone.assert_not_called()
+        for account in accounts_a:
+            self.assertEqual(
+                account.rate_limit_endpoint["usage_credits"]["x-rate-limit-reset"],
+                9999999999,
+            )
+        self._assert_balance(accounts_a, 3.0, datetime(2026, 9, 1))
+
+    def test_credit_balance_errors_leave_it_as_it_was(self):
+        """A failure is logged only, and the other API Keys are still written."""
+        failures = {
+            "401": self._credits_response(status_code=401),
+            "403": self._credits_response(status_code=403),
+            "500": self._credits_response(status_code=500),
+            "network": requests.ConnectionError("unreachable"),
+            "format": self.generate_magic_mock(
+                status_code=200, json_return_value={"errors": []}
+            ),
+        }
+        for name, failure in failures.items():
+            with self.subTest(failure=name), self._patch_credits(
+                BEARER_A1=failure, BEARER_B=self._credits_response(4.68)
+            ), patch.object(
+                type(self.env["bus.bus"]), "_sendone", autospec=True
+            ) as mock_sendone, self.assertLogs(LOGGER_ACCOUNT_X, level="WARNING"):
+                self.accounts_credit._x_refresh_credit_balance()
+            mock_sendone.assert_not_called()
+            self._assert_balance(
+                self.account_a1 + self.account_a2, 3.0, datetime(2026, 9, 1)
+            )
+            self.assertFalse(
+                any((self.account_a1 + self.account_a2).mapped("need_update"))
+            )
+            self.assertEqual(self.account_b.x_credit_balance, 4.68)
+
+    def test_credit_balance_of_another_media_is_never_asked(self):
+        with patch(PATCH_REQUEST_GET) as mock_get:
+            self.social_account_id._x_refresh_credit_balance()
+        mock_get.assert_not_called()
 
 
 class TestSocialMediaX(TestSocialCommonX):
