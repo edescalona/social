@@ -273,6 +273,42 @@ class SocialAccount(models.Model):
             )
         return escape(str(error))
 
+    def _x_refused_post_message(self, error, message):
+        """Explain why X refused a post of this account.
+
+        X answers a refused post with a ``400`` or a ``403`` that says little
+        about the cause, so the reason is told from what Odoo knows. An App
+        that cannot spend against the API is explained as such. A post longer
+        than what X allows without a subscription, sent by an account marked
+        as X Premium, points at that setting, since a subscription marked on
+        an account that does not hold it only shows up here. Any other refusal
+        names the account and keeps the text of X.
+
+        The message ends on the failed publication, which stores it as plain
+        text, so the link to the pricing page is written as its address.
+
+        :param error: the ``BadRequest`` or ``Forbidden`` raised by tweepy.
+        :param str message: the text of the post, as it was sent to X.
+        :return: the reason to show to the user, as plain text.
+        :rtype: str
+        """
+        self.ensure_one()
+        if isinstance(error, Forbidden) and _is_app_without_paid_plan(error):
+            return str(self._x_error_message(error, pricing_link=_URL_PRICING_X))
+        if self.x_premium and len(message or "") > _MAX_MESSAGE_LENGTH_X:
+            return _(
+                "X refused the post of %(account)s: %(error)s. What an "
+                "account may publish depends on its plan, so check the X "
+                "Premium setting of the account before trying again.",
+                account=self.display_name,
+                error=error,
+            )
+        return _(
+            "X refused the post of %(account)s: %(error)s.",
+            account=self.display_name,
+            error=error,
+        )
+
     @api.model
     def _get_x_oauth_wizard(self, kwargs):
         """Return the association wizard that started this OAuth flow.

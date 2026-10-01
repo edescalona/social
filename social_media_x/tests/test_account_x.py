@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, patch
 
 from freezegun import freeze_time
-from tweepy.errors import BadRequest, Unauthorized
+from tweepy.errors import BadRequest, Forbidden, Unauthorized
 
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
@@ -35,6 +35,13 @@ from .test_common_x import (
 )
 
 LOGGER_ACCOUNT_X = "odoo.addons.social_media_x.models.social_account"
+NOT_PERMITTED_X = "You are not permitted to perform this action."
+NOT_ATTACHED_TO_A_PROJECT_X = (
+    "When authenticating requests to the X API v2 endpoints, you must use "
+    "keys and tokens from a developer App that is attached to a Project. You "
+    "can create a project via the developer portal."
+)
+PREMIUM_HINT_X = "check the X Premium setting of the account"
 
 
 class _FakeResponse:
@@ -1162,6 +1169,52 @@ class TestSocialAccountX(TestSocialCommonX):
             self.SocialAccountX.create_tweet("Message Test", [], [], None, {})
         self.assertIn("X Premium", str(error.exception))
         self.assertIn(self.SocialAccountX.display_name, str(error.exception))
+
+    def test_refused_post_of_an_app_without_paid_plan(self):
+        """The App that cannot spend is explained, with the pricing address.
+
+        The message ends on the failed publication, stored as plain text, so
+        the address is written as it is and not as an anchor.
+        """
+        error = self.get_x_refusal(Forbidden, 403, NOT_ATTACHED_TO_A_PROJECT_X)
+        message = self.SocialAccountX._x_refused_post_message(error, "Message Test")
+        self.assertIn("cannot spend against the API", message)
+        self.assertIn(_URL_PRICING_X, message)
+        self.assertNotIn("<a ", message)
+        self.assertNotIn(PREMIUM_HINT_X, message)
+
+    def test_refused_long_post_of_a_premium_account_is_forbidden(self):
+        """A 403 for a long post of an account marked Premium names the plan."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
+        message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
+        self.assertIn(PREMIUM_HINT_X, message)
+        self.assertIn(self.SocialAccountX.display_name, message)
+        self.assertIn(NOT_PERMITTED_X, message)
+
+    def test_refused_long_post_of_a_premium_account_is_bad_request(self):
+        """A 400 for a long post of an account marked Premium names the plan."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(BadRequest, 400, "Invalid Request")
+        message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
+        self.assertIn(PREMIUM_HINT_X, message)
+
+    def test_refused_post_without_premium_keeps_the_text_of_x(self):
+        """Without X Premium the plan has nothing to do with the refusal."""
+        for error_class, status_code in ((Forbidden, 403), (BadRequest, 400)):
+            error = self.get_x_refusal(error_class, status_code, NOT_PERMITTED_X)
+            message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
+            self.assertNotIn(PREMIUM_HINT_X, message)
+            self.assertIn(self.SocialAccountX.display_name, message)
+            self.assertIn(NOT_PERMITTED_X, message)
+
+    def test_refused_short_post_of_a_premium_account_keeps_the_text_of_x(self):
+        """A post within the limit of any plan was not refused for its length."""
+        self.SocialAccountX.x_premium = True
+        error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
+        message = self.SocialAccountX._x_refused_post_message(error, "x" * 100)
+        self.assertNotIn(PREMIUM_HINT_X, message)
+        self.assertIn(NOT_PERMITTED_X, message)
 
     def test_refresh_credentials_is_not_possible_on_x(self):
         """X gives no way to renew the token from Odoo."""

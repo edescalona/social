@@ -2,6 +2,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import base64
+from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 from tweepy.errors import TooManyRequests
@@ -153,6 +154,23 @@ class TestSocialCommonX(TestSocialMediaBaseCommon):
             "x-rate-limit-reset": "9999999999",
         }
         return TooManyRequests(response=fake_resp)
+
+    def get_x_refusal(self, error_class, status_code, detail):
+        """Build the error tweepy raises when X refuses a request.
+
+        The body is the one of the API v2, which carries the reason in
+        ``detail`` instead of a list of ``errors``.
+        """
+        response = self.generate_magic_mock(
+            status_code=status_code,
+            json_return_value={
+                "title": HTTPStatus(status_code).phrase,
+                "detail": detail,
+                "status": status_code,
+            },
+        )
+        response.reason = HTTPStatus(status_code).phrase
+        return error_class(response)
 
     def get_patch_exceptions_x(
         self, fake_client, many_requests=False, valid_time_request=True
