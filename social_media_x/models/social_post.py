@@ -184,3 +184,21 @@ class SocialPost(models.Model):
         if (image.mimetype or "").lower() == "image/gif":
             return _MAX_GIF_SIZE_X
         return _MAX_IMAGE_SIZE_X
+
+    def _render_values_preview(self, media):
+        """Show only the video in the X preview of a post that also carries images.
+
+        X refuses a post with both kinds of media (see ``_get_post_errors``), so the
+        preview cannot show what X would publish. It shows what LinkedIn shows in
+        the same case, the video, while the form warns that X will refuse it. Only
+        the X preview is touched: another media of the same post may publish the
+        images.
+        """
+        values = super()._render_values_preview(media)
+        if media.media_type == "x" and self.video_ids:
+            values = dict(
+                values,
+                image_ids=self.env["ir.attachment"],
+                hidden_image_count=0,
+            )
+        return values
