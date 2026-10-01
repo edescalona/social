@@ -9,6 +9,7 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tools import mute_logger
 
+from odoo.addons.social_media_x.models.social_post import SocialPost as SocialPostX
 from odoo.addons.social_media_x.social_x_utils import (
     _MAX_IMAGE_SIZE_X,
     _MAX_MESSAGE_LENGTH_PREMIUM_X,
@@ -280,6 +281,79 @@ class TestSocialPostX(TestSocialCommonX):
         animation = self.create_attachment("animation.gif", size=_MAX_IMAGE_SIZE_X + 1)
         post = self._draft_post(image_ids=[Command.set(animation.ids)])
         self.assertFalse(post._get_post_errors("x"))
+
+    def test_post_preview_video_wins_over_the_images(self):
+        """The preview shows the video, and the form still says X refuses it."""
+        image = self.create_attachment("preview_image.jpg")
+        video = self.create_attachment("preview_video.mp4")
+        post = self._draft_post(
+            image_ids=[Command.set(image.ids)],
+            video_ids=[Command.set(video.ids)],
+        )
+        self.assertNotIn(f'"/web/image/{image.id}"', post.post_preview)
+        self.assertIn("preview_video.mp4", post.post_preview)
+        self.assertIn("either images or a video", post.message_error)
+
+    def test_post_preview_video_hides_the_count_of_the_images(self):
+        """No image is drawn, so the card does not count the ones left out."""
+        images = (
+            self.create_attachment("one.jpg")
+            + self.create_attachment("two.jpg")
+            + self.create_attachment("three.jpg")
+        )
+        post = self._draft_post(
+            image_ids=[Command.set(images.ids)],
+            video_ids=[Command.set(self.create_attachment("clip.mp4").ids)],
+        )
+        values = post._render_values_preview(self.media_x_id)
+        self.assertFalse(values["image_ids"])
+        self.assertEqual(values["hidden_image_count"], 0)
+        for image in images:
+            self.assertNotIn(f'"/web/image/{image.id}"', post.post_preview)
+        self.assertNotIn("+1", post.post_preview)
+
+    def test_post_preview_keeps_the_images_without_a_video(self):
+        images = (
+            self.create_attachment("one.jpg")
+            + self.create_attachment("two.jpg")
+            + self.create_attachment("three.jpg")
+        )
+        post = self._draft_post(image_ids=[Command.set(images.ids)])
+        drawn = [
+            image for image in images if f'"/web/image/{image.id}"' in post.post_preview
+        ]
+        self.assertEqual(len(drawn), 2)
+        self.assertIn("+1", post.post_preview)
+
+    def test_post_preview_leaves_the_other_media_alone(self):
+        """What X refuses says nothing about the card of another media.
+
+        The override of X is called directly over what the modules below it
+        return, so the answer does not depend on whether LinkedIn is installed
+        and adds its own rule for its own card.
+        """
+        post = self._draft_post(
+            account_ids=[
+                Command.set((self.SocialAccountX + self.social_account_id).ids)
+            ],
+            image_ids=[Command.set(self.create_attachment("one.jpg").ids)],
+            video_ids=[Command.set(self.create_attachment("clip.mp4").ids)],
+        )
+        mro = type(post).mro()
+        parent_cls = next(
+            cls
+            for cls in mro[mro.index(SocialPostX) + 1 :]
+            if "_render_values_preview" in cls.__dict__
+        )
+        values_below = {"image_ids": post.image_ids, "hidden_image_count": 0}
+        with self._fake_media_types(linkedin=self.social_media_id), patch.object(
+            parent_cls,
+            "_render_values_preview",
+            autospec=True,
+            return_value=values_below,
+        ):
+            values = SocialPostX._render_values_preview(post, self.social_media_id)
+        self.assertEqual(values, values_below)
 
     def test_post_check_messages_show_the_errors_and_save_the_post(self):
         """The post is saved and the form says what X will not publish."""
