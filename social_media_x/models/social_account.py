@@ -501,9 +501,9 @@ class SocialAccount(models.Model):
         than what X allows without a subscription, sent by an account X last
         reported as X Premium, asks to read the plan again with Update
         account, since a subscription cancelled after that read only shows up
-        here. Any other refusal
-        names the account and keeps the text of X, without its final full
-        stop, since the message closes the sentence itself.
+        here. Any other refusal names the account and keeps the text of X,
+        without its final full stop, since the message closes the sentence
+        itself.
 
         The message ends on the failed publication, which stores it as plain
         text, so the link to the pricing page is written as its address.
