@@ -397,6 +397,10 @@ MB</strong> in MP4. X takes images or a video, never both in the same post,
 so a post mixing them is refused instead of warned about. The same
 checks refuse the publication if the post reaches it anyway, through
 an import or an RPC call.</li>
+<li>The credit balance of the developer App that pays the calls to the X
+API, on the account form. It is read from X every 2 hours and from the
+buttons of the account, and the responsible of the account is warned
+when it drops under a threshold set on the account or is used up.</li>
 </ul>
 <p><strong>An X account will never draw a time series in Social Media &gt;
 Statistics.</strong> That screen reads a history per day, and the
@@ -424,23 +428,24 @@ something.</p>
 <li><a class="reference internal" href="#list-of-posts-generated-from-odoo" id="toc-entry-7">List of posts generated from Odoo.</a></li>
 <li><a class="reference internal" href="#generate-a-post" id="toc-entry-8">Generate a post.</a></li>
 <li><a class="reference internal" href="#update-token-api-key-api-secret-and-account-data" id="toc-entry-9">Update token, API Key, API Secret and account data</a></li>
-<li><a class="reference internal" href="#archive-account-x" id="toc-entry-10">Archive Account X</a></li>
-<li><a class="reference internal" href="#x-limits-and-validations" id="toc-entry-11">X limits and validations</a></li>
-<li><a class="reference internal" href="#posts-refused-by-x" id="toc-entry-12">Posts refused by X</a></li>
-<li><a class="reference internal" href="#rate-limits" id="toc-entry-13">Rate limits</a></li>
-<li><a class="reference internal" href="#figures-of-a-publication" id="toc-entry-14">Figures of a publication</a></li>
-<li><a class="reference internal" href="#dashboard-actions" id="toc-entry-15">Dashboard actions</a></li>
-<li><a class="reference internal" href="#x-credentials" id="toc-entry-16">X credentials</a></li>
-<li><a class="reference internal" href="#uninstalling-the-module" id="toc-entry-17">Uninstalling the module</a></li>
+<li><a class="reference internal" href="#credit-balance-of-the-app" id="toc-entry-10">Credit balance of the App</a></li>
+<li><a class="reference internal" href="#archive-account-x" id="toc-entry-11">Archive Account X</a></li>
+<li><a class="reference internal" href="#x-limits-and-validations" id="toc-entry-12">X limits and validations</a></li>
+<li><a class="reference internal" href="#posts-refused-by-x" id="toc-entry-13">Posts refused by X</a></li>
+<li><a class="reference internal" href="#rate-limits" id="toc-entry-14">Rate limits</a></li>
+<li><a class="reference internal" href="#figures-of-a-publication" id="toc-entry-15">Figures of a publication</a></li>
+<li><a class="reference internal" href="#dashboard-actions" id="toc-entry-16">Dashboard actions</a></li>
+<li><a class="reference internal" href="#x-credentials" id="toc-entry-17">X credentials</a></li>
+<li><a class="reference internal" href="#uninstalling-the-module" id="toc-entry-18">Uninstalling the module</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-18">Known issues / Roadmap</a></li>
-<li><a class="reference internal" href="#bug-tracker" id="toc-entry-19">Bug Tracker</a></li>
-<li><a class="reference internal" href="#credits" id="toc-entry-20">Credits</a><ul>
-<li><a class="reference internal" href="#authors" id="toc-entry-21">Authors</a></li>
-<li><a class="reference internal" href="#contributors" id="toc-entry-22">Contributors</a></li>
-<li><a class="reference internal" href="#other-credits" id="toc-entry-23">Other credits</a></li>
-<li><a class="reference internal" href="#maintainers" id="toc-entry-24">Maintainers</a></li>
+<li><a class="reference internal" href="#known-issues-roadmap" id="toc-entry-19">Known issues / Roadmap</a></li>
+<li><a class="reference internal" href="#bug-tracker" id="toc-entry-20">Bug Tracker</a></li>
+<li><a class="reference internal" href="#credits" id="toc-entry-21">Credits</a><ul>
+<li><a class="reference internal" href="#authors" id="toc-entry-22">Authors</a></li>
+<li><a class="reference internal" href="#contributors" id="toc-entry-23">Contributors</a></li>
+<li><a class="reference internal" href="#other-credits" id="toc-entry-24">Other credits</a></li>
+<li><a class="reference internal" href="#maintainers" id="toc-entry-25">Maintainers</a></li>
 </ul>
 </li>
 </ul>
@@ -535,11 +540,12 @@ is what keeps the scheduled actions of the module cheap: the check of
 network updates every two hours and the daily refresh of the figures
 read the same publications over and over.</p>
 <p>So a database that only publishes spends cents a month: this module
-reads nothing but its own publications, and it reads them at the price
-of an owned read. What grows with the account is the history, and the
-history is read by <em>Social Media X Sync</em>, which is a separate module
-nobody has to install. A deployment that publishes and watches its own
-figures does not need it.</p>
+reads nothing but its own publications, at the price of an owned read,
+and the credit balance of the App, once per API Key, which is not among
+the calls the pricing of X lists. What grows with the account is the
+history, and the history is read by <em>Social Media X Sync</em>, which is a
+separate module nobody has to install. A deployment that publishes and
+watches its own figures does not need it.</p>
 <p>There is no way around the API for what this module does. Publishing on
 X through anything else means either a reseller that pays the same API
 and charges for it on top, or driving the web with the session of the
@@ -798,7 +804,8 @@ accepts the message. Nothing waits for an import.</li>
 </li>
 <li><p class="first">In the wizard that appears, if none of the checkboxes are selected and
 the <em>Update</em> button is pressed, the system will update only the
-account’s data.</p>
+account’s data and read the credit balance of the App again, see
+<em>Credit balance of the App</em> below.</p>
 </li>
 <li><p class="first">If the <em>Update keys</em> checkbox is selected, the current API Key and API
 Secret values will be displayed by default. Modify any of these values
@@ -820,8 +827,64 @@ success notice.</p>
 </li>
 </ul>
 </div>
+<div class="section" id="credit-balance-of-the-app">
+<h2><a class="toc-backref" href="#toc-entry-10">Credit balance of the App</a></h2>
+<p>The calls to the X API are paid from the credits bought for the
+developer App, see <em>Configuration</em>. The account form shows what is left
+of them, so the balance can be followed from Odoo and not only from the
+Developer Console.</p>
+<ul>
+<li><p class="first">Go to <em>Social Media</em> &gt; Configuration &gt; Accounts, select the X account
+and open the <em>Configuration</em> tab.</p>
+</li>
+<li><p class="first"><em>Credit Balance (USD)</em> is the total balance X reports for the App,
+never negative, with the date it was read next to it. The row stays
+hidden until the balance has been read once. The accounts of other
+social media do not show it.</p>
+<p><img alt="X_CREDIT_BALANCE" src="https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/X_CREDIT_BALANCE.png" /></p>
+</li>
+<li><p class="first">The balance belongs to the App that pays the calls, not to the X
+account: the accounts registered with the same API Key show the same
+figure, and X is asked once per API Key for all of them.</p>
+</li>
+<li><p class="first">It is read again by the automatic check for updates that runs every 2
+hours, when the account is associated, by <em>Update account</em> with no
+checkbox selected and by <em>Update statistics</em> of the account form.</p>
+</li>
+<li><p class="first">If X or the network does not answer, the balance and its date are left
+as they were and the reason is only written in the server log: the
+date tells how old the figure is. The user is not warned and the
+account is not marked as needing an update. When X answers that the
+requests for the balance are exhausted, the readings wait for the
+window to end, without any notice.</p>
+</li>
+<li><p class="first"><em>Credit Warning (USD)</em>, on the same tab, is the amount under which the
+responsible of the account is warned, <strong>1.00</strong> by default. At 0, the
+warning is only given when the balance is used up.</p>
+</li>
+<li><p class="first">The warning is given when a reading finds the balance under the
+threshold, once per drop: the following readings under it do not
+repeat it, and a reading at or over the threshold arms it again.
+Raising the threshold over the current balance counts as a drop, so
+the next reading warns.</p>
+</li>
+<li><p class="first">When the balance reaches 0 the warning says it is used up: X blocks
+every call until credits are bought in the Developer Console.</p>
+</li>
+<li><p class="first">The warning is posted as a note on the chatter of the account that
+notifies its responsible, which keeps it when nobody is connected
+while the check runs, and it is shown as a notice to the responsible
+who is connected, blue when the balance is low and red when it is used
+up. When the balance is read while the account is being associated,
+the notice of the user who associates it is shown once X sends the
+user back to Odoo.</p>
+</li>
+<li><p class="first">Every account holding the same API Key warns its own responsible.</p>
+</li>
+</ul>
+</div>
 <div class="section" id="archive-account-x">
-<h2><a class="toc-backref" href="#toc-entry-10">Archive Account X</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-11">Archive Account X</a></h2>
 <ul class="simple">
 <li>Go to <em>Social Media</em> &gt; Configuration &gt; Accounts</li>
 <li>Select the account and use the standard <em>Actions</em> &gt; <em>Archive</em> entry of
@@ -843,7 +906,7 @@ The X publications stay online, only the Odoo history is removed.</li>
 </ul>
 </div>
 <div class="section" id="x-limits-and-validations">
-<h2><a class="toc-backref" href="#toc-entry-11">X limits and validations</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-12">X limits and validations</a></h2>
 <p>What X refuses is checked in Odoo before the publication is sent. The
 post shows the reason while it is being written, saving is never
 blocked, and the publication of the account that raises the objection is
@@ -891,7 +954,7 @@ post is stopped in Odoo instead of failing halfway through.</li>
 </ul>
 </div>
 <div class="section" id="posts-refused-by-x">
-<h2><a class="toc-backref" href="#toc-entry-12">Posts refused by X</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-13">Posts refused by X</a></h2>
 <p>When X refuses a publication, its line is left as <em>Failed</em> with the
 reason, which is also posted on the chatter of the post. The other
 accounts of the post are published as usual, and if every account was
@@ -927,22 +990,25 @@ again. Only a <tt class="docutils literal">401 Unauthorized</tt> is taken as a p
 credentials, see <em>X credentials</em> below.</p>
 </div>
 <div class="section" id="rate-limits">
-<h2><a class="toc-backref" href="#toc-entry-13">Rate limits</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-14">Rate limits</a></h2>
 <ul class="simple">
 <li>The <a class="reference external" href="https://docs.x.com/x-api/fundamentals/rate-limits">rate limit</a>
 is tracked per endpoint. The ones this module spends are linking the
 account, refreshing the data of the account, publishing (message and
-media upload), deleting, reading a single post and reading the figures
-of the recent ones (<tt class="docutils literal">get_posts</tt>); a synchronization module adds its
-own to the same record. When X answers that it is exhausted, Odoo
-stores the window it returns and a notice is shown with the limit of
-the plan, the remaining requests and the time of the next attempt.
-That stored window is what stops a deletion, a check of a single post
-and a refresh of the figures before they are attempted; linking the
-account and publishing are tried all the same and report the limit
-only once X has refused them, and the refresh of the data of the
-account does not track its limit at all. If X does not say when the
-window resets, 60 seconds are assumed.</li>
+media upload), deleting, reading a single post, reading the figures of
+the recent ones (<tt class="docutils literal">get_posts</tt>) and reading the credit balance of the
+App; a synchronization module adds its own to the same record. When X
+answers that it is exhausted, Odoo stores the window it returns and a
+notice is shown with the limit of the plan, the remaining requests and
+the time of the next attempt. That stored window is what stops a
+deletion, a check of a single post and a refresh of the figures before
+they are attempted; linking the account and publishing are tried all
+the same and report the limit only once X has refused them, and the
+refresh of the data of the account does not track its limit at all. If
+X does not say when the window resets, 60 seconds are assumed. The
+credit balance is the exception to the notice: its window is stored on
+every account of the same API Key and waited for in silence, see
+<em>Credit balance of the App</em>.</li>
 <li>If X refuses a publication because the requests of the plan are
 exhausted, the line is left as <em>Failed</em> with the message <em>X did not
 accept the post. The account may have reached the limit of requests of
@@ -963,14 +1029,16 @@ the same window as the rest: while the limit of the <tt class="docutils literal"
 endpoint is exhausted the publication is left untouched rather than
 asked about.</li>
 <li>The X accounts are walked by the automatic check for updates that runs
-every 2 hours, which by itself asks X for nothing: the token of X does
-not expire and its API reports no figures by day, so the pass only
-hands the accounts over to whoever synchronizes them. Without a
-synchronization module installed nothing happens on that pass.</li>
+every 2 hours. The only thing it asks X by itself is the credit
+balance of the App, one request per API Key: the token of X does not
+expire and its API reports no figures by day, so the rest of the pass
+only hands the accounts over to whoever synchronizes them. Without a
+synchronization module installed, reading the balance is all that
+happens on that pass.</li>
 </ul>
 </div>
 <div class="section" id="figures-of-a-publication">
-<h2><a class="toc-backref" href="#toc-entry-14">Figures of a publication</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-15">Figures of a publication</a></h2>
 <ul class="simple">
 <li>The figures of the posts published in the last 30 days — likes,
 replies, impressions, retweets and quotes — are read back from X once
@@ -1003,7 +1071,7 @@ figures are zero, so its line keeps its last figures and its date.</li>
 </ul>
 </div>
 <div class="section" id="dashboard-actions">
-<h2><a class="toc-backref" href="#toc-entry-15">Dashboard actions</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-16">Dashboard actions</a></h2>
 <ul class="simple">
 <li>Deleting a publication from the dashboard deletes the post on X first.
 If X refuses the deletion, the operation is cancelled with the error
@@ -1016,7 +1084,7 @@ repeated.</li>
 </ul>
 </div>
 <div class="section" id="x-credentials">
-<h2><a class="toc-backref" href="#toc-entry-16">X credentials</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-17">X credentials</a></h2>
 <p>The <a class="reference external" href="https://docs.x.com/resources/fundamentals/authentication/oauth-1-0a/api-key-and-secret">OAuth
 1.0a</a>
 tokens of X do not expire, so there is nothing to renew: they only stop
@@ -1029,7 +1097,7 @@ publication from Odoo with such a token does not mark the account: the
 deletion is cancelled and only the error returned by X is shown.</p>
 </div>
 <div class="section" id="uninstalling-the-module">
-<h2><a class="toc-backref" href="#toc-entry-17">Uninstalling the module</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-18">Uninstalling the module</a></h2>
 <p>Uninstalling <em>Social Media X</em> does not delete the accounts nor their
 publication history:</p>
 <ul class="simple">
@@ -1038,9 +1106,10 @@ publication history:</p>
 <li>The X specific data of this module is lost, because Odoo drops the
 columns of an uninstalled module: the API Key, the API Secret, the
 OAuth 1 tokens, the app-only bearer token, the rate limit window of
-each endpoint and the <em>X Premium</em> switch, which has to be ticked again
-after reinstalling. The fields of a synchronization module go with
-that module, not with this one.</li>
+each endpoint, the credit balance with its date, the warning
+threshold, which goes back to its default, and the <em>X Premium</em> switch,
+which has to be ticked again after reinstalling. The fields of a
+synchronization module go with that module, not with this one.</li>
 <li>The identifier of each account and publication on X is kept, so
 installing the module back and associating the account again
 reactivates the archived history and updates it, instead of importing
@@ -1058,7 +1127,7 @@ recover the history.</li>
 </div>
 </div>
 <div class="section" id="known-issues-roadmap">
-<h1><a class="toc-backref" href="#toc-entry-18">Known issues / Roadmap</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-19">Known issues / Roadmap</a></h1>
 <ul class="simple">
 <li>The <strong>X Premium</strong> switch of an account is declared by hand. Nothing
 reads the plan back from X, so an account marked as Premium that does
@@ -1075,7 +1144,7 @@ effect.</li>
 </ul>
 </div>
 <div class="section" id="bug-tracker">
-<h1><a class="toc-backref" href="#toc-entry-19">Bug Tracker</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-20">Bug Tracker</a></h1>
 <p>Bugs are tracked on <a class="reference external" href="https://github.com/OCA/social/issues">GitHub Issues</a>.
 In case of trouble, please check there if your issue has already been reported.
 If you spotted it first, help us to smash it by providing a detailed and welcomed
@@ -1083,15 +1152,15 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 <p>Do not contact contributors directly about support or help with technical issues.</p>
 </div>
 <div class="section" id="credits">
-<h1><a class="toc-backref" href="#toc-entry-20">Credits</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-21">Credits</a></h1>
 <div class="section" id="authors">
-<h2><a class="toc-backref" href="#toc-entry-21">Authors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-22">Authors</a></h2>
 <ul class="simple">
 <li>Binhex</li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2><a class="toc-backref" href="#toc-entry-22">Contributors</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-23">Contributors</a></h2>
 <ul class="simple">
 <li><a class="reference external" href="https://www.binhex.cloud">Binhex</a>:<ul>
 <li>Edilio Escalona Almira <a class="reference external" href="mailto:e.escalona&#64;binhex.cloud">e.escalona&#64;binhex.cloud</a></li>
@@ -1105,12 +1174,12 @@ If you spotted it first, help us to smash it by providing a detailed and welcome
 </ul>
 </div>
 <div class="section" id="other-credits">
-<h2><a class="toc-backref" href="#toc-entry-23">Other credits</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-24">Other credits</a></h2>
 <p>This work has been funded by AEOdoo (Asociación Española de Odoo -
 <a class="reference external" href="https://www.aeodoo.org">https://www.aeodoo.org</a>)</p>
 </div>
 <div class="section" id="maintainers">
-<h2><a class="toc-backref" href="#toc-entry-24">Maintainers</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-25">Maintainers</a></h2>
 <p>This module is maintained by the OCA.</p>
 <a class="reference external image-reference" href="https://odoo-community.org">
 <img alt="Odoo Community Association" src="https://odoo-community.org/logo.png" />

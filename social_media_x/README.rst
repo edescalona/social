@@ -56,6 +56,10 @@ Main features:
   so a post mixing them is refused instead of warned about. The same
   checks refuse the publication if the post reaches it anyway, through
   an import or an RPC call.
+- The credit balance of the developer App that pays the calls to the X
+  API, on the account form. It is read from X every 2 hours and from the
+  buttons of the account, and the responsible of the account is warned
+  when it drops under a threshold set on the account or is used up.
 
 **An X account will never draw a time series in Social Media >
 Statistics.** That screen reads a history per day, and the
@@ -156,11 +160,12 @@ network updates every two hours and the daily refresh of the figures
 read the same publications over and over.
 
 So a database that only publishes spends cents a month: this module
-reads nothing but its own publications, and it reads them at the price
-of an owned read. What grows with the account is the history, and the
-history is read by *Social Media X Sync*, which is a separate module
-nobody has to install. A deployment that publishes and watches its own
-figures does not need it.
+reads nothing but its own publications, at the price of an owned read,
+and the credit balance of the App, once per API Key, which is not among
+the calls the pricing of X lists. What grows with the account is the
+history, and the history is read by *Social Media X Sync*, which is a
+separate module nobody has to install. A deployment that publishes and
+watches its own figures does not need it.
 
 There is no way around the API for what this module does. Publishing on
 X through anything else means either a reseller that pays the same API
@@ -458,7 +463,8 @@ Update token, API Key, API Secret and account data
 
 - In the wizard that appears, if none of the checkboxes are selected and
   the *Update* button is pressed, the system will update only the
-  account's data.
+  account's data and read the credit balance of the App again, see
+  *Credit balance of the App* below.
 
 - If the *Update keys* checkbox is selected, the current API Key and API
   Secret values will be displayed by default. Modify any of these values
@@ -479,6 +485,62 @@ Update token, API Key, API Secret and account data
   account was updated successfully*. If X refuses the figures of the
   account right after associating it, its error is shown after the
   success notice.
+
+Credit balance of the App
+-------------------------
+
+The calls to the X API are paid from the credits bought for the
+developer App, see *Configuration*. The account form shows what is left
+of them, so the balance can be followed from Odoo and not only from the
+Developer Console.
+
+- Go to *Social Media* > Configuration > Accounts, select the X account
+  and open the *Configuration* tab.
+
+- *Credit Balance (USD)* is the total balance X reports for the App,
+  never negative, with the date it was read next to it. The row stays
+  hidden until the balance has been read once. The accounts of other
+  social media do not show it.
+
+  |X_CREDIT_BALANCE|
+
+- The balance belongs to the App that pays the calls, not to the X
+  account: the accounts registered with the same API Key show the same
+  figure, and X is asked once per API Key for all of them.
+
+- It is read again by the automatic check for updates that runs every 2
+  hours, when the account is associated, by *Update account* with no
+  checkbox selected and by *Update statistics* of the account form.
+
+- If X or the network does not answer, the balance and its date are left
+  as they were and the reason is only written in the server log: the
+  date tells how old the figure is. The user is not warned and the
+  account is not marked as needing an update. When X answers that the
+  requests for the balance are exhausted, the readings wait for the
+  window to end, without any notice.
+
+- *Credit Warning (USD)*, on the same tab, is the amount under which the
+  responsible of the account is warned, **1.00** by default. At 0, the
+  warning is only given when the balance is used up.
+
+- The warning is given when a reading finds the balance under the
+  threshold, once per drop: the following readings under it do not
+  repeat it, and a reading at or over the threshold arms it again.
+  Raising the threshold over the current balance counts as a drop, so
+  the next reading warns.
+
+- When the balance reaches 0 the warning says it is used up: X blocks
+  every call until credits are bought in the Developer Console.
+
+- The warning is posted as a note on the chatter of the account that
+  notifies its responsible, which keeps it when nobody is connected
+  while the check runs, and it is shown as a notice to the responsible
+  who is connected, blue when the balance is low and red when it is used
+  up. When the balance is read while the account is being associated,
+  the notice of the user who associates it is shown once X sends the
+  user back to Odoo.
+
+- Every account holding the same API Key warns its own responsible.
 
 Archive Account X
 -----------------
@@ -592,17 +654,20 @@ Rate limits
 - The `rate limit <https://docs.x.com/x-api/fundamentals/rate-limits>`__
   is tracked per endpoint. The ones this module spends are linking the
   account, refreshing the data of the account, publishing (message and
-  media upload), deleting, reading a single post and reading the figures
-  of the recent ones (``get_posts``); a synchronization module adds its
-  own to the same record. When X answers that it is exhausted, Odoo
-  stores the window it returns and a notice is shown with the limit of
-  the plan, the remaining requests and the time of the next attempt.
-  That stored window is what stops a deletion, a check of a single post
-  and a refresh of the figures before they are attempted; linking the
-  account and publishing are tried all the same and report the limit
-  only once X has refused them, and the refresh of the data of the
-  account does not track its limit at all. If X does not say when the
-  window resets, 60 seconds are assumed.
+  media upload), deleting, reading a single post, reading the figures of
+  the recent ones (``get_posts``) and reading the credit balance of the
+  App; a synchronization module adds its own to the same record. When X
+  answers that it is exhausted, Odoo stores the window it returns and a
+  notice is shown with the limit of the plan, the remaining requests and
+  the time of the next attempt. That stored window is what stops a
+  deletion, a check of a single post and a refresh of the figures before
+  they are attempted; linking the account and publishing are tried all
+  the same and report the limit only once X has refused them, and the
+  refresh of the data of the account does not track its limit at all. If
+  X does not say when the window resets, 60 seconds are assumed. The
+  credit balance is the exception to the notice: its window is stored on
+  every account of the same API Key and waited for in silence, see
+  *Credit balance of the App*.
 - If X refuses a publication because the requests of the plan are
   exhausted, the line is left as *Failed* with the message *X did not
   accept the post. The account may have reached the limit of requests of
@@ -623,10 +688,12 @@ Rate limits
   endpoint is exhausted the publication is left untouched rather than
   asked about.
 - The X accounts are walked by the automatic check for updates that runs
-  every 2 hours, which by itself asks X for nothing: the token of X does
-  not expire and its API reports no figures by day, so the pass only
-  hands the accounts over to whoever synchronizes them. Without a
-  synchronization module installed nothing happens on that pass.
+  every 2 hours. The only thing it asks X by itself is the credit
+  balance of the App, one request per API Key: the token of X does not
+  expire and its API reports no figures by day, so the rest of the pass
+  only hands the accounts over to whoever synchronizes them. Without a
+  synchronization module installed, reading the balance is all that
+  happens on that pass.
 
 Figures of a publication
 ------------------------
@@ -697,9 +764,10 @@ publication history:
 - The X specific data of this module is lost, because Odoo drops the
   columns of an uninstalled module: the API Key, the API Secret, the
   OAuth 1 tokens, the app-only bearer token, the rate limit window of
-  each endpoint and the *X Premium* switch, which has to be ticked again
-  after reinstalling. The fields of a synchronization module go with
-  that module, not with this one.
+  each endpoint, the credit balance with its date, the warning
+  threshold, which goes back to its default, and the *X Premium* switch,
+  which has to be ticked again after reinstalling. The fields of a
+  synchronization module go with that module, not with this one.
 - The identifier of each account and publication on X is kept, so
   installing the module back and associating the account again
   reactivates the archived history and updates it, instead of importing
@@ -717,6 +785,7 @@ publication history:
 .. |BUTTON_UPDATE_ACCOUNT| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/BUTTON_UPDATE_ACCOUNT.png
 .. |UPDATE_KEYS| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/UPDATE_KEYS.png
 .. |UPDATE_TOKEN| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/UPDATE_TOKEN.png
+.. |X_CREDIT_BALANCE| image:: https://raw.githubusercontent.com/OCA/social/17.0/social_media_x/static/img/readme/X_CREDIT_BALANCE.png
 
 Known issues / Roadmap
 ======================

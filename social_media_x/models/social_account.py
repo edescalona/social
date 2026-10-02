@@ -17,7 +17,7 @@ from tweepy.errors import BadRequest, Forbidden, TooManyRequests, Unauthorized
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
-from odoo.tools import split_every
+from odoo.tools import float_compare, float_is_zero, split_every
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
@@ -30,6 +30,7 @@ from ..social_x_utils import (
     _URL_OAUTH_X,
     _URL_PRICING_X,
     _URL_RATE_LIMITS_X,
+    _URL_USAGE_CREDITS_X,
     _URL_X,
     _is_app_without_paid_plan,
 )
@@ -81,6 +82,37 @@ class SocialAccount(models.Model):
         "Turned on for an account that does not hold the subscription, the "
         "post is sent and X refuses it, and the publication fails with the "
         "reason X gives.",
+    )
+    x_credit_balance = fields.Float(
+        string="Credit Balance (USD)",
+        digits=(16, 2),
+        readonly=True,
+        copy=False,
+        help="What is left of the credits the developer App bought to pay "
+        "for the calls to the X API. It is the balance of the App and not of "
+        "this account, so the accounts holding the same API Key share it. It "
+        "is read again every 2 hours and when the account is associated, "
+        "updated or its statistics refreshed.",
+    )
+    x_credit_balance_date = fields.Datetime(
+        string="Credit Balance Read On",
+        readonly=True,
+        copy=False,
+        help="When X last answered the credit balance.",
+    )
+    x_credit_warning = fields.Float(
+        string="Credit Warning (USD)",
+        digits=(16, 2),
+        default=1.0,
+        help="The responsible of the account is warned when the credit "
+        "balance drops under this amount. At 0, only when it is used up.",
+    )
+    x_credit_warned = fields.Boolean(
+        readonly=True,
+        copy=False,
+        help="Whether the responsible was already warned that the credit "
+        "balance is under the warning threshold. Cleared when the balance is "
+        "read again at or over it, so the warning is given once per drop.",
     )
     rate_limit_endpoint = fields.Json(copy=False, default=dict)
 
@@ -239,6 +271,191 @@ class SocialAccount(models.Model):
         response = requests.post(url, headers=headers, data=data, timeout=10)
         token = response.json().get("access_token", False)
         return token
+
+    def _x_refresh_credit_balance(self):
+        """Read the credit balance of the developer App of these accounts.
+
+        The balance belongs to the App that pays the calls and not to the
+        account, so X is asked once per API Key and the answer is written on
+        every account holding it. Each API Key in its own savepoint: a group
+        that fails must not undo what was written for the previous ones.
+
+        The accounts are read and written with ``sudo()``: the API Key is
+        restricted to the administrators, and an API Key may be shared with
+        the accounts of another responsible, whose balance is the same one.
+        The accounts of any other social media are left out.
+        """
+        accounts_x = self.sudo().filtered(lambda account: account.media_type == "x")
+        for accounts in accounts_x.grouped("x_api_key").values():
+            with accounts[0]._account_guard(
+                "Error reading the X API credit balance of the account %s"
+            ):
+                accounts._x_write_credit_balance()
+
+    def _x_write_credit_balance(self):
+        """Ask X for the credit balance of these accounts and write it.
+
+        Every account here holds the same API Key, so the bearer of the first
+        one answers for all of them.
+
+        The balance is only something to look at, so a failure to read it is
+        logged and nothing else: it never hides what the user was doing, the
+        previous balance stays and its date tells how old it is. The rate
+        limit is kept in silence for the same reason, on every account of the
+        API Key, since X counts it for the App and not for the account.
+        """
+        first_account = self[0]
+        limit_reset = (
+            (first_account.rate_limit_endpoint or {})
+            .get("usage_credits", {})
+            .get("x-rate-limit-reset", 0)
+        )
+        if limit_reset >= time.time():
+            _logger.info(
+                "X credit balance not read for account %s: rate limit until %s",
+                first_account.id,
+                limit_reset,
+            )
+            return
+        try:
+            response = requests.get(
+                _URL_USAGE_CREDITS_X,
+                headers={
+                    "Authorization": f"Bearer {first_account.x_access_token_oauth2}"
+                },
+                timeout=10,
+            )
+            if response.status_code == 429:
+                self._x_store_credit_rate_limit(response.headers)
+                return
+            if response.status_code != 200:
+                _logger.warning(
+                    "X refused the credit balance of account %s: %s %s",
+                    first_account.id,
+                    response.status_code,
+                    response.text,
+                )
+                return
+            balance = response.json()["data"]["total_balance"]
+        except (requests.RequestException, ValueError, KeyError, TypeError) as error:
+            _logger.warning(
+                "Could not read the X credit balance of account %s: %s",
+                first_account.id,
+                error,
+            )
+            return
+        previous_balances = {
+            account: account.x_credit_balance if account.x_credit_balance_date else None
+            for account in self
+        }
+        self.write(
+            {
+                "x_credit_balance": balance,
+                "x_credit_balance_date": fields.Datetime.now(),
+            }
+        )
+        for account in self:
+            account._x_warn_credit_balance(previous_balances[account])
+
+    def _x_warn_credit_balance(self, previous_balance):
+        """Warn the responsible when the credit balance has just gone down.
+
+        Read every 2 hours, the balance would repeat the same warning all day,
+        so it is given only when the balance crosses the line. Used up, when
+        it reaches 0 coming from more or from never having been read. Low,
+        when it is under the warning threshold of the account and the
+        responsible was not warned of it yet; reading it again at or over the
+        threshold clears that, so the next drop warns again. Raising the
+        threshold over the balance is a drop as well.
+
+        The warning goes to the chatter of the account, which keeps it for a
+        responsible who is not connected when the cron reads the balance, and
+        to the bus, for the one who is. Read while answering the OAuth
+        callback, the warning of the user who is associating the account is
+        kept in the session instead, since the redirect of the callback would
+        outrun the bus; the responsibles of the other accounts holding the
+        same API Key are not the ones reloading, so they keep the bus.
+
+        :param previous_balance: the balance before this read, ``None`` when
+            it had never been read.
+        """
+        self.ensure_one()
+        balance = self.x_credit_balance
+        used_up = float_is_zero(balance, precision_digits=2)
+        below = used_up or (
+            float_compare(balance, self.x_credit_warning, precision_digits=2) < 0
+        )
+        message = notif_type = None
+        if used_up:
+            if previous_balance is None or not float_is_zero(
+                previous_balance, precision_digits=2
+            ):
+                notif_type = "social_form_danger"
+                message = _(
+                    "The X API credit balance of this App is used up. X blocks "
+                    "every call until credits are bought in the Developer Console."
+                )
+        elif below and not self.x_credit_warned:
+            notif_type = "social_form_info"
+            # Formatted apart: an f-string among the arguments of ``_()``
+            # stops the extraction of the terms that follow it.
+            balance_text = f"{balance:.2f}"
+            threshold_text = f"{self.x_credit_warning:.2f}"
+            message = _(
+                "The X API credit balance of this App is down to USD "
+                "%(balance)s, under the warning threshold of USD %(threshold)s.",
+                balance=balance_text,
+                threshold=threshold_text,
+            )
+        if self.x_credit_warned != below:
+            self.x_credit_warned = below
+        if not message:
+            return
+        self.message_post(body=message, partner_ids=self.user_id.partner_id.ids)
+        if (
+            self.env.context.get("social_media_oauth_callback")
+            and self.user_id == self.env.user
+        ):
+            message_type, notification = self._prepare_user_notification(
+                notif_type, message, media="X", account_name=self.name
+            )
+            self._notify_user_session(notification, message_type=message_type)
+            return
+        # The web client only listens to the information and the success of
+        # a form, so a used up balance travels on the information type: the
+        # kind of notice the payload carries keeps it red.
+        self._notify_user_client(
+            target=self.user_id.partner_id,
+            notif_type=notif_type,
+            notif_message=message,
+            media="X",
+            account_name=self.name,
+            bus_type="social_form_info",
+        )
+
+    def _x_store_credit_rate_limit(self, headers):
+        """Keep the rate limit window X answered for the credit balance.
+
+        :param headers: the headers of the ``429`` answer of X.
+        """
+        window = {
+            "x-rate-limit-limit": int(headers.get("x-rate-limit-limit", 0)),
+            "x-rate-limit-remaining": int(headers.get("x-rate-limit-remaining", 0)),
+            "x-rate-limit-reset": int(
+                headers.get("x-rate-limit-reset", time.time() + 60)
+            ),
+        }
+        for account in self:
+            account.rate_limit_endpoint = {
+                **(account.rate_limit_endpoint or {}),
+                "usage_credits": window,
+            }
+        _logger.info(
+            "X rate limit reached on the credit balance of accounts %s, "
+            "next request at %s",
+            self.ids,
+            window["x-rate-limit-reset"],
+        )
 
     @api.model
     def _x_error_message(self, error, pricing_link=None):
@@ -500,6 +717,10 @@ class SocialAccount(models.Model):
                         ),
                         message_type="success",
                     )
+                    # After the success, so that a low balance is told once
+                    # the user knows the account is there, and before the
+                    # figures, whose failure ends the callback.
+                    account._x_refresh_credit_balance()
                     account._on_account_associated()
                 else:
                     message_error = _(
@@ -621,7 +842,9 @@ class SocialAccount(models.Model):
         accounts themselves, which are searched here and handed over to
         :meth:`~._x_check_updates` — an empty hook, because reading back what an
         account already published is the business of a synchronization module
-        and not of the connector.
+        and not of the connector. Before handing them over, the credit balance
+        of their App is read: one call per API Key, whatever the history of
+        the account.
 
         Which accounts are checked is asked to
         :meth:`~._get_check_media_updates_domain`, so the module with a reason to
@@ -637,6 +860,7 @@ class SocialAccount(models.Model):
         )
         if not accounts:
             return update
+        accounts._x_refresh_credit_balance()
         return accounts._x_check_updates() or update
 
     def _x_check_updates(self):
@@ -787,6 +1011,13 @@ class SocialAccount(models.Model):
             )
             answered |= line
         return answered
+
+    def action_refresh_statistics(self):
+        """Read the credit balance of the App as well, for an X account."""
+        res = super().action_refresh_statistics()
+        if self.media_type == "x":
+            self._x_refresh_credit_balance()
+        return res
 
     def action_update_account(self):
         res = super().action_update_account()

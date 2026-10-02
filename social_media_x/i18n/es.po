@@ -15,6 +15,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: social_media_x
+#: model_terms:ir.ui.view,arch_db:social_media_x.social_account_view_form_inherit
+msgid "<span class=\"text-muted\">read on</span>"
+msgstr "<span class=\"text-muted\">leído el</span>"
+
+#. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_api_key
 #: model:ir.model.fields,field_description:social_media_x.field_wizard_social_account__x_api_key
 msgid "API Key"
@@ -68,6 +73,21 @@ msgstr "Asociar cuenta de red social"
 #: model:ir.model,name:social_media_x.model_social_post
 msgid "Content to Publish on Social Media"
 msgstr "Contenido para publicar en redes sociales"
+
+#. module: social_media_x
+#: model:ir.model.fields,field_description:social_media_x.field_social_account__x_credit_balance
+msgid "Credit Balance (USD)"
+msgstr "Saldo de créditos (USD)"
+
+#. module: social_media_x
+#: model:ir.model.fields,field_description:social_media_x.field_social_account__x_credit_balance_date
+msgid "Credit Balance Read On"
+msgstr "Saldo de créditos leído el"
+
+#. module: social_media_x
+#: model:ir.model.fields,field_description:social_media_x.field_social_account__x_credit_warning
+msgid "Credit Warning (USD)"
+msgstr "Aviso de créditos (USD)"
 
 #. module: social_media_x
 #. odoo-python
@@ -202,6 +222,28 @@ msgstr ""
 "se guarda aquí."
 
 #. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
+msgid ""
+"The X API credit balance of this App is down to USD %(balance)s, under the "
+"warning threshold of USD %(threshold)s."
+msgstr ""
+"El saldo de créditos de la API de X de esta App ha bajado a USD %(balance)s, "
+"por debajo del umbral de aviso de USD %(threshold)s."
+
+#. module: social_media_x
+#. odoo-python
+#: code:addons/social_media_x/models/social_account.py:0
+#, python-format
+msgid ""
+"The X API credit balance of this App is used up. X blocks every call until "
+"credits are bought in the Developer Console."
+msgstr ""
+"El saldo de créditos de la API de X de esta App se ha agotado. X bloquea "
+"todas las llamadas hasta que se compren créditos en la Developer Console."
+
+#. module: social_media_x
 #: model_terms:ir.ui.view,arch_db:social_media_x.wizard_social_account_view_form_inherit
 msgid ""
 "The X API has no free access tier. The developer App must\n"
@@ -256,6 +298,15 @@ msgstr ""
 "de nuevo más tarde."
 
 #. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_credit_warning
+msgid ""
+"The responsible of the account is warned when the credit balance drops under "
+"this amount. At 0, only when it is used up."
+msgstr ""
+"Se avisa al responsable de la cuenta cuando el saldo de créditos baja de "
+"este importe. Con 0, solo cuando se agota."
+
+#. module: social_media_x
 #. odoo-python
 #: code:addons/social_media_x/models/social_post.py:0
 #, python-format
@@ -282,6 +333,36 @@ msgstr "Token de escritura"
 #, python-format
 msgid "Unexpected response from X: %(error)s"
 msgstr "Respuesta inesperada de X: %(error)s"
+
+#. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_credit_balance
+msgid ""
+"What is left of the credits the developer App bought to pay for the calls to "
+"the X API. It is the balance of the App and not of this account, so the "
+"accounts holding the same API Key share it. It is read again every 2 hours "
+"and when the account is associated, updated or its statistics refreshed."
+msgstr ""
+"Lo que queda de los créditos que la App de desarrollador compró para pagar "
+"las llamadas a la API de X. Es el saldo de la App y no de esta cuenta, así "
+"que las cuentas con la misma API Key lo comparten. Se vuelve a leer cada 2 "
+"horas y cuando la cuenta se asocia, se actualiza o se refrescan sus "
+"estadísticas."
+
+#. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_credit_balance_date
+msgid "When X last answered the credit balance."
+msgstr "Cuándo respondió X el saldo de créditos por última vez."
+
+#. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_credit_warned
+msgid ""
+"Whether the responsible was already warned that the credit balance is under "
+"the warning threshold. Cleared when the balance is read again at or over it, "
+"so the warning is given once per drop."
+msgstr ""
+"Si ya se avisó al responsable de que el saldo de créditos está por debajo "
+"del umbral de aviso. Se limpia cuando el saldo se vuelve a leer en el umbral "
+"o por encima, así que se avisa una vez por cada bajada."
 
 #. module: social_media_x
 #: model:ir.model.fields,help:social_media_x.field_social_account__x_premium
@@ -316,6 +397,11 @@ msgstr "precios de la API de X"
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_access_secret_oauth1
 msgid "X Access Secret Oauth1"
 msgstr "Secreto de acceso OAuth1 de X"
+
+#. module: social_media_x
+#: model:ir.model.fields,field_description:social_media_x.field_social_account__x_credit_warned
+msgid "X Credit Warned"
+msgstr "Aviso de créditos de X dado"
 
 #. module: social_media_x
 #: model:ir.model.fields,field_description:social_media_x.field_social_account__x_premium

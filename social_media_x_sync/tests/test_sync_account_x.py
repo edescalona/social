@@ -657,13 +657,19 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertEqual(mock_import.call_args.args[0], self.SocialAccountX)
 
     def test_run_check_media_updates_imports_once_per_account(self):
-        """The cron entry point reaches the import once for each X account."""
+        """The cron entry point reaches the import once for each X account.
+
+        The credit balance the connector reads on the way is stubbed: it has
+        tests of its own.
+        """
         accounts_x = self.SocialAccountX + self.SocialAccountCredentialX
         with patch.object(
             type(self.SocialAccount),
             "_get_check_media_updates_domain",
             autospec=True,
             return_value=[("id", "in", accounts_x.ids)],
+        ), patch.object(
+            type(self.SocialAccount), "_x_refresh_credit_balance", autospec=True
         ), patch.object(
             type(self.SocialAccount),
             "_update_posts_statistics",

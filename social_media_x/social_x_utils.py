@@ -4,6 +4,9 @@
 _URL_X = "https://x.com/"
 _URL_OAUTH_X = "https://api.twitter.com/oauth"
 _URL_OAUTH2_TOKEN_X = "https://api.twitter.com/oauth2/token"
+# The credit balance of the developer App, the payer of every call: one answer
+# per API Key, the same for every account holding it.
+_URL_USAGE_CREDITS_X = "https://api.x.com/2/usage/credits"
 _URL_RATE_LIMITS_X = "https://docs.x.com/x-api/fundamentals/rate-limits"
 _URL_PRICING_X = "https://docs.x.com/x-api/getting-started/pricing"
 _NO_PAID_PLAN_REASONS_X = (

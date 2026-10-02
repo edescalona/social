@@ -50,8 +50,9 @@ updates every two hours and the daily refresh of the figures read the same
 publications over and over.
 
 So a database that only publishes spends cents a month: this module reads
-nothing but its own publications, and it reads them at the price of an owned
-read. What grows with the account is the history, and the history is read by
+nothing but its own publications, at the price of an owned read, and the
+credit balance of the App, once per API Key, which is not among the calls
+the pricing of X lists. What grows with the account is the history, and the history is read by
 *Social Media X Sync*, which is a separate module nobody has to install. A
 deployment that publishes and watches its own figures does not need it.
 
