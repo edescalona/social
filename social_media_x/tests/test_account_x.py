@@ -45,7 +45,7 @@ NOT_ATTACHED_TO_A_PROJECT_X = (
     "keys and tokens from a developer App that is attached to a Project. You "
     "can create a project via the developer portal."
 )
-PREMIUM_HINT_X = "check the X Premium setting of the account"
+PREMIUM_HINT_X = "Press Update account to read the plan again"
 
 
 class _FakeResponse:
@@ -1320,11 +1320,11 @@ class TestSocialAccountX(TestSocialCommonX):
 
     @mute_logger(LOGGER_ACCOUNT_X)
     def test_create_tweet_refused_post(self):
-        """A long post of an account marked X Premium names the plan.
+        """A long post of an account X reported as Premium names the plan.
 
-        The characters an account may publish are declared on the account, so
-        a subscription marked on one that does not hold it is only found out
-        here, and the user reads why instead of the raw answer of X.
+        The plan is read from X only on association and Update account, so a
+        subscription cancelled after that read is only found out here, and the
+        user reads how to read it again instead of the raw answer of X.
         """
         self.SocialAccountX.x_premium = True
         error = self._create_tweet_refused(
@@ -1333,6 +1333,8 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertIsInstance(error, UserError)
         self.assertNotIsInstance(error, SocialCredentialsError)
         self.assertIn(PREMIUM_HINT_X, str(error))
+        self.assertIn("X Premium", str(error))
+        self.assertNotIn("setting", str(error))
         self.assertIn(self.SocialAccountX.display_name, str(error))
 
     @mute_logger(LOGGER_ACCOUNT_X)
@@ -1392,7 +1394,7 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertNotIn(PREMIUM_HINT_X, message)
 
     def test_refused_long_post_of_a_premium_account_is_forbidden(self):
-        """A 403 for a long post of an account marked Premium names the plan."""
+        """A 403 for a long post of an account read as Premium names the plan."""
         self.SocialAccountX.x_premium = True
         error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
         message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
@@ -1401,7 +1403,7 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertIn(NOT_PERMITTED_X, message)
 
     def test_refused_long_post_of_a_premium_account_is_bad_request(self):
-        """A 400 for a long post of an account marked Premium names the plan."""
+        """A 400 for a long post of an account read as Premium names the plan."""
         self.SocialAccountX.x_premium = True
         error = self.get_x_refusal(BadRequest, 400, "Invalid Request")
         message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)

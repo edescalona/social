@@ -498,9 +498,10 @@ class SocialAccount(models.Model):
         X answers a refused post with a ``400`` or a ``403`` that says little
         about the cause, so the reason is told from what Odoo knows. An App
         that cannot spend against the API is explained as such. A post longer
-        than what X allows without a subscription, sent by an account marked
-        as X Premium, points at that setting, since a subscription marked on
-        an account that does not hold it only shows up here. Any other refusal
+        than what X allows without a subscription, sent by an account X last
+        reported as X Premium, asks to read the plan again with Update
+        account, since a subscription cancelled after that read only shows up
+        here. Any other refusal
         names the account and keeps the text of X, without its final full
         stop, since the message closes the sentence itself.
 
@@ -519,8 +520,9 @@ class SocialAccount(models.Model):
         if self.x_premium and len(message or "") > _MAX_MESSAGE_LENGTH_X:
             return _(
                 "X refused the post of %(account)s: %(error)s. What an "
-                "account may publish depends on its plan, so check the X "
-                "Premium setting of the account before trying again.",
+                "account may publish depends on its plan, and X reported X "
+                "Premium for this account when it was last read. Press Update "
+                "account to read the plan again before trying again.",
                 account=self.display_name,
                 error=reason,
             )

@@ -408,8 +408,9 @@ class TestSocialPostX(TestSocialCommonX):
     def test_action_post_records_why_x_refused_the_post(self):
         """A post refused by X leaves its reason on the line, not raw text.
 
-        The plan of an account is declared and can be wrong, so the refusal
-        of X is what tells the user, and it has to name the cause.
+        The plan of an account is the one X answered when it was last read
+        and can be out of date, so the refusal of X is what tells the user,
+        and it has to name the cause.
         """
         post = self._draft_post(message="Test Message")
         self.SocialAccountX.x_premium = True
@@ -419,8 +420,9 @@ class TestSocialPostX(TestSocialCommonX):
             autospec=True,
             side_effect=UserError(
                 "X refused the post of X Account: too long. What an account "
-                "may publish depends on its plan, so check the X Premium "
-                "setting of the account before trying again."
+                "may publish depends on its plan, and X reported X Premium "
+                "for this account when it was last read. Press Update account "
+                "to read the plan again before trying again."
             ),
         ):
             post._action_create_post_account()
@@ -433,10 +435,11 @@ class TestSocialPostX(TestSocialCommonX):
     def test_action_post_forbidden_by_x_leaves_the_account_alone(self):
         """A 403 fails the line with its reason and flags nothing on the account.
 
-        X answers a long post of an account marked X Premium without the
-        subscription with a 403, which authorizing the account again does not
-        fix: the line tells the user to check the setting, the post goes back
-        to draft and the account is not asked to be authorized again.
+        X answers a long post of an account read as X Premium that no longer
+        holds the subscription with a 403, which authorizing the account again
+        does not fix: the line tells the user to read the plan again, the post
+        goes back to draft and the account is not asked to be authorized
+        again.
         """
         self.SocialAccountX.x_premium = True
         post = self._draft_post(message="x" * 329)
@@ -455,6 +458,7 @@ class TestSocialPostX(TestSocialCommonX):
         line = post.post_account_ids
         self.assertEqual(line.state, "failed")
         self.assertIn("X Premium", line.failed_description)
+        self.assertIn("Update account", line.failed_description)
         self.assertIn(
             "You are not permitted to perform this action.",
             line.failed_description,
