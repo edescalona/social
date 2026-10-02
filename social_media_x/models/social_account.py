@@ -667,11 +667,18 @@ class SocialAccount(models.Model):
     def _update_account_data(self):
         client = self.get_client_api(bearer_token=self.sudo().x_access_token_oauth2)
         data = client.get_me(
-            user_fields=["username", "name", "profile_image_url", "created_at"]
+            user_fields=[
+                "username",
+                "name",
+                "profile_image_url",
+                "created_at",
+                "subscription_type",
+            ]
         ).data
         values = {
             "name": data.name,
             "username": data.username,
+            **self._x_premium_values(data),
         }
         account_image = self._x_download_profile_image(data.profile_image_url)
         if account_image:

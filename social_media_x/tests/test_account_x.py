@@ -549,6 +549,63 @@ class TestSocialAccountX(TestSocialCommonX):
             {"name": "Account Name X", "username": "account-username-x"},
         )
 
+    def _run_update_account_data(self, raw_data):
+        """Update the X account with a user whose raw answer is ``raw_data``.
+
+        :param dict raw_data: the raw answer of X, where the plan travels.
+        :return: the client the update asked, to look at what it requested.
+        """
+        fake_client = MagicMock()
+        fake_client.get_me.return_value.data = SimpleNamespace(
+            name="Account Name X",
+            username="account-username-x",
+            profile_image_url="https://example.com/img_url",
+            data=raw_data,
+        )
+        with patch.object(
+            type(self.SocialAccountX),
+            "get_client_api",
+            autospec=True,
+            return_value=fake_client,
+        ), patch(
+            PATCH_ACCOUNT_X.format("requests.get"),
+            autospec=True,
+            return_value=MagicMock(status_code=404),
+        ):
+            self.SocialAccountX._update_account_data()
+        return fake_client
+
+    def test_update_account_data_asks_the_plan(self):
+        fake_client = self._run_update_account_data({"subscription_type": "None"})
+        fake_client.get_me.assert_called_once()
+        self.assertIn(
+            "subscription_type",
+            fake_client.get_me.call_args.kwargs["user_fields"],
+        )
+
+    def test_update_account_data_reads_a_premium_plan(self):
+        self.SocialAccountX.x_premium = False
+        self._run_update_account_data({"subscription_type": "Premium"})
+        self.assertTrue(self.SocialAccountX.x_premium)
+
+    def test_update_account_data_reads_no_plan(self):
+        """An account marked by hand is set right on the next update."""
+        self.SocialAccountX.x_premium = True
+        self._run_update_account_data({"subscription_type": "None"})
+        self.assertFalse(self.SocialAccountX.x_premium)
+
+    def test_update_account_data_without_the_plan_keeps_it(self):
+        """X not answering the plan does not leave a Premium account at 280."""
+        self.SocialAccountX.x_premium = True
+        write = type(self.SocialAccountX).write
+        with patch.object(
+            type(self.SocialAccountX), "write", autospec=True, side_effect=write
+        ) as mock_write:
+            self._run_update_account_data({"username": "account-username-x"})
+        mock_write.assert_called_once()
+        self.assertNotIn("x_premium", mock_write.call_args.args[1])
+        self.assertTrue(self.SocialAccountX.x_premium)
+
     def test_wizard_update_account(self):
         with patch(
             PATCH_WIZARD_ACCOUNT.format("_update_account")
