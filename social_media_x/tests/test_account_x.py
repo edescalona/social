@@ -1713,9 +1713,7 @@ class TestSocialAccountCreditX(TestSocialCommonX):
         self.assertEqual(
             mock_notify.call_args.kwargs["target"], self.account_b.user_id.partner_id
         )
-        self.assertEqual(
-            mock_notify.call_args.kwargs["notif_type"], "social_kanban_info"
-        )
+        self.assertEqual(mock_notify.call_args.kwargs["notif_type"], "social_form_info")
         self.assertIn("USD 0.80", mock_notify.call_args.kwargs["notif_message"])
         self.assertIn("USD 1.00", mock_notify.call_args.kwargs["notif_message"])
         note = self._credit_notes(self.account_b)
@@ -1735,7 +1733,7 @@ class TestSocialAccountCreditX(TestSocialCommonX):
         mock_notify = self._read_balance(self.account_b, 0.0)
         mock_notify.assert_called_once()
         self.assertEqual(
-            mock_notify.call_args.kwargs["notif_type"], "social_kanban_danger"
+            mock_notify.call_args.kwargs["notif_type"], "social_form_danger"
         )
         self.assertIn("used up", mock_notify.call_args.kwargs["notif_message"])
         self.assertIn("used up", self._credit_notes(self.account_b).body)
@@ -1743,11 +1741,28 @@ class TestSocialAccountCreditX(TestSocialCommonX):
         self._read_balance(self.account_b, 0.0).assert_not_called()
         self.assertEqual(len(self._credit_notes(self.account_b)), 1)
 
+    def test_credit_warning_travels_on_a_type_the_client_listens_to(self):
+        """The web client only subscribes to the form types of the bus."""
+        for total, message_type in ((0.5, "info"), (0.0, "danger")):
+            with self.subTest(total=total), patch.object(
+                type(self.env["bus.bus"]), "_sendone", autospec=True
+            ) as mock_sendone:
+                self._read_balance_on_the_bus(self.account_b, total)
+            mock_sendone.assert_called_once()
+            _bus, _target, bus_type, payload = mock_sendone.call_args.args
+            self.assertEqual(bus_type, "social_form_info")
+            self.assertEqual(payload["message_type"], message_type)
+
+    def _read_balance_on_the_bus(self, accounts, total):
+        bearer = accounts[0].sudo().x_access_token_oauth2
+        with self._patch_credits(**{bearer: self._credits_response(total)}):
+            accounts._x_refresh_credit_balance()
+
     def test_credit_warning_of_a_low_balance_then_used_up(self):
         self._read_balance(self.account_b, 0.5)
         mock_notify = self._read_balance(self.account_b, 0.0)
         self.assertEqual(
-            mock_notify.call_args.kwargs["notif_type"], "social_kanban_danger"
+            mock_notify.call_args.kwargs["notif_type"], "social_form_danger"
         )
         self.assertEqual(len(self._credit_notes(self.account_b)), 2)
 
@@ -1765,7 +1780,7 @@ class TestSocialAccountCreditX(TestSocialCommonX):
         self.account_b.write({"x_credit_balance": 0.0, "x_credit_balance_date": False})
         mock_notify = self._read_balance(self.account_b, 0.0)
         self.assertEqual(
-            mock_notify.call_args.kwargs["notif_type"], "social_kanban_danger"
+            mock_notify.call_args.kwargs["notif_type"], "social_form_danger"
         )
 
     def test_credit_warning_of_a_raised_threshold(self):

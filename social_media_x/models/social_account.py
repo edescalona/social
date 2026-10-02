@@ -390,13 +390,13 @@ class SocialAccount(models.Model):
             if previous_balance is None or not float_is_zero(
                 previous_balance, precision_digits=2
             ):
-                notif_type = "social_kanban_danger"
+                notif_type = "social_form_danger"
                 message = _(
                     "The X API credit balance of this App is used up. X blocks "
                     "every call until credits are bought in the Developer Console."
                 )
         elif below and not self.x_credit_warned:
-            notif_type = "social_kanban_info"
+            notif_type = "social_form_info"
             # Formatted apart: an f-string among the arguments of ``_()``
             # stops the extraction of the terms that follow it.
             balance_text = f"{balance:.2f}"
@@ -421,12 +421,16 @@ class SocialAccount(models.Model):
             )
             self._notify_user_session(notification, message_type=message_type)
             return
+        # The web client only listens to the information and the success of
+        # a form, so a used up balance travels on the information type: the
+        # kind of notice the payload carries keeps it red.
         self._notify_user_client(
             target=self.user_id.partner_id,
             notif_type=notif_type,
             notif_message=message,
             media="X",
             account_name=self.name,
+            bus_type="social_form_info",
         )
 
     def _x_store_credit_rate_limit(self, headers):
