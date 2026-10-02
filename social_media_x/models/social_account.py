@@ -76,12 +76,13 @@ class SocialAccount(models.Model):
     )
     x_premium = fields.Boolean(
         default=False,
-        help="Whether this account holds an X Premium subscription, which "
-        "raises the message of a post from 280 to 25 000 characters. Left "
-        "off, a post longer than 280 characters is refused before it is sent. "
-        "Turned on for an account that does not hold the subscription, the "
-        "post is sent and X refuses it, and the publication fails with the "
-        "reason X gives.",
+        readonly=True,
+        copy=False,
+        help="Whether the X user of this account holds an X Premium "
+        "subscription, which raises the message of a post from 280 to 25 000 "
+        "characters. Read from X when the account is associated and on Update "
+        "account, so a subscription bought or cancelled later is seen after "
+        "pressing Update account.",
     )
     x_credit_balance = fields.Float(
         string="Credit Balance (USD)",
@@ -497,11 +498,12 @@ class SocialAccount(models.Model):
         X answers a refused post with a ``400`` or a ``403`` that says little
         about the cause, so the reason is told from what Odoo knows. An App
         that cannot spend against the API is explained as such. A post longer
-        than what X allows without a subscription, sent by an account marked
-        as X Premium, points at that setting, since a subscription marked on
-        an account that does not hold it only shows up here. Any other refusal
-        names the account and keeps the text of X, without its final full
-        stop, since the message closes the sentence itself.
+        than what X allows without a subscription, sent by an account X last
+        reported as X Premium, asks to read the plan again with Update
+        account, since a subscription cancelled after that read only shows up
+        here. Any other refusal names the account and keeps the text of X,
+        without its final full stop, since the message closes the sentence
+        itself.
 
         The message ends on the failed publication, which stores it as plain
         text, so the link to the pricing page is written as its address.
@@ -518,8 +520,9 @@ class SocialAccount(models.Model):
         if self.x_premium and len(message or "") > _MAX_MESSAGE_LENGTH_X:
             return _(
                 "X refused the post of %(account)s: %(error)s. What an "
-                "account may publish depends on its plan, so check the X "
-                "Premium setting of the account before trying again.",
+                "account may publish depends on its plan, and X reported X "
+                "Premium for this account when it was last read. Press Update "
+                "account to read the plan again before trying again.",
                 account=self.display_name,
                 error=reason,
             )
@@ -644,14 +647,41 @@ class SocialAccount(models.Model):
             return None
         return base64.b64encode(media_content.content)
 
+    def _x_premium_values(self, user):
+        """Return the plan of the authorized X user as values to write.
+
+        X answers ``subscription_type`` only for the authenticated user, as
+        the text ``"None"`` when there is no subscription and as the name of
+        the plan otherwise. Every plan allows long posts, so any other text
+        means X Premium. tweepy keeps the field only in the raw answer, never
+        as an attribute of the user.
+
+        :param user: the ``tweepy.User`` answered by ``get_me``.
+        :return: ``x_premium`` to write, or nothing when X did not answer the
+            plan, so the value already stored is kept.
+        :rtype: dict
+        """
+        raw_data = user.data if isinstance(user.data, dict) else {}
+        subscription_type = raw_data.get("subscription_type")
+        if not isinstance(subscription_type, str):
+            return {}
+        return {"x_premium": subscription_type != "None"}
+
     def _update_account_data(self):
         client = self.get_client_api(bearer_token=self.sudo().x_access_token_oauth2)
         data = client.get_me(
-            user_fields=["username", "name", "profile_image_url", "created_at"]
+            user_fields=[
+                "username",
+                "name",
+                "profile_image_url",
+                "created_at",
+                "subscription_type",
+            ]
         ).data
         values = {
             "name": data.name,
             "username": data.username,
+            **self._x_premium_values(data),
         }
         account_image = self._x_download_profile_image(data.profile_image_url)
         if account_image:
@@ -681,6 +711,7 @@ class SocialAccount(models.Model):
                     "public_metrics",
                     "profile_image_url",
                     "created_at",
+                    "subscription_type",
                 ]
             ).data
             if data.username:
@@ -697,6 +728,7 @@ class SocialAccount(models.Model):
                     "x_access_token_oauth1": x_access_token_oauth1,
                     "x_access_secret_oauth1": x_access_secret_oauth1,
                     "last_update_account": fields.Datetime.now(),
+                    **self._x_premium_values(data),
                 }
                 access_token_oauth2 = self._get_access_token_oauth2(
                     wizard_social_account

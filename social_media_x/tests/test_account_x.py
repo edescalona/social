@@ -45,7 +45,7 @@ NOT_ATTACHED_TO_A_PROJECT_X = (
     "keys and tokens from a developer App that is attached to a Project. You "
     "can create a project via the developer portal."
 )
-PREMIUM_HINT_X = "check the X Premium setting of the account"
+PREMIUM_HINT_X = "Press Update account to read the plan again"
 
 
 class _FakeResponse:
@@ -457,6 +457,32 @@ class TestSocialAccountX(TestSocialCommonX):
         client.get_me.return_value = me
         return client
 
+    def test_x_premium_values_without_subscription(self):
+        """X answers the text ``"None"``, not a JSON null, without a plan."""
+        user = SimpleNamespace(data={"subscription_type": "None"})
+        self.assertEqual(
+            self.SocialAccount._x_premium_values(user), {"x_premium": False}
+        )
+
+    def test_x_premium_values_of_every_plan(self):
+        """Every plan of X Premium allows long posts."""
+        for plan in ("Basic", "Premium", "PremiumPlus"):
+            user = SimpleNamespace(data={"subscription_type": plan})
+            self.assertEqual(
+                self.SocialAccount._x_premium_values(user),
+                {"x_premium": True},
+                msg=plan,
+            )
+
+    def test_x_premium_values_without_the_field(self):
+        """A plan X did not answer leaves the stored one as it was."""
+        user = SimpleNamespace(data={"username": "user"})
+        self.assertEqual(self.SocialAccount._x_premium_values(user), {})
+
+    def test_x_premium_values_of_a_value_that_is_not_text(self):
+        user = SimpleNamespace(data={"subscription_type": None})
+        self.assertEqual(self.SocialAccount._x_premium_values(user), {})
+
     def test_update_account_data(self):
         fake_client = MagicMock()
         fake_data = fake_client.get_me.return_value.data
@@ -522,6 +548,63 @@ class TestSocialAccountX(TestSocialCommonX):
             mock_write.call_args.args[1],
             {"name": "Account Name X", "username": "account-username-x"},
         )
+
+    def _run_update_account_data(self, raw_data):
+        """Update the X account with a user whose raw answer is ``raw_data``.
+
+        :param dict raw_data: the raw answer of X, where the plan travels.
+        :return: the client the update asked, to look at what it requested.
+        """
+        fake_client = MagicMock()
+        fake_client.get_me.return_value.data = SimpleNamespace(
+            name="Account Name X",
+            username="account-username-x",
+            profile_image_url="https://example.com/img_url",
+            data=raw_data,
+        )
+        with patch.object(
+            type(self.SocialAccountX),
+            "get_client_api",
+            autospec=True,
+            return_value=fake_client,
+        ), patch(
+            PATCH_ACCOUNT_X.format("requests.get"),
+            autospec=True,
+            return_value=MagicMock(status_code=404),
+        ):
+            self.SocialAccountX._update_account_data()
+        return fake_client
+
+    def test_update_account_data_asks_the_plan(self):
+        fake_client = self._run_update_account_data({"subscription_type": "None"})
+        fake_client.get_me.assert_called_once()
+        self.assertIn(
+            "subscription_type",
+            fake_client.get_me.call_args.kwargs["user_fields"],
+        )
+
+    def test_update_account_data_reads_a_premium_plan(self):
+        self.SocialAccountX.x_premium = False
+        self._run_update_account_data({"subscription_type": "Premium"})
+        self.assertTrue(self.SocialAccountX.x_premium)
+
+    def test_update_account_data_reads_no_plan(self):
+        """An account marked by hand is set right on the next update."""
+        self.SocialAccountX.x_premium = True
+        self._run_update_account_data({"subscription_type": "None"})
+        self.assertFalse(self.SocialAccountX.x_premium)
+
+    def test_update_account_data_without_the_plan_keeps_it(self):
+        """X not answering the plan does not leave a Premium account at 280."""
+        self.SocialAccountX.x_premium = True
+        write = type(self.SocialAccountX).write
+        with patch.object(
+            type(self.SocialAccountX), "write", autospec=True, side_effect=write
+        ) as mock_write:
+            self._run_update_account_data({"username": "account-username-x"})
+        mock_write.assert_called_once()
+        self.assertNotIn("x_premium", mock_write.call_args.args[1])
+        self.assertTrue(self.SocialAccountX.x_premium)
 
     def test_wizard_update_account(self):
         with patch(
@@ -985,6 +1068,8 @@ class TestSocialAccountX(TestSocialCommonX):
         access_token_oauth2="fake_access_token_oauth2",
         get_me_error=None,
         read_credit_balance=False,
+        raw_data=None,
+        fake_client=None,
     ):
         """Associate ``username`` through the OAuth callback of X.
 
@@ -1000,16 +1085,22 @@ class TestSocialAccountX(TestSocialCommonX):
         :param get_me_error: exception X raises when asked for the user.
         :param read_credit_balance: leave the read of the credit balance to
             the caller instead of stubbing it.
+        :param dict raw_data: the raw answer of X for the user, where the plan
+            travels.
+        :param fake_client: the client X is asked through, when the test
+            looks at what it requested.
         :return: the X account with that user name, archived or not.
         """
         self.WizardAccountX.write({"oauth_token": "wiz-token-create"})
-        fake_client = MagicMock()
+        fake_client = fake_client or MagicMock()
         fake_client.get_me.side_effect = get_me_error
         data = fake_client.get_me.return_value.data
         data.id = user_id
         data.name = username
         data.username = username
         data.profile_image_url = "https://example.com/img_url"
+        if raw_data is not None:
+            data.data = raw_data
         with self.get_patch_exceptions_x(
             fake_client=fake_client, valid_time_request=False
         ), patch(
@@ -1057,6 +1148,41 @@ class TestSocialAccountX(TestSocialCommonX):
             account = self._run_create_account_x("reassociated-x-user", user_id="67890")
         self.assertEqual(account, existing)
         self.assertEqual(account.last_update_account, datetime(2026, 9, 30, 10, 0))
+
+    def test_create_account_x_asks_the_plan(self):
+        fake_client = MagicMock()
+        self._run_create_account_x("plan-x-user", fake_client=fake_client)
+        fake_client.get_me.assert_called_once()
+        self.assertIn(
+            "subscription_type",
+            fake_client.get_me.call_args.kwargs["user_fields"],
+        )
+
+    def test_create_account_x_with_a_plan_is_premium(self):
+        account = self._run_create_account_x(
+            "premium-x-user", raw_data={"subscription_type": "Premium"}
+        )
+        self.assertEqual(len(account), 1)
+        self.assertTrue(account.x_premium)
+
+    def test_reassociating_an_account_x_without_a_plan_is_not_premium(self):
+        """An account marked by hand is set right when it is associated again."""
+        existing = self.SocialAccount.create(
+            {
+                "name": "Reassociated X",
+                "username": "reassociated-x-user",
+                "remote_ref": "67890",
+                "media_id": self.env.ref("social_media_x.social_media_x").id,
+                "x_premium": True,
+            }
+        )
+        account = self._run_create_account_x(
+            "reassociated-x-user",
+            user_id="67890",
+            raw_data={"subscription_type": "None"},
+        )
+        self.assertEqual(account, existing)
+        self.assertFalse(account.x_premium)
 
     def _run_create_account_x_in_session(self, username, **kwargs):
         """Associate ``username`` and return the messages kept in the session.
@@ -1194,11 +1320,11 @@ class TestSocialAccountX(TestSocialCommonX):
 
     @mute_logger(LOGGER_ACCOUNT_X)
     def test_create_tweet_refused_post(self):
-        """A long post of an account marked X Premium names the plan.
+        """A long post of an account X reported as Premium names the plan.
 
-        The characters an account may publish are declared on the account, so
-        a subscription marked on one that does not hold it is only found out
-        here, and the user reads why instead of the raw answer of X.
+        The plan is read from X only on association and Update account, so a
+        subscription cancelled after that read is only found out here, and the
+        user reads how to read it again instead of the raw answer of X.
         """
         self.SocialAccountX.x_premium = True
         error = self._create_tweet_refused(
@@ -1207,6 +1333,8 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertIsInstance(error, UserError)
         self.assertNotIsInstance(error, SocialCredentialsError)
         self.assertIn(PREMIUM_HINT_X, str(error))
+        self.assertIn("X Premium", str(error))
+        self.assertNotIn("setting", str(error))
         self.assertIn(self.SocialAccountX.display_name, str(error))
 
     @mute_logger(LOGGER_ACCOUNT_X)
@@ -1266,7 +1394,7 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertNotIn(PREMIUM_HINT_X, message)
 
     def test_refused_long_post_of_a_premium_account_is_forbidden(self):
-        """A 403 for a long post of an account marked Premium names the plan."""
+        """A 403 for a long post of an account read as Premium names the plan."""
         self.SocialAccountX.x_premium = True
         error = self.get_x_refusal(Forbidden, 403, NOT_PERMITTED_X)
         message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)
@@ -1275,7 +1403,7 @@ class TestSocialAccountX(TestSocialCommonX):
         self.assertIn(NOT_PERMITTED_X, message)
 
     def test_refused_long_post_of_a_premium_account_is_bad_request(self):
-        """A 400 for a long post of an account marked Premium names the plan."""
+        """A 400 for a long post of an account read as Premium names the plan."""
         self.SocialAccountX.x_premium = True
         error = self.get_x_refusal(BadRequest, 400, "Invalid Request")
         message = self.SocialAccountX._x_refused_post_message(error, "x" * 329)

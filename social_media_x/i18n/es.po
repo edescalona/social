@@ -354,6 +354,19 @@ msgid "When X last answered the credit balance."
 msgstr "Cuándo respondió X el saldo de créditos por última vez."
 
 #. module: social_media_x
+#: model:ir.model.fields,help:social_media_x.field_social_account__x_premium
+msgid ""
+"Whether the X user of this account holds an X Premium subscription, which "
+"raises the message of a post from 280 to 25 000 characters. Read from X when "
+"the account is associated and on Update account, so a subscription bought or "
+"cancelled later is seen after pressing Update account."
+msgstr ""
+"Indica si el usuario de X de esta cuenta tiene una suscripción a X Premium, "
+"que amplía el mensaje de una publicación de 280 a 25 000 caracteres. Se lee "
+"de X al asociar la cuenta y con Actualizar cuenta, así que una suscripción "
+"contratada o cancelada después se ve tras pulsar Actualizar cuenta."
+
+#. module: social_media_x
 #: model:ir.model.fields,help:social_media_x.field_social_account__x_credit_warned
 msgid ""
 "Whether the responsible was already warned that the credit balance is under "
@@ -363,21 +376,6 @@ msgstr ""
 "Si ya se avisó al responsable de que el saldo de créditos está por debajo "
 "del umbral de aviso. Se limpia cuando el saldo se vuelve a leer en el umbral "
 "o por encima, así que se avisa una vez por cada bajada."
-
-#. module: social_media_x
-#: model:ir.model.fields,help:social_media_x.field_social_account__x_premium
-msgid ""
-"Whether this account holds an X Premium subscription, which raises the "
-"message of a post from 280 to 25 000 characters. Left off, a post longer "
-"than 280 characters is refused before it is sent. Turned on for an account "
-"that does not hold the subscription, the post is sent and X refuses it, and "
-"the publication fails with the reason X gives."
-msgstr ""
-"Indica si esta cuenta tiene una suscripción a X Premium, que amplía el "
-"mensaje de una publicación de 280 a 25 000 caracteres. Desactivado, una "
-"publicación de más de 280 caracteres se rechaza antes de enviarse. Activado "
-"en una cuenta que no tiene la suscripción, la publicación se envía, X la "
-"rechaza y la publicación falla con el motivo que da X."
 
 #. module: social_media_x
 #: model:ir.model.fields.selection,name:social_media_x.selection__social_media__media_type__x
@@ -526,12 +524,13 @@ msgstr "X ha rechazado la publicación de %(account)s: %(error)s."
 #, python-format
 msgid ""
 "X refused the post of %(account)s: %(error)s. What an account may publish "
-"depends on its plan, so check the X Premium setting of the account before "
-"trying again."
+"depends on its plan, and X reported X Premium for this account when it was "
+"last read. Press Update account to read the plan again before trying again."
 msgstr ""
 "X ha rechazado la publicación de %(account)s: %(error)s. Lo que una cuenta "
-"puede publicar depende de su plan, así que revise el ajuste X Premium de la "
-"cuenta antes de volver a intentarlo."
+"puede publicar depende de su plan, y X indicó X Premium para esta cuenta la "
+"última vez que se leyó. Pulse Actualizar cuenta para volver a leer el plan "
+"antes de intentarlo de nuevo."
 
 #. module: social_media_x
 #. odoo-python

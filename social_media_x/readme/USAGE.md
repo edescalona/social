@@ -32,8 +32,9 @@ Update token, API Key, API Secret and account data
   ![BUTTON_UPDATE_ACCOUNT](../static/img/readme/BUTTON_UPDATE_ACCOUNT.png)
 
 - In the wizard that appears, if none of the checkboxes are selected and the
-  *Update* button is pressed, the system will update only the account's data
-  and read the credit balance of the App again, see *Credit balance of the
+  *Update* button is pressed, the system will update only the account's data,
+  its X Premium plan included, see *X Premium plan of the account* below, and
+  read the credit balance of the App again, see *Credit balance of the
   App* below.
 - If the *Update keys* checkbox is selected, the current API Key and API Secret
   values will be displayed by default. Modify any of these values and authentication
@@ -52,6 +53,38 @@ Update token, API Key, API Secret and account data
   with no checkbox selected shows *The account was updated successfully*. If X
   refuses the figures of the account right after associating it, its error is
   shown after the success notice.
+
+X Premium plan of the account
+------------------------
+
+How long the message of a post may be depends on the plan of the X user who
+authorized the account: **280** characters without X Premium and **25 000**
+with it. Odoo reads that plan from X, it is not set by hand.
+
+- Go to *Social Media* > Configuration > Accounts, select the X account and
+  open the *Configuration* tab. The *X Premium* switch shows the plan X
+  reported for the account and cannot be changed from the form. It is not
+  carried over when an account is duplicated.
+
+  ![X_PREMIUM](../static/img/readme/X_PREMIUM.png)
+- The plan is read from X when the account is associated, when it is
+  associated again from *Update account* with *Update keys* or *Update token*,
+  and by *Update account* with no checkbox selected. The switch is on when X
+  reports any plan of X Premium, whatever its level (Basic, Premium or
+  Premium+), and off when X reports that the user has no subscription. If X
+  does not report the plan, the switch keeps the value it had.
+- The automatic check for updates does not read it. A subscription bought or
+  cancelled on X is seen in Odoo after pressing *Update account*.
+- X Premium is a subscription of the X user, bought on
+  [x.com](https://x.com) while signed in with that user, from the *Premium*
+  entry of its menu. It is not bought in the Developer Console
+  ([console.x.com](https://console.x.com)), which belongs to the developer
+  App: its project, its keys, the pay-per-use plan and its credits, see
+  *Configuration*. The credits of the App do not grant X Premium: an App with
+  credit publishes on an account without the subscription, and that account
+  is still limited to 280 characters.
+
+  ![X_PREMIUM_MENU](../static/img/readme/X_PREMIUM_MENU.png)
 
 Credit balance of the App
 ------------------------
@@ -127,15 +160,15 @@ the publication through an import or an RPC call, so nothing gets past them.
 - The message is checked against the characters the plan of the account
   allows: **280** without X Premium and **25 000** with it, see the
   [creation of a post](https://docs.x.com/x-api/posts/creation-of-a-post). The
-  plan is the **X Premium** switch of the account form, declared by hand
-  because nothing reads it back from X. A longer message is reported on the
+  plan is the **X Premium** switch of the account form, read from X, see *X
+  Premium plan of the account* above. A longer message is reported on the
   post and the publication is not sent. A post selecting several X accounts is
   measured against the strictest of them while it is written, and every
   publication against its own account when it is sent, so only the line that
-  cannot publish is refused. An account marked as Premium without holding the
-  subscription sends the post and X refuses it: that line is left as *Failed*
-  with the reason and a hint to check the *X Premium* switch, see *Posts
-  refused by X* below.
+  cannot publish is refused. An account whose subscription was cancelled
+  after the plan was last read still shows X Premium, sends the post and X
+  refuses it: that line is left as *Failed* with the reason and a hint to
+  read the plan again with *Update account*, see *Posts refused by X* below.
 - X publishes **4 images or 1 video** per publication and never both kinds in
   the same message, see the
   [media upload](https://docs.x.com/x-api/media/upload-media) documentation. A
@@ -177,13 +210,13 @@ back to *Draft*. What the reason says depends on the answer of X:
   [X API pricing](https://docs.x.com/x-api/getting-started/pricing) page,
   written as plain text because the reason of a failed publication is kept as
   text.
-- **A message longer than 280 characters, sent by an account marked as X
-  Premium.** X answers ``400 Bad Request`` or ``403 Forbidden`` and the reason
-  is *X refused the post of {account}: {answer of X}. What an account may
-  publish depends on its plan, so check the X Premium setting of the account
-  before trying again.* This hint is only given when both conditions hold: it
-  is how an account marked as Premium without holding the subscription shows
-  up.
+- **A message longer than 280 characters, sent by an account X reported as
+  X Premium.** X answers ``400 Bad Request`` or ``403 Forbidden`` and the
+  reason is *X refused the post of {account}: {answer of X}. What an account
+  may publish depends on its plan, and X reported X Premium for this account
+  when it was last read. Press Update account to read the plan again before
+  trying again.* This hint is only given when both conditions hold: it is how
+  a subscription cancelled after the plan was last read shows up.
 - **Any other refusal**, a ``400 Bad Request`` or a ``403 Forbidden`` for the
   permissions of the App or the content of the post: *X refused the post of
   {account}: {answer of X}.*
@@ -304,8 +337,8 @@ publication history:
   of an uninstalled module: the API Key, the API Secret, the OAuth 1 tokens,
   the app-only bearer token, the rate limit window of each endpoint, the
   credit balance with its date, the warning threshold, which goes back to
-  its default, and the *X Premium* switch, which has to be ticked again after
-  reinstalling. The
+  its default, and the *X Premium* switch, which is read from X again when
+  the account is associated after reinstalling. The
   fields of a synchronization module go with that module, not with this one.
 - The identifier of each account and publication on X is kept, so installing
   the module back and associating the account again reactivates the archived
