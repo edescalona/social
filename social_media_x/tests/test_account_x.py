@@ -1068,6 +1068,8 @@ class TestSocialAccountX(TestSocialCommonX):
         access_token_oauth2="fake_access_token_oauth2",
         get_me_error=None,
         read_credit_balance=False,
+        raw_data=None,
+        fake_client=None,
     ):
         """Associate ``username`` through the OAuth callback of X.
 
@@ -1083,16 +1085,22 @@ class TestSocialAccountX(TestSocialCommonX):
         :param get_me_error: exception X raises when asked for the user.
         :param read_credit_balance: leave the read of the credit balance to
             the caller instead of stubbing it.
+        :param dict raw_data: the raw answer of X for the user, where the plan
+            travels.
+        :param fake_client: the client X is asked through, when the test
+            looks at what it requested.
         :return: the X account with that user name, archived or not.
         """
         self.WizardAccountX.write({"oauth_token": "wiz-token-create"})
-        fake_client = MagicMock()
+        fake_client = fake_client or MagicMock()
         fake_client.get_me.side_effect = get_me_error
         data = fake_client.get_me.return_value.data
         data.id = user_id
         data.name = username
         data.username = username
         data.profile_image_url = "https://example.com/img_url"
+        if raw_data is not None:
+            data.data = raw_data
         with self.get_patch_exceptions_x(
             fake_client=fake_client, valid_time_request=False
         ), patch(
@@ -1140,6 +1148,41 @@ class TestSocialAccountX(TestSocialCommonX):
             account = self._run_create_account_x("reassociated-x-user", user_id="67890")
         self.assertEqual(account, existing)
         self.assertEqual(account.last_update_account, datetime(2026, 9, 30, 10, 0))
+
+    def test_create_account_x_asks_the_plan(self):
+        fake_client = MagicMock()
+        self._run_create_account_x("plan-x-user", fake_client=fake_client)
+        fake_client.get_me.assert_called_once()
+        self.assertIn(
+            "subscription_type",
+            fake_client.get_me.call_args.kwargs["user_fields"],
+        )
+
+    def test_create_account_x_with_a_plan_is_premium(self):
+        account = self._run_create_account_x(
+            "premium-x-user", raw_data={"subscription_type": "Premium"}
+        )
+        self.assertEqual(len(account), 1)
+        self.assertTrue(account.x_premium)
+
+    def test_reassociating_an_account_x_without_a_plan_is_not_premium(self):
+        """An account marked by hand is set right when it is associated again."""
+        existing = self.SocialAccount.create(
+            {
+                "name": "Reassociated X",
+                "username": "reassociated-x-user",
+                "remote_ref": "67890",
+                "media_id": self.env.ref("social_media_x.social_media_x").id,
+                "x_premium": True,
+            }
+        )
+        account = self._run_create_account_x(
+            "reassociated-x-user",
+            user_id="67890",
+            raw_data={"subscription_type": "None"},
+        )
+        self.assertEqual(account, existing)
+        self.assertFalse(account.x_premium)
 
     def _run_create_account_x_in_session(self, username, **kwargs):
         """Associate ``username`` and return the messages kept in the session.

@@ -708,6 +708,7 @@ class SocialAccount(models.Model):
                     "public_metrics",
                     "profile_image_url",
                     "created_at",
+                    "subscription_type",
                 ]
             ).data
             if data.username:
@@ -724,6 +725,7 @@ class SocialAccount(models.Model):
                     "x_access_token_oauth1": x_access_token_oauth1,
                     "x_access_secret_oauth1": x_access_secret_oauth1,
                     "last_update_account": fields.Datetime.now(),
+                    **self._x_premium_values(data),
                 }
                 access_token_oauth2 = self._get_access_token_oauth2(
                     wizard_social_account
