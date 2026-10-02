@@ -644,6 +644,26 @@ class SocialAccount(models.Model):
             return None
         return base64.b64encode(media_content.content)
 
+    def _x_premium_values(self, user):
+        """Return the plan of the authorized X user as values to write.
+
+        X answers ``subscription_type`` only for the authenticated user, as
+        the text ``"None"`` when there is no subscription and as the name of
+        the plan otherwise. Every plan allows long posts, so any other text
+        means X Premium. tweepy keeps the field only in the raw answer, never
+        as an attribute of the user.
+
+        :param user: the ``tweepy.User`` answered by ``get_me``.
+        :return: ``x_premium`` to write, or nothing when X did not answer the
+            plan, so the value already stored is kept.
+        :rtype: dict
+        """
+        raw_data = user.data if isinstance(user.data, dict) else {}
+        subscription_type = raw_data.get("subscription_type")
+        if not isinstance(subscription_type, str):
+            return {}
+        return {"x_premium": subscription_type != "None"}
+
     def _update_account_data(self):
         client = self.get_client_api(bearer_token=self.sudo().x_access_token_oauth2)
         data = client.get_me(

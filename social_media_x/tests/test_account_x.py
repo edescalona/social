@@ -457,6 +457,32 @@ class TestSocialAccountX(TestSocialCommonX):
         client.get_me.return_value = me
         return client
 
+    def test_x_premium_values_without_subscription(self):
+        """X answers the text ``"None"``, not a JSON null, without a plan."""
+        user = SimpleNamespace(data={"subscription_type": "None"})
+        self.assertEqual(
+            self.SocialAccount._x_premium_values(user), {"x_premium": False}
+        )
+
+    def test_x_premium_values_of_every_plan(self):
+        """Every plan of X Premium allows long posts."""
+        for plan in ("Basic", "Premium", "PremiumPlus"):
+            user = SimpleNamespace(data={"subscription_type": plan})
+            self.assertEqual(
+                self.SocialAccount._x_premium_values(user),
+                {"x_premium": True},
+                msg=plan,
+            )
+
+    def test_x_premium_values_without_the_field(self):
+        """A plan X did not answer leaves the stored one as it was."""
+        user = SimpleNamespace(data={"username": "user"})
+        self.assertEqual(self.SocialAccount._x_premium_values(user), {})
+
+    def test_x_premium_values_of_a_value_that_is_not_text(self):
+        user = SimpleNamespace(data={"subscription_type": None})
+        self.assertEqual(self.SocialAccount._x_premium_values(user), {})
+
     def test_update_account_data(self):
         fake_client = MagicMock()
         fake_data = fake_client.get_me.return_value.data
