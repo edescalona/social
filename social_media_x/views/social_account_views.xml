@@ -38,7 +38,11 @@
                         <span class="text-muted">read on</span>
                         <field name="x_credit_balance_date" class="text-muted" />
                     </div>
-                    <field name="x_credit_warning" invisible="media_type != 'x'" />
+                    <field
+                        name="x_credit_warning"
+                        class="oe_inline"
+                        invisible="media_type != 'x'"
+                    />
                 </group>
             </xpath>
         </field>
