@@ -24,6 +24,10 @@ Main features:
   both in the same post, so a post mixing them is refused instead of warned
   about. The same checks refuse the publication if the post reaches it anyway,
   through an import or an RPC call.
+- The credit balance of the developer App that pays the calls to the X API,
+  on the account form. It is read from X every 2 hours and from the buttons
+  of the account, and the responsible of the account is warned when it drops
+  under a threshold set on the account or is used up.
 
 **An X account will never draw a time series in *Social Media* > Statistics.**
 That screen reads a history per day, and the
