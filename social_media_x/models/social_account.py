@@ -76,12 +76,13 @@ class SocialAccount(models.Model):
     )
     x_premium = fields.Boolean(
         default=False,
-        help="Whether this account holds an X Premium subscription, which "
-        "raises the message of a post from 280 to 25 000 characters. Left "
-        "off, a post longer than 280 characters is refused before it is sent. "
-        "Turned on for an account that does not hold the subscription, the "
-        "post is sent and X refuses it, and the publication fails with the "
-        "reason X gives.",
+        readonly=True,
+        copy=False,
+        help="Whether the X user of this account holds an X Premium "
+        "subscription, which raises the message of a post from 280 to 25 000 "
+        "characters. Read from X when the account is associated and on Update "
+        "account, so a subscription bought or cancelled later is seen after "
+        "pressing Update account.",
     )
     x_credit_balance = fields.Float(
         string="Credit Balance (USD)",
