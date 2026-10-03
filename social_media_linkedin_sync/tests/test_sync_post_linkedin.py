@@ -16,6 +16,7 @@ from odoo.addons.social_media_linkedin.tests.test_common_linkedin import (
 )
 from odoo.addons.social_media_sync.tests.test_social_sync_common import (
     PATCH_SYNC_POST_ACCOUNT,
+    media_download_response,
 )
 
 from .test_sync_linkedin_common import (
@@ -36,10 +37,7 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
     def test_get_assets_save(self, mock_get):
         """Only the images that are not stored yet are downloaded."""
         fake_content = b"fake image data"
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = fake_content
-        mock_get.return_value = mock_response
+        mock_get.return_value = media_download_response(chunks=[fake_content])
         stored = self.create_attachment(attach_name="exists.jpg")
         self.SocialPostAccountLinkedin.write(
             {
