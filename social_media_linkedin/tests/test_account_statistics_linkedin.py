@@ -1,6 +1,7 @@
 # Copyright 2026 Binhex <https://www.binhex.cloud>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import json
 from unittest.mock import MagicMock, patch
 
 from odoo import _
@@ -8,6 +9,7 @@ from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
+from ..exceptions import LinkedinRequestRejectedError
 from ..social_linkedin_utils import _QUERY_STRING_MAX_BYTES_LINKEDIN
 from .test_common_linkedin import PATCH_ACCOUNT_LINKEDIN, TestSocialCommonLinkedin
 
@@ -306,6 +308,82 @@ class TestLinkedinPostStatistics(TestSocialCommonLinkedin):
                     params_fields=["q"],
                     params_values={"q": "organizationalEntity"},
                 )
+
+    def _refused_response(self, status_code, message):
+        return MagicMock(status_code=status_code, text=json.dumps({"message": message}))
+
+    def test_get_entity_share_statistics_rejected_with_a_4xx(self):
+        """A 4xx is LinkedIn refusing the request, told apart for the caller."""
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"),
+            autospec=True,
+            return_value=self._refused_response(400, "Invalid share urn"),
+        ):
+            with self.assertRaises(LinkedinRequestRejectedError) as error:
+                self.SocialAccountLinkedin._get_entity_share_statistics(
+                    ["urn:li:share:1"],
+                    "shares",
+                    "share",
+                    "boom",
+                    params_fields=["q"],
+                    params_values={"q": "organizationalEntity"},
+                )
+        self.assertIsInstance(error.exception, UserError)
+        self.assertEqual(error.exception.status_code, 400)
+        self.assertEqual(error.exception.args[0], "boom: Invalid share urn")
+
+    def test_get_entity_share_statistics_failing_with_a_5xx(self):
+        """Any other status says nothing about the publications asked for."""
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"),
+            autospec=True,
+            return_value=self._refused_response(500, "Internal error"),
+        ):
+            with self.assertRaises(UserError) as error:
+                self.SocialAccountLinkedin._get_entity_share_statistics(
+                    ["urn:li:share:1"],
+                    "shares",
+                    "share",
+                    "boom",
+                    params_fields=["q"],
+                    params_values={"q": "organizationalEntity"},
+                )
+        self.assertNotIsInstance(error.exception, LinkedinRequestRejectedError)
+        self.assertEqual(error.exception.args[0], "boom: Internal error")
+
+    def test_get_ugc_posts_statistics_rejected_with_a_4xx(self):
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"),
+            autospec=True,
+            return_value=self._refused_response(400, "Invalid ugc post urn"),
+        ):
+            with self.assertRaises(LinkedinRequestRejectedError) as error:
+                self.SocialAccountLinkedin._get_ugc_posts_statistics(
+                    posts=[{"id": "urn:li:ugcPost:1"}],
+                    params_fields=[],
+                    params_values={},
+                )
+        self.assertIsInstance(error.exception, UserError)
+        self.assertEqual(error.exception.status_code, 400)
+        self.assertEqual(
+            error.exception.args[0],
+            "The likes and the comments of the publications could not be read: "
+            "Invalid ugc post urn",
+        )
+
+    def test_get_ugc_posts_statistics_failing_with_a_5xx(self):
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_request_linkedin"),
+            autospec=True,
+            return_value=self._refused_response(503, "Service unavailable"),
+        ):
+            with self.assertRaises(UserError) as error:
+                self.SocialAccountLinkedin._get_ugc_posts_statistics(
+                    posts=[{"id": "urn:li:ugcPost:1"}],
+                    params_fields=[],
+                    params_values={},
+                )
+        self.assertNotIsInstance(error.exception, LinkedinRequestRejectedError)
 
     def test_get_entity_statistics_merges_the_two_ugc_sources(self):
         """A UGC post keeps its figures and takes its likes from the feed."""

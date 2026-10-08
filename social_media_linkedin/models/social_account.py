@@ -19,6 +19,7 @@ from odoo.tools import split_every
 
 from odoo.addons.social_media_base.exceptions import SocialCredentialsError
 
+from ..exceptions import LinkedinRequestRejectedError
 from ..social_linkedin_utils import (
     _BATCH_GET_MAX_IDS_LINKEDIN,
     _ENDPOINT_POSTS_LINKEDIN,
@@ -1710,6 +1711,24 @@ class SocialAccount(models.Model):
             )
         return statistics
 
+    @api.model
+    def _linkedin_statistics_error(self, response, message):
+        """Return the error to raise for a call of figures LinkedIn refused.
+
+        A ``4xx`` is LinkedIn refusing the request itself, which for a batch
+        of figures may well be one publication of it deleted on LinkedIn, so
+        it is raised as :class:`LinkedinRequestRejectedError` for the caller
+        to look into. Any other status says nothing about the publications
+        asked for and stays a plain ``UserError``.
+
+        :param response: the answer of LinkedIn, anything but a ``200``.
+        :param message: what to tell the user, the same for both.
+        :rtype: UserError
+        """
+        if 400 <= response.status_code < 500:
+            return LinkedinRequestRejectedError(message, response.status_code)
+        return UserError(message)
+
     def _get_entity_share_statistics(
         self,
         urns,
@@ -1750,12 +1769,13 @@ class SocialAccount(models.Model):
                 return_json=False,
             )
             if response.status_code != 200:
-                raise UserError(
+                raise self._linkedin_statistics_error(
+                    response,
                     _(
                         "%(label)s: %(error)s",
                         label=error_label,
                         error=self._linkedin_error_message(response),
-                    )
+                    ),
                 )
             data.update(self._parse_share_statistics(response.json(), urn_key))
         return data
@@ -1797,12 +1817,13 @@ class SocialAccount(models.Model):
                 linkedin_v2=True,
             )
             if response.status_code != 200:
-                raise UserError(
+                raise self._linkedin_statistics_error(
+                    response,
                     _(
                         "The likes and the comments of the publications could not be "
                         "read: %(error)s",
                         error=self._linkedin_error_message(response),
-                    )
+                    ),
                 )
             data.update(
                 {
