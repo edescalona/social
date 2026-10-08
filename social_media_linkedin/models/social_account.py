@@ -1686,26 +1686,29 @@ class SocialAccount(models.Model):
     def _linkedin_confirm_posts_gone(self, post_accounts):
         """Mark as deleted the publications LinkedIn confirms are gone.
 
-        Fail open: a check that cannot be made --a scope the token lacks, a
-        request that did not go through-- confirms nothing, so the refusal it
-        was made to explain is told as it is. The error of the check goes to
-        the log, not to the user.
+        Fail open: a check that fails for whatever reason --a scope the token
+        lacks, a request that did not go through, a concurrent update of the
+        lines-- confirms nothing, so the refusal it was made to explain is
+        told as it is. Unlike the guards of the account, not even the
+        concurrency error of PostgreSQL is raised again: the savepoint undoes
+        the marks, and the refusal is answered as if no check had been made.
+        The error of the check goes to the log, not to the user.
 
         :param post_accounts: the lines of this account LinkedIn refused.
         :return: the lines marked as deleted.
         :rtype: recordset
         """
         self.ensure_one()
-        gone = post_accounts.browse()
-        with self._account_guard(
-            on_error=lambda error: _logger.exception(
+        try:
+            with self.env.cr.savepoint():
+                return post_accounts._register_remote_posts_gone()
+        except Exception:  # noqa: BLE001 - a failed check confirms nothing
+            _logger.exception(
                 "Error checking which publications of the LinkedIn account %s "
                 "are gone, none of them is marked",
                 self.name,
             )
-        ):
-            gone = post_accounts._register_remote_posts_gone()
-        return gone
+            return post_accounts.browse()
 
     def _linkedin_write_post_statistics(self, post_accounts):
         """Ask LinkedIn for these publications and write what it answers.

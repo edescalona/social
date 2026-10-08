@@ -165,6 +165,15 @@ Figures of a publication
 - A publication missing from the answer is one nobody interacted with: the
   finder leaves out the entities with no activity at all, so its figures are
   written as zeros and its date as read all the same.
+- A publication deleted on LinkedIn does not leave the others of the account
+  without figures. LinkedIn refuses the whole batch with a `4xx` when one of
+  its publications is gone, so Odoo then asks LinkedIn which publications of
+  the batch no longer exist: the ones it confirms with a `404` are marked as
+  *Deleted*, the same as when a publication is opened, and the others are
+  asked for once more. If none is confirmed, or the second reading fails as
+  well, the account is reported and skipped like any other refusal. An error
+  on LinkedIn's side (`5xx`) or a timeout says nothing about the publications
+  and is reported straight away.
 - No new permission is needed: the figures of a publication come from
   `organizationalEntityShareStatistics` and `socialActions`, which the scopes
   already requested when the account was associated cover, so an account

@@ -4,6 +4,9 @@
 import json
 from unittest.mock import MagicMock, patch
 
+import psycopg2
+from psycopg2 import errorcodes
+
 from odoo import _
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
@@ -15,7 +18,11 @@ from odoo.addons.social_media_base.tests.test_social_common import (
 
 from ..exceptions import LinkedinRequestRejectedError
 from ..social_linkedin_utils import _QUERY_STRING_MAX_BYTES_LINKEDIN
-from .test_common_linkedin import PATCH_ACCOUNT_LINKEDIN, TestSocialCommonLinkedin
+from .test_common_linkedin import (
+    PATCH_ACCOUNT_LINKEDIN,
+    PATCH_POST_ACCOUNT_LINKEDIN,
+    TestSocialCommonLinkedin,
+)
 
 LOGGER_ACCOUNT_LINKEDIN = "odoo.addons.social_media_linkedin.models.social_account"
 LOGGER_ACCOUNT_BASE = "odoo.addons.social_media_base.models.social_account"
@@ -781,6 +788,39 @@ class TestLinkedinPostStatistics(TestSocialCommonLinkedin):
         self.assertEqual(len(notified), 1)
         self.assertIn(REJECTION_LINKEDIN, notified[0])
         self.assertNotIn("r_organization_social", notified[0])
+        self.assertFalse(refreshed)
+
+    def test_a_concurrent_update_during_the_check_confirms_nothing(self):
+        """Not even the concurrency error of the check escapes the refusal."""
+
+        class ConcurrencyError(psycopg2.OperationalError):
+            pgcode = errorcodes.SERIALIZATION_FAILURE
+
+        first = self._linkedin_publication("urn:li:share:1")
+        second = self._linkedin_publication("urn:li:share:2")
+        batches, statistics = self._refuse_first_batches(1, {})
+        with patch(
+            PATCH_ACCOUNT_LINKEDIN.format("_get_entity_statistics"),
+            autospec=True,
+            side_effect=statistics,
+        ), patch(
+            PATCH_POST_ACCOUNT_LINKEDIN.format("_check_remote_posts_exist"),
+            autospec=True,
+            side_effect=ConcurrencyError("serialization conflict"),
+        ), self._patch_notify_user() as mock_notify, self.assertLogs(
+            LOGGER_ACCOUNT_LINKEDIN, "ERROR"
+        ) as logs:
+            refreshed = self.SocialAccountLinkedin._refresh_post_statistics(
+                first + second
+            )
+        self.assertEqual((first + second).mapped("state"), ["posted", "posted"])
+        self.assertEqual(len(batches), 1)
+        self.assertTrue(
+            any("Error checking which publications" in line for line in logs.output)
+        )
+        notified = self._danger_notifications(mock_notify)
+        self.assertEqual(len(notified), 1)
+        self.assertIn(REJECTION_LINKEDIN, notified[0])
         self.assertFalse(refreshed)
 
     def test_a_refusal_of_social_actions_is_recovered_the_same(self):
