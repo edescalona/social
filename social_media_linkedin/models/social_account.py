@@ -1631,9 +1631,81 @@ class SocialAccount(models.Model):
         for account, lines in linkedin.grouped("account_id").items():
             if not account.linkedin_account_id:
                 continue
-            with account._statistics_guard():
-                refreshed |= account._linkedin_write_post_statistics(lines)
+            refreshed |= account._linkedin_refresh_post_statistics_recovering(lines)
         return refreshed
+
+    def _linkedin_refresh_post_statistics_recovering(self, post_accounts):
+        """Read the figures of these publications, past a deleted one.
+
+        LinkedIn refuses the whole batch with a ``4xx`` as soon as one of its
+        publications was deleted there, so one deleted publication would
+        leave every other one of the account without figures. On such a
+        refusal LinkedIn is asked which publications are gone, the ones it
+        confirms are marked as deleted, and the others are asked for once
+        more. Nothing confirmed,
+        or the second reading failing too, is answered as any other failure:
+        the account is rolled back and its responsible user told.
+
+        The marks go in a savepoint of their own, outside the guard of both
+        readings, so a second reading that fails does not undo them and the
+        next pass does not pay for the check again.
+
+        :param post_accounts: the lines of this account to read.
+        :return: the lines whose figures were written, never the ones marked.
+        :rtype: recordset
+        """
+        self.ensure_one()
+        refreshed = post_accounts.browse()
+        rejection = None
+        with self._statistics_guard():
+            try:
+                refreshed = self._linkedin_write_post_statistics(post_accounts)
+            except LinkedinRequestRejectedError as error:
+                # Nothing to roll back: the batch is read before anything is
+                # written. Kept to be told only if no publication explains it.
+                rejection = error
+        if rejection is None:
+            return refreshed
+        gone = self._linkedin_confirm_posts_gone(post_accounts)
+        if not gone:
+            with self._statistics_guard():
+                raise rejection
+            return refreshed
+        _logger.info(
+            "LinkedIn refused the figures of the account %(account)s, "
+            "%(count)s of its publications are gone and marked as deleted: "
+            "%(error)s",
+            {"account": self.name, "count": len(gone), "error": rejection.args[0]},
+        )
+        remaining = post_accounts - gone
+        if remaining:
+            with self._statistics_guard():
+                refreshed = self._linkedin_write_post_statistics(remaining)
+        return refreshed
+
+    def _linkedin_confirm_posts_gone(self, post_accounts):
+        """Mark as deleted the publications LinkedIn confirms are gone.
+
+        Fail open: a check that cannot be made --a scope the token lacks, a
+        request that did not go through-- confirms nothing, so the refusal it
+        was made to explain is told as it is. The error of the check goes to
+        the log, not to the user.
+
+        :param post_accounts: the lines of this account LinkedIn refused.
+        :return: the lines marked as deleted.
+        :rtype: recordset
+        """
+        self.ensure_one()
+        gone = post_accounts.browse()
+        with self._account_guard(
+            on_error=lambda error: _logger.exception(
+                "Error checking which publications of the LinkedIn account %s "
+                "are gone, none of them is marked",
+                self.name,
+            )
+        ):
+            gone = post_accounts._register_remote_posts_gone()
+        return gone
 
     def _linkedin_write_post_statistics(self, post_accounts):
         """Ask LinkedIn for these publications and write what it answers.
