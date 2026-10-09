@@ -694,10 +694,10 @@ class SocialPostAccount(models.Model):
     def _get_assets_save_x(self, media_keys, media_map):
         """Download the media of a tweet that are not stored yet.
 
-        The photos go through :meth:`_store_remote_medias`. The videos and
-        animated GIFs are downloaded here, because their attachment needs a
-        ``mimetype``: it is named after the media key, which has no extension
-        to tell an mp4 by.
+        The photos go through :meth:`_store_remote_medias` and the videos and
+        animated GIFs through :meth:`_store_remote_videos`, typed as the mp4
+        X serves: their attachment is named after the media key, which has no
+        extension to tell an mp4 by.
 
         :param media_keys: the media keys of the tweet, in the order X lists
             them.
@@ -711,23 +711,18 @@ class SocialPostAccount(models.Model):
         """
         medias_exist = self._get_medias_account(media_keys)
         image_url_by_ref = {}
-        videos = self.env["ir.attachment"]
-        video_refs = {}
+        video_url_by_ref = {}
         for media_key in media_keys:
             if media_key in medias_exist or media_key not in media_map:
                 continue
             _media_key, url, media_type, variants = media_map[media_key]
             download_url = self._x_media_download_url(media_type, url, variants)
-            if media_type not in _VIDEO_MEDIA_TYPES_X:
+            if media_type in _VIDEO_MEDIA_TYPES_X:
+                video_url_by_ref[media_key] = download_url
+            else:
                 image_url_by_ref[media_key] = download_url
-                continue
-            if not download_url:
-                continue
-            video = self._map_medias_account(
-                name=media_key, url=download_url, mimetype=_VIDEO_CONTENT_TYPE_X
-            )
-            if video:
-                videos |= video
-                video_refs[str(video.id)] = media_key
         images, media_refs = self._store_remote_medias(image_url_by_ref)
+        videos, video_refs = self._store_remote_videos(
+            video_url_by_ref, mimetype=_VIDEO_CONTENT_TYPE_X
+        )
         return images, videos, {**media_refs, **video_refs}
