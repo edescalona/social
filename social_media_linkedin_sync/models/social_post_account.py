@@ -74,6 +74,10 @@ class SocialPostAccount(models.Model):
         Whether the post has a video is told by the import itself, which
         marks the publication even when the download fails.
 
+        When the system parameter ``social_media_sync.download_videos`` turns
+        the videos off, nothing is asked: the Videos API would only answer
+        where to download a video that is not going to be downloaded.
+
         :param content: The ``content`` of the post answered by the Posts API.
         :param account: The account to ask LinkedIn with, needed when the post
             does not exist in Odoo yet.
@@ -85,6 +89,8 @@ class SocialPostAccount(models.Model):
         if not video_urn.startswith(_URN_VIDEO_LINKEDIN) or self._get_medias_account(
             [video_urn]
         ):
+            return self.env["ir.attachment"], {}
+        if not self._download_videos_enabled():
             return self.env["ir.attachment"], {}
         account = account or self.account_id
         download_urls = account._get_linkedin_videos_download_url([video_urn])

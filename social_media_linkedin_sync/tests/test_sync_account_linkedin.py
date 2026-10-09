@@ -633,6 +633,72 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
         self.assertEqual(line.video_ids, video)
         self.assertEqual(line.media_refs, {str(video.id): "urn:li:video:odoo"})
 
+    def _set_download_videos(self, value):
+        """Write the parameter as an administrator would."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_sync.download_videos", value
+        )
+
+    def test_import_with_videos_off_marks_the_video_and_downloads_nothing(self):
+        """The post comes in with its mark, and LinkedIn is not asked."""
+        self._set_download_videos("False")
+        attachment_count = self.env["ir.attachment"].search_count([])
+        mock_urls, mock_get = self._import_feed(
+            [self._video_post("urn:li:share:video", "urn:li:video:1")],
+            {"urn:li:video:1": "https://fake-url/1"},
+            {"https://fake-url/1": media_download_response([b"video"])},
+        )
+        mock_urls.assert_not_called()
+        mock_get.assert_not_called()
+        post_account = self._imported_line("urn:li:share:video")
+        self.assertEqual(len(post_account), 1, "The post is imported anyway")
+        self.assertTrue(post_account.has_video)
+        self.assertFalse(post_account.video_ids)
+        self.assertNotIn("urn:li:video:1", (post_account.media_refs or {}).values())
+        self.assertEqual(self.env["ir.attachment"].search_count([]), attachment_count)
+
+    def test_import_downloads_the_video_once_videos_are_back_on(self):
+        """Nothing was written while off, so the next pass asks again."""
+        ugc_posts = [self._video_post("urn:li:share:video", "urn:li:video:1")]
+        download_urls = {"urn:li:video:1": "https://fake-url/1"}
+        self._set_download_videos("False")
+        self._import_feed(
+            ugc_posts,
+            download_urls,
+            {"https://fake-url/1": media_download_response([b"video"])},
+        )
+        self._set_download_videos("True")
+        mock_urls, mock_get = self._import_feed(
+            ugc_posts,
+            download_urls,
+            {"https://fake-url/1": media_download_response([b"video"])},
+        )
+        mock_urls.assert_called_once()
+        mock_get.assert_called_once()
+        post_account = self._imported_line("urn:li:share:video")
+        self.assertEqual(post_account.video_ids.mapped("name"), ["urn:li:video:1"])
+        self.assertEqual(
+            post_account.media_refs,
+            {str(post_account.video_ids.id): "urn:li:video:1"},
+        )
+
+    def test_import_with_videos_off_keeps_the_videos_already_downloaded(self):
+        """Turning the parameter off decides what comes, not what stays."""
+        ugc_posts = [self._video_post("urn:li:share:video", "urn:li:video:1")]
+        self._import_feed(
+            ugc_posts,
+            {"urn:li:video:1": "https://fake-url/1"},
+            {"https://fake-url/1": media_download_response([b"video"])},
+        )
+        post_account = self._imported_line("urn:li:share:video")
+        video = post_account.video_ids
+        self.assertTrue(video)
+        self._set_download_videos("False")
+        self._import_feed(ugc_posts)
+        self.assertEqual(post_account.video_ids, video)
+        self.assertEqual(post_account.media_refs, {str(video.id): "urn:li:video:1"})
+        self.assertTrue(video.exists())
+
     def test_update_posts_statistics_full_list_leaves_the_account_alone(self):
         """Even the whole feed writes rows and not the figures of the account.
 
