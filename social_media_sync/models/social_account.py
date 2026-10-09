@@ -544,7 +544,9 @@ class SocialAccount(models.Model):
         self._notify_accounts_by_partner("social_posts_need_import", need_update)
 
     @api.model
-    def _import_command(self, post_account, values, attachments, media_refs):
+    def _import_command(
+        self, post_account, values, attachments, media_refs, videos=None
+    ):
         """Return the command that writes one imported publication.
 
         The medias go in the same write as the rest of the publication, so a
@@ -553,12 +555,17 @@ class SocialAccount(models.Model):
         nothing over the new ones: what this pass read is what the social
         media says today.
 
+        The references are merged whenever a media of either kind arrives: a
+        publication with a video and no image still has to keep the
+        reference of its video.
+
         :param post_account: the line already in Odoo, an empty recordset when
             the publication has never been imported.
         :param values: the fields read from the social media.
-        :param attachments: the medias downloaded in this pass.
-        :param media_refs: the reference of each downloaded media, keyed by
-            its identifier.
+        :param attachments: the images downloaded in this pass.
+        :param media_refs: the reference of each image and video downloaded
+            in this pass, keyed by its identifier.
+        :param videos: the videos downloaded in this pass.
         :rtype: tuple
         """
         if attachments:
@@ -567,6 +574,15 @@ class SocialAccount(models.Model):
                 "image_ids": [
                     Command.link(attachment.id) for attachment in attachments
                 ],
+            }
+        if videos:
+            values = {
+                **values,
+                "video_ids": [Command.link(video.id) for video in videos],
+            }
+        if attachments or videos:
+            values = {
+                **values,
                 "media_refs": {**(post_account.media_refs or {}), **media_refs},
             }
         if not post_account:

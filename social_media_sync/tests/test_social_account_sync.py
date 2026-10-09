@@ -7,7 +7,7 @@ import psycopg2
 from freezegun import freeze_time
 from psycopg2 import errorcodes
 
-from odoo import _, fields
+from odoo import Command, _, fields
 from odoo.exceptions import UserError
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
@@ -43,6 +43,82 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
 
         return patch.object(
             type(self.SocialAccount), name, autospec=True, side_effect=note
+        )
+
+    def _remote_media(self, name, mimetype):
+        """Return a media downloaded onto the publication of the fixtures."""
+        return self.env["ir.attachment"].create(
+            {
+                "name": name,
+                "mimetype": mimetype,
+                "datas": self.video_data,
+                "res_model": "social.post.account",
+                "res_id": self.social_post_account_id.id,
+            }
+        )
+
+    def _write_import_command(self, command):
+        """Write an import command as the bridges do, through the account."""
+        self.social_account_id.write({"post_account_ids": [command]})
+
+    def test_import_command_links_the_videos(self):
+        """A publication with a video and no image keeps its reference."""
+        image = self._remote_media("urn:li:image:1", "image/png")
+        self.social_post_account_id.write(
+            {
+                "image_ids": [Command.link(image.id)],
+                "media_refs": {str(image.id): "urn:li:image:1"},
+            }
+        )
+        video = self._remote_media("urn:li:video:1", "video/mp4")
+        self._write_import_command(
+            self.SocialAccount._import_command(
+                self.social_post_account_id,
+                {"message": "Imported"},
+                self.env["ir.attachment"],
+                {str(video.id): "urn:li:video:1"},
+                videos=video,
+            )
+        )
+        self.assertEqual(self.social_post_account_id.video_ids, video)
+        self.assertEqual(self.social_post_account_id.image_ids, image)
+        self.assertEqual(
+            self.social_post_account_id.media_refs,
+            {str(image.id): "urn:li:image:1", str(video.id): "urn:li:video:1"},
+        )
+
+    def test_import_command_links_images_and_videos_together(self):
+        image = self._remote_media("urn:li:image:1", "image/png")
+        video = self._remote_media("urn:li:video:1", "video/mp4")
+        self._write_import_command(
+            self.SocialAccount._import_command(
+                self.social_post_account_id,
+                {"message": "Imported"},
+                image,
+                {str(image.id): "urn:li:image:1", str(video.id): "urn:li:video:1"},
+                videos=video,
+            )
+        )
+        self.assertEqual(self.social_post_account_id.image_ids, image)
+        self.assertEqual(self.social_post_account_id.video_ids, video)
+        self.assertEqual(
+            self.social_post_account_id.media_refs,
+            {str(image.id): "urn:li:image:1", str(video.id): "urn:li:video:1"},
+        )
+
+    def test_import_command_without_medias_writes_the_values_as_they_are(self):
+        values = {"message": "Imported"}
+        self.assertEqual(
+            self.SocialAccount._import_command(
+                self.social_post_account_id, values, self.env["ir.attachment"], {}
+            ),
+            Command.update(self.social_post_account_id.id, values),
+        )
+        self.assertEqual(
+            self.SocialAccount._import_command(
+                self.SocialPostAccount, values, None, {}, videos=None
+            ),
+            Command.create(values),
         )
 
     def test_action_full_resync(self):
