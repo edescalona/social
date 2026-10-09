@@ -8,7 +8,6 @@ from freezegun import freeze_time
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
-from ..models.social_account import SocialAccount as SocialAccountXCls
 from ..social_x_utils import _GET_POSTS_MAX_IDS_X
 from .test_common_x import TestSocialCommonX
 
@@ -325,29 +324,23 @@ class TestXDashboardUpdate(TestSocialCommonX):
 
     @freeze_time("2026-09-30 10:00:00")
     def test_every_account_reads_its_window_once(self):
-        """Called on no account, the X ones never reach base.
+        """Called on no account, base reads the window of each X one once.
 
-        Base would take the empty recordset as every account and read the X
-        ones a second time, so each window would be paid twice.
+        Base takes the empty recordset as every account, so each window is
+        read, and paid, a single time.
         """
         accounts_x = self.SocialAccountX + self.SocialAccountCredentialX
         (self.SocialAccount.search([]) - accounts_x).write({"active": False})
         self._window_post("1")
         self._window_post("2", account=self.SocialAccountCredentialX)
-        with self._patch_read_of_x() as mock_read, self.get_patch_super_x(
-            self.SocialAccountX,
-            SocialAccountXCls,
-            "refresh_dashboard_statistics",
-            autospec=True,
-        ) as mock_super:
+        with self._patch_read_of_x() as mock_read:
             self.assertTrue(self.SocialAccount.browse().refresh_dashboard_statistics())
-        mock_super.assert_not_called()
         read_ids = sorted(call.args[0].id for call in mock_read.call_args_list)
         self.assertEqual(read_ids, sorted(accounts_x.ids))
 
     @freeze_time("2026-09-30 10:00:00")
     def test_another_media_goes_through_base_and_x_is_read_once(self):
-        """The other social media answers through base; X only through here."""
+        """The other social media answers for its series, and X is read once."""
         self._window_post("1")
         with self._patch_read_of_x(answer=False) as mock_read, patch.object(
             type(self.SocialAccountX),
@@ -358,7 +351,6 @@ class TestXDashboardUpdate(TestSocialCommonX):
             accounts = self.social_account_id + self.SocialAccountX
             self.assertTrue(accounts.refresh_dashboard_statistics())
         mock_series.assert_called_once()
-        self.assertEqual(mock_series.call_args.args[0], self.social_account_id)
         mock_read.assert_called_once()
 
     @freeze_time("2026-09-30 10:00:00")

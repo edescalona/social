@@ -990,36 +990,6 @@ class SocialAccount(models.Model):
                 metrics[str(val_x.id)] = self._get_public_metrics(val_x)
         return metrics
 
-    def refresh_dashboard_statistics(self):
-        """Count the figures read back for the recent posts as an update.
-
-        X reports no daily series, so the answer base gives —whether
-        :meth:`_refresh_statistics` rewrote one— is always ``False`` for its
-        accounts, even when the button has just read the figures of every post
-        of the window. The X accounts take here the same steps base takes,
-        without that hook, and count as refreshed when X answered for any of
-        their lines. The calls spent are the same ones: each window is read
-        once.
-
-        The rest of the accounts go through ``super()`` only when there are
-        any: called on an empty recordset base reads every account, the X ones
-        included, and those would be read, and paid, twice.
-
-        :return: whether anything was refreshed.
-        :rtype: bool
-        """
-        accounts = self or self.sudo().search([])
-        accounts_x = accounts.filtered(lambda account: account.media_type == "x")
-        others = accounts - accounts_x
-        refreshed = False
-        if others:
-            refreshed = super(SocialAccount, others).refresh_dashboard_statistics()
-        if accounts_x:
-            answered = accounts_x._refresh_window_statistics()
-            accounts_x._refresh_account_statistics()
-            refreshed = refreshed or bool(answered)
-        return refreshed
-
     def _refresh_post_statistics(self, post_accounts):
         """Read the figures X reports for these publications.
 
