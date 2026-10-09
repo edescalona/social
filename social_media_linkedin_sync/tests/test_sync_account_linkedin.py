@@ -217,6 +217,30 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             [urns[:_BATCH_GET_MAX_IDS_LINKEDIN], urns[_BATCH_GET_MAX_IDS_LINKEDIN:]],
         )
 
+    def test_get_linkedin_videos_download_url_network_error_loses_its_batch(self):
+        """LinkedIn not being reached for a chunk only loses that chunk."""
+        urns = [
+            f"urn:li:video:{number}"
+            for number in range(_BATCH_GET_MAX_IDS_LINKEDIN + 1)
+        ]
+        last_urn = urns[-1]
+        response = self._videos_response(
+            {last_urn: {"status": "AVAILABLE", "downloadUrl": "https://fake/last"}}
+        )
+        network_error = UserError("Error connecting to LinkedIn: timed out")
+        with self.get_patch_exceptions_linkedin(
+            side_effect=[network_error, response]
+        ) as mock_request, self.assertLogs(
+            LOGGER_ACCOUNT_SYNC_LINKEDIN, "WARNING"
+        ) as logs:
+            urls = self.SocialAccountLinkedin._get_linkedin_videos_download_url(urns)
+        self.assertEqual(urls, {last_urn: "https://fake/last"})
+        self.assertEqual(mock_request.call_count, 2)
+        self.assertEqual(len(logs.records), 1)
+        message = logs.records[0].getMessage()
+        self.assertIn(self.SocialAccountLinkedin.name, message)
+        self.assertIn("timed out", message)
+
     def test_update_posts_statistics_single_post_preserves_urns(self):
         ugc_posts = [
             {
@@ -491,6 +515,71 @@ class TestSocialSyncAccountLinkedin(TestSocialSyncCommonLinkedin):
             self._imported_line("urn:li:share:ok").video_ids.mapped("name"),
             ["urn:li:video:ok"],
         )
+
+    def test_import_survives_a_network_error_on_the_medias(self):
+        """LinkedIn not being reached for the medias keeps the import.
+
+        The images and the video are a complement of the post: the posts are
+        imported without them, the video one still tells it has a video, and
+        the guard of the account rolls nothing back.
+        """
+        ugc_posts = [
+            {
+                "id": "urn:li:share:image",
+                "commentary": "Imported with an image",
+                "content": {"media": {"id": "urn:li:image:1"}},
+                "publishedAt": 1735689600000,
+                "author": "urn:li:organization:123456",
+            },
+            self._video_post("urn:li:share:video", "urn:li:video:1"),
+        ]
+        network_error = UserError("Error connecting to LinkedIn: timed out")
+
+        def request_linkedin(account, *args, **kwargs):
+            endpoint = kwargs.get("endpoint")
+            if endpoint in ("/images", "/videos"):
+                raise network_error
+            raise AssertionError(f"Unexpected call to LinkedIn: {endpoint}")
+
+        # The download of the images is what is under test, so its patch is
+        # left out of the pass.
+        patches = [
+            patcher
+            for patcher in self._generate_update_posts_statistics_patches(ugc_posts)
+            if getattr(patcher, "attribute", None) != "_get_assets_save"
+        ]
+        with ExitStack() as stack:
+            for patcher in patches:
+                stack.enter_context(patcher)
+            mock_request = stack.enter_context(
+                self.get_patch_exceptions_linkedin(side_effect=request_linkedin)
+            )
+            logs = stack.enter_context(self.assertLogs("odoo", "WARNING"))
+            self.SocialAccountLinkedin._update_posts_statistics(None, None)
+        self.env.flush_all()
+        self.env.invalidate_all()
+        self.assertEqual(
+            sorted(call.kwargs["endpoint"] for call in mock_request.call_args_list),
+            ["/images", "/videos"],
+        )
+        self.assertFalse(
+            [record for record in logs.records if record.levelname == "ERROR"],
+            "A media lost on the network is not an error of the import",
+        )
+        self.assertEqual(
+            {record.name for record in logs.records},
+            {LOGGER_ACCOUNT_LINKEDIN, LOGGER_ACCOUNT_SYNC_LINKEDIN},
+        )
+        image_line = self._imported_line("urn:li:share:image")
+        video_line = self._imported_line("urn:li:share:video")
+        self.assertEqual(len(image_line), 1, "The post with an image is imported")
+        self.assertEqual(len(video_line), 1, "The post with a video is imported")
+        self.assertTrue(video_line.has_video)
+        self.assertFalse(image_line.has_video)
+        for line in image_line | video_line:
+            self.assertFalse(line.image_ids)
+            self.assertFalse(line.video_ids)
+            self.assertFalse(line.media_refs)
 
     def test_import_adds_the_video_to_a_publication_already_imported(self):
         """A video missing from a previous pass is downloaded by the next one."""

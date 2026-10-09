@@ -1230,7 +1230,8 @@ class SocialAccount(models.Model):
         The Posts API only answers the URN of the images of a post, so the
         Images API is asked for the URL to download them from. It is a
         ``BATCH_GET``, capped by LinkedIn at ``_BATCH_GET_MAX_IDS_LINKEDIN``
-        elements, so the URNs go in chunks of that size. A failure is logged
+        elements, so the URNs go in chunks of that size. A failure, be it an
+        answer other than 200 or LinkedIn not being reached at all, is logged
         instead of raised, and only loses its own chunk: the images are a
         complement of the post and must not stop the statistics pass.
 
@@ -1245,13 +1246,22 @@ class SocialAccount(models.Model):
         )
         download_urls = {}
         for batch in split_every(_BATCH_GET_MAX_IDS_LINKEDIN, image_urns, list):
-            response = self._request_linkedin(
-                endpoint="/images",
-                headers=headers,
-                params_fields=["ids"],
-                params_values={"ids": batch},
-                return_json=False,
-            )
+            try:
+                response = self._request_linkedin(
+                    endpoint="/images",
+                    headers=headers,
+                    params_fields=["ids"],
+                    params_values={"ids": batch},
+                    return_json=False,
+                )
+            except UserError as error:
+                _logger.warning(
+                    "LinkedIn could not be reached for the images of the "
+                    "account %s: %s",
+                    self.name,
+                    error,
+                )
+                continue
             if response.status_code != 200:
                 _logger.warning(
                     "Could not read the images of LinkedIn: %s",

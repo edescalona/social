@@ -339,9 +339,10 @@ class SocialAccount(models.Model):
         ``BATCH_GET``, capped by LinkedIn at ``_BATCH_GET_MAX_IDS_LINKEDIN``
         elements, so the URNs go in chunks of that size. A video LinkedIn is
         still processing answers no ``downloadUrl`` and is left out, so the
-        next pass asks for it again. A failure is logged instead of raised,
-        and only loses its own chunk: the videos are a complement of the post
-        and must not stop the import.
+        next pass asks for it again. A failure, be it an answer other than 200
+        or LinkedIn not being reached at all, is logged instead of raised, and
+        only loses its own chunk: the videos are a complement of the post and
+        must not stop the import.
 
         The question costs one call per chunk of videos the publications do
         not hold yet, which grows with the history of the account and is what
@@ -358,13 +359,22 @@ class SocialAccount(models.Model):
         )
         download_urls = {}
         for batch in split_every(_BATCH_GET_MAX_IDS_LINKEDIN, video_urns, list):
-            response = self._request_linkedin(
-                endpoint="/videos",
-                headers=headers,
-                params_fields=["ids"],
-                params_values={"ids": batch},
-                return_json=False,
-            )
+            try:
+                response = self._request_linkedin(
+                    endpoint="/videos",
+                    headers=headers,
+                    params_fields=["ids"],
+                    params_values={"ids": batch},
+                    return_json=False,
+                )
+            except UserError as error:
+                _logger.warning(
+                    "LinkedIn could not be reached for the videos of the "
+                    "account %s: %s",
+                    self.name,
+                    error,
+                )
+                continue
             if response.status_code != 200:
                 _logger.warning(
                     "Could not read the videos of LinkedIn: %s",
