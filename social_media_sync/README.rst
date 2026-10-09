@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =================
 Social Media Sync
 =================
@@ -17,7 +13,7 @@ Social Media Sync
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fsocial-lightgray.png?logo=github
@@ -231,9 +227,20 @@ Importing what an account already published.
   account are refreshed either way, because they cost a fixed number of
   calls and they move without anything being published; it is the import
   whose cost grows with the history of the account.
-- When nothing needed importing, the button says so —*The data was
-  updated. No new publications.*— instead of announcing publications it
-  did not bring in.
+- The notice of the button tells what the import found. When the social
+  media of an account was read and answered publications Odoo did not
+  hold yet, it says *The data was updated. New publications were
+  imported.*; when it was read and there was nothing new, *The data was
+  updated. No new publications.* Reading an account is an update even
+  when none of its figures moved. When no account was read —none of them
+  was behind, or the social media did not let the import run— the notice
+  is the one of *Social Media Base*, worded from the figures alone.
+- Every import ends by adding up again the figures of the card of each
+  account it read, from what it has just stored: the *Update* button,
+  the first import —once more at its end, after the daily series, since
+  the card of an account with one is drawn from it— and the full resync.
+  After *Update* and after the first import the dashboard draws the new
+  figures as soon as it is over, without being reloaded.
 - The figures imported for a publication — impressions, social media
   clicks, shares, likes, comments, interactions and engagement — are
   added by this module to the list of publications and to their form,

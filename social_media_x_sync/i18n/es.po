@@ -138,13 +138,6 @@ msgstr ""
 "alcanzado el límite de peticiones de su plan."
 
 #. module: social_media_x_sync
-#. odoo-javascript
-#: code:addons/social_media_x_sync/static/src/js/views/kanban/social_kanban_controller.esm.js:0
-#, python-format
-msgid "The data was updated successfully."
-msgstr "Los datos se han actualizado correctamente."
-
-#. module: social_media_x_sync
 #. odoo-python
 #: code:addons/social_media_x_sync/models/social_post_account.py:0
 #, python-format

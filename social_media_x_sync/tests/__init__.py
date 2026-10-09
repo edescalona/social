@@ -5,7 +5,6 @@ from . import test_sync_x_common
 from . import test_sync_account_x
 from . import test_sync_post_account_x
 from . import test_card_footer_x
-from . import test_update_notice_x
 from . import test_sync_utils_x
 from . import test_post_reaction_x
 from . import test_comment_dialog_x
