@@ -35,8 +35,10 @@ likes. Those reads are charged like any other.
 The videos and animated GIFs of the timeline are downloaded whole, and each
 file is held to the size cap of *Social Media Sync*, the system parameter
 `social_media_sync.media_max_size_mb`. A long video can be larger than what
-it allows, so an account publishing them is the one to raise it for; see the
-configuration of *Social Media Sync*.
+it allows, so an account publishing them is the one to raise it for. Leaving
+the videos and the animated GIFs out of Odoo altogether, while the photos are
+still downloaded, is what `social_media_sync.download_videos` written as
+`False` does. See the configuration of *Social Media Sync* for both.
 
 Enable since
 ------------------------

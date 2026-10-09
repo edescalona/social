@@ -174,7 +174,10 @@ The videos and animated GIFs of the timeline are downloaded whole, and
 each file is held to the size cap of *Social Media Sync*, the system
 parameter ``social_media_sync.media_max_size_mb``. A long video can be
 larger than what it allows, so an account publishing them is the one to
-raise it for; see the configuration of *Social Media Sync*.
+raise it for. Leaving the videos and the animated GIFs out of Odoo
+altogether, while the photos are still downloaded, is what
+``social_media_sync.download_videos`` written as ``False`` does. See the
+configuration of *Social Media Sync* for both.
 
 Enable since
 ------------
@@ -257,6 +260,14 @@ Importing the publications
   marked as having a video, and its form says that the video was not
   downloaded. The next pass that reads the publication tries the
   download again.
+
+- While the system parameter ``social_media_sync.download_videos`` is
+  ``False``, no video and no animated GIF is downloaded, and the photos
+  still are. The publication is marked as having a video all the same,
+  and its form says that the video was not downloaded. The videos
+  already downloaded stay, and once the parameter is back to ``True``
+  the next import downloads the ones missing from the publications it
+  reads.
 
 - The files come from the servers X delivers its media from, not from
   its API, so downloading them spends no credits of the plan.

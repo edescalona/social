@@ -23,6 +23,12 @@ Importing the publications
   or the file is above the cap — still leaves the publication marked as
   having a video, and its form says that the video was not downloaded. The
   next pass that reads the publication tries the download again.
+- While the system parameter `social_media_sync.download_videos` is `False`,
+  no video and no animated GIF is downloaded, and the photos still are. The
+  publication is marked as having a video all the same, and its form says
+  that the video was not downloaded. The videos already downloaded stay, and
+  once the parameter is back to `True` the next import downloads the ones
+  missing from the publications it reads.
 - The files come from the servers X delivers its media from, not from its
   API, so downloading them spends no credits of the plan.
 - The *Update* button of the dashboard runs the same import on demand, over
