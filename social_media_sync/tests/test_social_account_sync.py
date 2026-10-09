@@ -301,7 +301,7 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
             [call[0][0] for call in patch_resync.call_args_list],
         )
 
-    @mute_logger("odoo.addons.social_media_sync.models.social_account")
+    @mute_logger(LOGGER_ACCOUNT, LOGGER_BASE_ACCOUNT)
     def test_run_full_resync_isolates_each_account(self):
         """The account that fails must not stop the ones still to come."""
         failing = self.social_account_id
