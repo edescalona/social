@@ -11,7 +11,9 @@ Importing what a page already published.
   page of the feed sorted by last modification, which is what catches what
   changed since the previous pass.
 - It also downloads the medias of the publications created outside of Odoo, so
-  those images appear on the dashboard only after the import.
+  those images appear on the dashboard only after the import. An image LinkedIn
+  could not say where to download from, or whose download fails, is not
+  stored, and the next pass that reads the publication tries again.
 - The video of a post is downloaded too, and only once: a video the
   publication already holds, including the one of a post published from
   Odoo, is not asked for again. The card of the publication counts it, and
