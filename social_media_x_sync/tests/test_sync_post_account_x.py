@@ -727,6 +727,22 @@ class TestSocialSyncPostAccountX(TestSocialSyncCommonX):
             {photo_url, VIDEO_BEST_URL_X},
         )
 
+    def test_get_assets_save_x_stores_the_videos_through_social_media_sync(self):
+        """The videos of X are downloaded by the hook every bridge shares."""
+        media_map = {"video1": ("video1", None, "video", VIDEO_VARIANTS_X)}
+        with patch.object(
+            type(self.SocialPostAccount),
+            "_store_remote_videos",
+            autospec=True,
+            return_value=(self.env["ir.attachment"], {}),
+        ) as mock_store_videos:
+            self.SocialPostAccountX._get_assets_save_x(["video1"], media_map)
+        mock_store_videos.assert_called_once_with(
+            self.SocialPostAccountX,
+            {"video1": VIDEO_BEST_URL_X},
+            mimetype="video/mp4",
+        )
+
     def test_get_assets_save_x_skips_a_video_already_stored(self):
         video = self.env["ir.attachment"].create(
             {"name": "video1", "mimetype": "video/mp4", "raw": b"video"}

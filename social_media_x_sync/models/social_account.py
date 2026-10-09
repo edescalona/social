@@ -6,7 +6,7 @@ import logging
 import pytz
 from tweepy.errors import Forbidden, TooManyRequests, Unauthorized
 
-from odoo import Command, api, fields, models
+from odoo import api, fields, models
 
 from odoo.addons.social_media_x.social_x_utils import _URL_X
 
@@ -205,40 +205,27 @@ class SocialAccount(models.Model):
         return values
 
     @api.model
-    def _x_media_values(self, post_account, media_keys, media_map, videos, media_refs):
-        """Return what the media of a tweet write besides its images.
+    def _x_media_values(self, media_keys, media_map):
+        """Return whether the media of a tweet make it a publication with video.
 
         ``has_video`` tells that the tweet has a video or an animated GIF even
         when its file could not be downloaded, so the publication says the
-        truth and the next pass tries the download again.
+        truth and the next pass tries the download again. The videos
+        downloaded and their references are written by
+        :meth:`_import_command`, as the images are.
 
-        The references are merged with the ones already stored here and not
-        by :meth:`_import_command`, which only merges them along with images:
-        a tweet with a video and no photo still has to keep the reference of
-        its video.
-
-        :param post_account: the line already in Odoo, an empty recordset when
-            the publication has never been imported.
         :param media_keys: the media keys of the tweet.
         :param media_map: ``{media_key: (media_key, url, type, variants)}``,
             the media of the page as X reported them.
-        :param videos: the videos downloaded in this pass.
-        :param media_refs: the media key of each image and video downloaded
-            in this pass, keyed by its identifier.
         :rtype: dict
         """
-        values = {}
         if any(
             media_map[media_key][2] in _VIDEO_MEDIA_TYPES_X
             for media_key in media_keys
             if media_key in media_map
         ):
-            values["has_video"] = True
-        if videos:
-            values["video_ids"] = [Command.link(video.id) for video in videos]
-        if media_refs:
-            values["media_refs"] = {**(post_account.media_refs or {}), **media_refs}
-        return values
+            return {"has_video": True}
+        return {}
 
     def _update_posts_statistics(self, post_id, domain, imported=None):
         statistics = super()._update_posts_statistics(post_id, domain, imported)
@@ -335,19 +322,17 @@ class SocialAccount(models.Model):
                                 "actor_urn": val_x.author_id,
                                 "state": "posted",
                                 "author": author.username,
-                                **account._x_media_values(
-                                    post_account,
-                                    media_keys,
-                                    media_map,
-                                    video_ids,
-                                    media_refs,
-                                ),
+                                **account._x_media_values(media_keys, media_map),
                             }
                             if liked_refs is not None:
                                 data["liked_by_account"] = str(val_x.id) in liked_refs
                             post_accounts.append(
                                 account._import_command(
-                                    post_account, data, image_ids, media_refs
+                                    post_account,
+                                    data,
+                                    image_ids,
+                                    media_refs,
+                                    videos=video_ids,
                                 )
                             )
                     account.write(

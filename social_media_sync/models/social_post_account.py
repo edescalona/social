@@ -319,6 +319,36 @@ class SocialPostAccount(models.Model):
                 media_refs[str(attachment.id)] = ref
         return attachments, media_refs
 
+    def _store_remote_videos(self, url_by_ref, mimetype="video/mp4"):
+        """Download the videos of a publication and keep what came back.
+
+        The twin of :meth:`_store_remote_medias` for the videos, shared by
+        every bridge: each one resolves where its social media serves a video
+        from and leaves out what this publication already holds, and the
+        download, its cap and what a failure leaves behind are the same for
+        all of them.
+
+        The attachment is named after the reference, which has no extension
+        to tell the kind of file by, so the ``mimetype`` is given here.
+
+        :param url_by_ref: ``{reference: url}``, the reference being the one
+            the social media names the video by.
+        :param mimetype: the type of file the social media serves.
+        :return: the videos created and the reference of each one, keyed by
+            its identifier.
+        :rtype: tuple
+        """
+        videos = self.env["ir.attachment"]
+        media_refs = {}
+        for ref, url in url_by_ref.items():
+            if not url:
+                continue
+            video = self._map_medias_account(name=ref, url=url, mimetype=mimetype)
+            if video:
+                videos |= video
+                media_refs[str(video.id)] = ref
+        return videos, media_refs
+
     def _map_medias_account(self, **values):
         """Download a media of the social media and attach it here.
 
