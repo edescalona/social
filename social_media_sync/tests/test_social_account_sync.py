@@ -15,6 +15,7 @@ from odoo.tools import mute_logger
 from .test_social_sync_common import PATCH_SYNC_ACCOUNT, TestSocialMediaSyncCommon
 
 LOGGER_ACCOUNT = "odoo.addons.social_media_sync.models.social_account"
+LOGGER_BASE_ACCOUNT = "odoo.addons.social_media_base.models.social_account"
 
 
 @tagged("post_install", "-at_install")
@@ -25,6 +26,24 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
         if imported is not None:
             imported.update(accounts.ids)
         return []
+
+    def _patch_in_order(self, calls, name, side_effect=None):
+        """Patch ``name`` on the accounts and note in ``calls`` when it runs.
+
+        :param calls: list every call is appended to, as ``(name, account)``.
+        :param name: method of ``social.account`` to patch.
+        :param side_effect: what the method does once noted, if anything.
+        """
+
+        def note(account, *args, **kwargs):
+            calls.append((name, account))
+            if side_effect is not None:
+                return side_effect(account, *args, **kwargs)
+            return None
+
+        return patch.object(
+            type(self.SocialAccount), name, autospec=True, side_effect=note
+        )
 
     def test_action_full_resync(self):
         """The account form button delegates on the connector hook."""
@@ -118,6 +137,54 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
             self.social_account_id.update_posts_statistics()
         self.assertTrue(self.social_account_id.pending_initial_sync)
 
+    def test_update_posts_statistics_recomputes_the_accounts_it_read(self):
+        """The card adds up what the import stored, so it is recomputed after.
+
+        Only the accounts the connector read: nothing moved on the others.
+        """
+        unread = self.SocialAccount.create(
+            {"name": "Unread account", "media_id": self.social_media_id.id}
+        )
+
+        def read_one(accounts, post_id, domain, imported=None):
+            return self._report_imported(
+                accounts.filtered(lambda account: account != unread),
+                post_id,
+                domain,
+                imported,
+            )
+
+        calls = []
+        with self._patch_in_order(
+            calls, "_update_posts_statistics", read_one
+        ), self._patch_in_order(calls, "_refresh_account_statistics"):
+            (self.social_account_id | unread).update_posts_statistics()
+        self.assertEqual(
+            calls,
+            [
+                ("_update_posts_statistics", self.social_account_id | unread),
+                ("_refresh_account_statistics", self.social_account_id),
+            ],
+        )
+
+    def test_update_posts_statistics_recomputes_nothing_without_accounts(self):
+        """No account left to read, no card to recompute."""
+        self.SocialAccount.search([]).write(
+            {"posts_need_import": False, "pending_initial_sync": False}
+        )
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ), patch.object(
+            type(self.SocialAccount), "_update_posts_statistics", autospec=True
+        ), patch.object(
+            type(self.SocialAccount), "_refresh_account_statistics", autospec=True
+        ) as mock_refresh:
+            self.SocialAccount.update_posts_statistics()
+        mock_refresh.assert_not_called()
+
     def test_full_resync_falls_back_to_the_ordinary_refresh(self):
         """A media with no notion of a whole feed has nothing extra to do."""
         with patch.object(
@@ -190,6 +257,44 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
         ):
             with self.assertRaises(psycopg2.OperationalError):
                 self.SocialAccount._run_full_resync()
+
+    def test_action_full_resync_recomputes_after_the_resync(self):
+        """A connector may reconcile without going through the ordinary import."""
+        calls = []
+        with self._patch_in_order(calls, "_full_resync"), self._patch_in_order(
+            calls, "_refresh_account_statistics"
+        ):
+            self.social_account_id.action_full_resync()
+        self.assertEqual(
+            calls,
+            [
+                ("_full_resync", self.social_account_id),
+                ("_refresh_account_statistics", self.social_account_id),
+            ],
+        )
+
+    @mute_logger(LOGGER_BASE_ACCOUNT)
+    def test_run_full_resync_recomputes_each_account(self):
+        """Each account right after its resync, the failing one included.
+
+        An account whose resync fails is not recomputed, and does not keep the
+        next one from being recomputed.
+        """
+        failing = self.social_account_id
+        working = failing.copy({"name": "Other", "username": "other-account"})
+
+        def resync(account):
+            if account == failing:
+                raise UserError(_("The social media refused the feed"))
+
+        calls = []
+        with self._patch_in_order(calls, "_full_resync", resync), self._patch_in_order(
+            calls, "_refresh_account_statistics"
+        ):
+            self.SocialAccount._run_full_resync()
+        position = calls.index(("_full_resync", working))
+        self.assertEqual(calls[position + 1], ("_refresh_account_statistics", working))
+        self.assertNotIn(("_refresh_account_statistics", failing), calls)
 
     def test_full_resync_cron_runs_weekly(self):
         """Reading every publication is the expensive pass, so it runs seldom."""
@@ -438,6 +543,55 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
         ) as patch_reschedule:
             self.SocialAccount._run_initial_sync()
         self.assertFalse(patch_reschedule.call_args[0][0])
+
+    def _run_initial_sync_in_order(self, backfill=None):
+        """Run the initial sync of the account and note what ran, in order.
+
+        :param backfill: what the backfill does, if anything.
+        :rtype: list
+        """
+        self.social_account_id.pending_initial_sync = True
+        calls = []
+        with self._patch_in_order(
+            calls, "_update_posts_statistics", self._report_imported
+        ), self._patch_in_order(
+            calls, "_backfill_statistics", backfill
+        ), self._patch_in_order(
+            calls, "_refresh_account_statistics"
+        ), self._patch_in_order(calls, "_notify_posts_updated"), mute_logger(
+            LOGGER_ACCOUNT
+        ):
+            self.SocialAccount._run_initial_sync()
+        return [name for name, account in calls if account == self.social_account_id]
+
+    def test_run_initial_sync_recomputes_after_the_backfill(self):
+        """The card of a daily series is drawn from what the backfill wrote."""
+        self.assertEqual(
+            self._run_initial_sync_in_order(),
+            [
+                "_update_posts_statistics",
+                "_refresh_account_statistics",
+                "_backfill_statistics",
+                "_refresh_account_statistics",
+                "_notify_posts_updated",
+            ],
+        )
+
+    def test_run_initial_sync_keeps_the_import_recompute_of_a_failed_backfill(self):
+        """No new series, no second recompute: the one of the import stays."""
+
+        def backfill(account):
+            raise ValueError("boom")
+
+        self.assertEqual(
+            self._run_initial_sync_in_order(backfill),
+            [
+                "_update_posts_statistics",
+                "_refresh_account_statistics",
+                "_backfill_statistics",
+                "_notify_posts_updated",
+            ],
+        )
 
     def test_reschedule_initial_sync_asks_the_cron_for_a_later_run(self):
         CronTrigger = self.env["ir.cron.trigger"]

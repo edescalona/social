@@ -149,6 +149,11 @@ class SocialAccount(models.Model):
         tell that run from one that really imported something, and word the
         button accordingly.
 
+        The card of an account reads figures aggregated on the account, which
+        nothing recomputes after an import on its own: the accounts read here
+        are recomputed last, from what the import just stored. The others are
+        left alone, nothing moved on them.
+
         :param post_id: post to update, all of them when not set.
         :param domain: additional domain on the posts.
         :rtype: list
@@ -166,6 +171,7 @@ class SocialAccount(models.Model):
             pending.sudo().write({"pending_initial_sync": False})
         # ``_clear_posts_need_import`` keeps the ones actually flagged.
         imported_accounts._clear_posts_need_import()
+        imported_accounts._refresh_account_statistics()
         return statistics
 
     def _full_resync(self):
@@ -191,9 +197,15 @@ class SocialAccount(models.Model):
         return self.update_posts_statistics()
 
     def action_full_resync(self):
-        """Read everything again from the social media, from the account form."""
+        """Read everything again from the social media, from the account form.
+
+        A connector is free to reconcile the feed without going through
+        :meth:`update_posts_statistics`, so the card is recomputed here, once
+        the reconciliation is over.
+        """
         self.ensure_one()
         self._full_resync()
+        self._refresh_account_statistics()
 
     @api.model
     def _run_full_resync(self):
@@ -213,10 +225,15 @@ class SocialAccount(models.Model):
         sibling crons do. The accounts waiting for their initial sync are left
         out: that import is this very pass, and the two would fight over the
         same rows.
+
+        The card of each account is recomputed inside its savepoint, like
+        :meth:`action_full_resync` does: the reconciliation may not have gone
+        through :meth:`update_posts_statistics`.
         """
         for account in self.sudo().search([("pending_initial_sync", "=", False)]):
             with account._account_guard("Error on the full resync of the account %s"):
                 account._full_resync()
+                account._refresh_account_statistics()
 
     def _trigger_initial_sync(self):
         """Run the posts-statistics sync now so the dashboard is populated
@@ -352,6 +369,11 @@ class SocialAccount(models.Model):
                         account.id,
                     )
                     account._register_backfill_failure(backfill_error)
+                else:
+                    # The card of an account with a daily series is drawn from
+                    # it, and the series was only written now: the recompute
+                    # the import did came too early for it.
+                    account._refresh_account_statistics()
             account._close_initial_sync(error)
             # An account still pending was skipped, not imported: the quota of
             # the social media was spent, or the connector had nothing to read
