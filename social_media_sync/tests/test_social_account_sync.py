@@ -868,3 +868,59 @@ class TestSocialAccountSync(TestSocialMediaSyncCommon):
             answer = self.SocialAccount.update_posts_statistics()
         mock_update.assert_not_called()
         self.assertEqual(answer, [])
+
+    def _import_publications(self, count):
+        """Stand for a connector that reads the accounts and creates ``count`` lines.
+
+        :rtype: function
+        """
+
+        def import_publications(accounts, post_id, domain, imported=None):
+            for index in range(count):
+                self.SocialPostAccount.create(
+                    {
+                        "account_id": accounts[0].id,
+                        "message": "Imported publication %s" % index,
+                    }
+                )
+            return self._report_imported(accounts, post_id, domain, imported)
+
+        return import_publications
+
+    def test_update_dashboard_posts_with_new_publications(self):
+        with patch.object(
+            type(self.SocialAccount),
+            "_update_posts_statistics",
+            autospec=True,
+            side_effect=self._import_publications(2),
+        ):
+            answer = self.social_account_id.update_dashboard_posts()
+        self.assertEqual(answer, {"read": True, "imported": 2})
+
+    def test_update_dashboard_posts_without_new_publications(self):
+        """The account was read and had nothing new: still an update."""
+        with patch.object(
+            type(self.SocialAccount),
+            "_update_posts_statistics",
+            autospec=True,
+            side_effect=self._import_publications(0),
+        ):
+            answer = self.social_account_id.update_dashboard_posts()
+        self.assertEqual(answer, {"read": True, "imported": 0})
+
+    def test_update_dashboard_posts_without_accounts_to_read(self):
+        """No account left to read: the connectors are not even asked."""
+        self.SocialAccount.search([]).write(
+            {"posts_need_import": False, "pending_initial_sync": False}
+        )
+        with patch.object(
+            type(self.SocialAccount),
+            "_detects_pending_posts",
+            autospec=True,
+            return_value=True,
+        ), patch.object(
+            type(self.SocialAccount), "_update_posts_statistics", autospec=True
+        ) as mock_update:
+            answer = self.SocialAccount.update_dashboard_posts()
+        mock_update.assert_not_called()
+        self.assertEqual(answer, {"read": False, "imported": 0})

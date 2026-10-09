@@ -120,6 +120,51 @@ class SocialAccount(models.Model):
     def update_posts_statistics(self, post_id=None, domain=None):
         """Refresh the posts and the statistics of the accounts.
 
+        What the crons, the full resync and the connectors call. The import
+        itself is :meth:`_update_posts`; this answers only the figures it
+        read back.
+
+        :param post_id: post to update, all of them when not set.
+        :param domain: additional domain on the posts.
+        :rtype: list
+        """
+        statistics, _imported_accounts = self._update_posts(post_id, domain)
+        return statistics
+
+    def update_dashboard_posts(self, post_id=None, domain=None):
+        """Import the posts from the *Update* button and say what came in.
+
+        The figures :meth:`update_posts_statistics` answers come out the same
+        whether an account was read or not, and whether the read brought
+        anything new or not, so they cannot word the notice of the button.
+        This answers the two things the notice is worded from: whether the
+        social media of any account was read, and how many publications are
+        in Odoo now that were not before.
+
+        The publications are counted from outside, before and after the
+        import, so the connectors do not have to report what they created.
+        The count reaches the archived ones too, so a publication archived
+        during the import does not take one off the new ones.
+
+        :param post_id: post to update, all of them when not set.
+        :param domain: additional domain on the posts.
+        :return: ``read``, whether any account was read, and ``imported``, the
+            number of publications created.
+        :rtype: dict
+        """
+        accounts = self or self.search([])
+        post_accounts = (
+            self.env["social.post.account"].sudo().with_context(active_test=False)
+        )
+        account_domain = [("account_id", "in", accounts.ids)]
+        before = post_accounts.search_count(account_domain)
+        _statistics, imported_accounts = self._update_posts(post_id, domain)
+        after = post_accounts.search_count(account_domain)
+        return {"read": bool(imported_accounts), "imported": after - before}
+
+    def _update_posts(self, post_id, domain):
+        """Import the posts of the accounts and close what the import resolves.
+
         An account read here does not need its initial sync any more: this is
         the very import the cron was going to run, so the flag is cleared and
         the dashboard stops announcing a background import. It is also what
@@ -145,9 +190,7 @@ class SocialAccount(models.Model):
 
         An empty recordset is every account as far as the connectors are
         concerned, so a narrowing that keeps nothing has to stop here instead
-        of handing them one. The empty answer is what the dashboard reads to
-        tell that run from one that really imported something, and word the
-        button accordingly.
+        of handing them one, and no account is reported as read.
 
         The card of an account reads figures aggregated on the account, which
         nothing recomputes after an import on its own: the accounts read here
@@ -156,13 +199,15 @@ class SocialAccount(models.Model):
 
         :param post_id: post to update, all of them when not set.
         :param domain: additional domain on the posts.
-        :rtype: list
+        :return: the figures the connectors answered, and the accounts they
+            read.
+        :rtype: tuple
         """
         accounts = self or self.search([])
         if not self:
             accounts = accounts._accounts_to_import()
             if not accounts:
-                return []
+                return [], accounts
         imported = set()
         statistics = accounts._update_posts_statistics(post_id, domain, imported)
         imported_accounts = accounts.filtered(lambda account: account.id in imported)
@@ -172,7 +217,7 @@ class SocialAccount(models.Model):
         # ``_clear_posts_need_import`` keeps the ones actually flagged.
         imported_accounts._clear_posts_need_import()
         imported_accounts._refresh_account_statistics()
-        return statistics
+        return statistics, imported_accounts
 
     def _full_resync(self):
         """Hook for the connectors to read everything again and reconcile it.
