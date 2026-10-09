@@ -558,6 +558,32 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertFalse(post_account.media_refs)
         mock_get.assert_not_called()
 
+    def test_import_downloads_the_video_once_videos_are_back_on(self):
+        """Nothing was written while off, so the next import asks again."""
+        medias = [
+            MagicMock(
+                media_key="video1", url=None, type="video", variants=VIDEO_VARIANTS_X
+            )
+        ]
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_sync.download_videos", "False"
+        )
+        first, _mock_get = self._import_media_tweet(
+            medias, {VIDEO_BEST_URL_X: media_download_response([b"video"])}
+        )
+        self.assertTrue(first.has_video)
+        self.assertFalse(first.video_ids)
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_sync.download_videos", "True"
+        )
+        second, mock_get = self._import_media_tweet(
+            medias, {VIDEO_BEST_URL_X: media_download_response([b"video"])}
+        )
+        self.assertEqual(second, first)
+        mock_get.assert_called_once()
+        self.assertEqual(second.video_ids.mapped("name"), ["video1"])
+        self.assertEqual(second.media_refs, {str(second.video_ids.id): "video1"})
+
     def test_import_keeps_the_links_the_author_wrote(self):
         """Only the link X adds for the photo leaves the message."""
         photo_url = "https://pbs.twimg.com/media/photo.jpg"
