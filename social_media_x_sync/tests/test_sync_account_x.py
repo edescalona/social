@@ -497,6 +497,67 @@ class TestSocialSyncAccountX(TestSocialSyncCommonX):
         self.assertFalse(post_account.video_ids)
         self.assertEqual(post_account.image_ids.mapped("name"), ["photo1"])
 
+    def test_import_with_videos_off_keeps_the_photo_and_not_the_video(self):
+        """The parameter leaves the video on X and lets the photo in."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_sync.download_videos", "False"
+        )
+        photo_url = "https://pbs.twimg.com/media/photo.jpg"
+        post_account, mock_get = self._import_media_tweet(
+            [
+                MagicMock(
+                    media_key="photo1", url=photo_url, type="photo", variants=None
+                ),
+                MagicMock(
+                    media_key="video1",
+                    url=None,
+                    type="video",
+                    variants=VIDEO_VARIANTS_X,
+                ),
+            ],
+            {
+                photo_url: media_download_response([b"photo"]),
+                VIDEO_BEST_URL_X: media_download_response([b"video"]),
+            },
+        )
+        self.assertEqual(len(post_account), 1)
+        self.assertTrue(post_account.has_video)
+        self.assertEqual(post_account.image_ids.mapped("name"), ["photo1"])
+        self.assertFalse(post_account.video_ids)
+        self.assertEqual(
+            post_account.media_refs, {str(post_account.image_ids.id): "photo1"}
+        )
+        self.assertEqual(
+            [call.args[0] for call in mock_get.call_args_list],
+            [photo_url],
+            "Only the photo is downloaded",
+        )
+
+    def test_import_with_videos_off_leaves_the_animated_gif_out(self):
+        """An animated GIF is an mp4 for the download, and stays on X too."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_sync.download_videos", "False"
+        )
+        gif_url = "https://video.twimg.com/tweet_video/gif.mp4"
+        post_account, mock_get = self._import_media_tweet(
+            [
+                MagicMock(
+                    media_key="gif1",
+                    url=None,
+                    type="animated_gif",
+                    variants=[
+                        {"bit_rate": 0, "content_type": "video/mp4", "url": gif_url}
+                    ],
+                )
+            ],
+            {gif_url: media_download_response([b"gif"])},
+        )
+        self.assertEqual(len(post_account), 1)
+        self.assertTrue(post_account.has_video)
+        self.assertFalse(post_account.video_ids)
+        self.assertFalse(post_account.media_refs)
+        mock_get.assert_not_called()
+
     def test_import_keeps_the_links_the_author_wrote(self):
         """Only the link X adds for the photo leaves the message."""
         photo_url = "https://pbs.twimg.com/media/photo.jpg"

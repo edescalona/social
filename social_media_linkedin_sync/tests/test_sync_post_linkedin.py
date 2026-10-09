@@ -178,6 +178,23 @@ class TestSocialSyncPostLinkedin(TestSocialSyncCommonLinkedin):
                 )
         mock_download_url.assert_not_called()
 
+    def test_get_video_assets_save_asks_nothing_when_videos_are_off(self):
+        """The Videos API is not asked where to download a video left out."""
+        self.env["ir.config_parameter"].sudo().set_param(
+            "social_media_sync.download_videos", "False"
+        )
+        with patch.object(
+            type(self.SocialAccountLinkedin), "_get_linkedin_videos_download_url"
+        ) as mock_download_url, patch("requests.get") as mock_get:
+            self.assertEqual(
+                self.SocialPostAccountLinkedin._get_video_assets_save(
+                    {"media": {"id": "urn:li:video:new"}}
+                ),
+                (self.env["ir.attachment"], {}),
+            )
+        mock_download_url.assert_not_called()
+        mock_get.assert_not_called()
+
     def test_get_video_assets_save_of_a_video_still_processing(self):
         """A video LinkedIn answers no URL for is not downloaded."""
         with patch.object(

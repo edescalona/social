@@ -133,8 +133,11 @@ The video of a post is downloaded whole, and the file is held to the
 size cap of *Social Media Sync*, the system parameter
 ``social_media_sync.media_max_size_mb``, installed at ``100`` megabytes.
 LinkedIn takes videos of up to 500 MB, so a page publishing long videos
-is the one to raise it for; see the configuration of *Social Media
-Sync*.
+is the one to raise it for. Leaving the videos out of Odoo altogether is
+what ``social_media_sync.download_videos`` written as ``False`` does: no
+video is downloaded and LinkedIn is not even asked where to download one
+from, while the images still are. See the configuration of *Social Media
+Sync* for both.
 
 System parameters
 -----------------
@@ -193,6 +196,14 @@ Importing what a page already published.
   publication is still marked as having a video, its form says that the
   video was not downloaded, and the next pass that reads the publication
   tries again.
+- No video is downloaded while the system parameter
+  ``social_media_sync.download_videos`` is ``False``, and LinkedIn is
+  not asked where to download it from either; the images still are. The
+  publication is still marked as having a video and its form says that
+  the video was not downloaded. The videos already downloaded stay, and
+  once the parameter is back to ``True`` the next pass that reads a
+  publication still missing its video downloads it; the *Full resync* is
+  the pass that reads them all.
 - The publication mirrors what is online: an image removed from the post
   on LinkedIn is dropped from the dashboard card on the next import.
   Only the medias downloaded from LinkedIn are managed this way, so a
