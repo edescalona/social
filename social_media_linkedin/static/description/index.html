@@ -1021,8 +1021,11 @@ numbers are system parameters, described in CONFIGURE.</p>
 its images, and what LinkedIn made of it is recorded in its media
 references. The camera icon without a count is the fallback drawn for
 a publication that carries only the <em>has video</em> flag — one imported
-from LinkedIn, whose video was never downloaded and can only be
-watched there.</p>
+from LinkedIn whose video was not downloaded, so it can only be
+watched there. <em>Social Media LinkedIn Sync</em> downloads the videos it
+imports, and leaves one out when it is above the size cap, LinkedIn is
+still processing it, the download fails, or the system parameter
+<tt class="docutils literal">social_media_sync.download_videos</tt> is <tt class="docutils literal">False</tt>.</p>
 </li>
 </ul>
 </div>

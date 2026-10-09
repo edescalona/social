@@ -654,8 +654,11 @@ Video upload
   its images, and what LinkedIn made of it is recorded in its media
   references. The camera icon without a count is the fallback drawn for
   a publication that carries only the *has video* flag — one imported
-  from LinkedIn, whose video was never downloaded and can only be
-  watched there.
+  from LinkedIn whose video was not downloaded, so it can only be
+  watched there. *Social Media LinkedIn Sync* downloads the videos it
+  imports, and leaves one out when it is above the size cap, LinkedIn is
+  still processing it, the download fails, or the system parameter
+  ``social_media_sync.download_videos`` is ``False``.
 
 Publishing options
 ------------------
