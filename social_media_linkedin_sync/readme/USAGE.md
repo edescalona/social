@@ -12,6 +12,14 @@ Importing what a page already published.
   changed since the previous pass.
 - It also downloads the medias of the publications created outside of Odoo, so
   those images appear on the dashboard only after the import.
+- The video of a post is downloaded too, and only once: a video the
+  publication already holds, including the one of a post published from
+  Odoo, is not asked for again. The card of the publication counts it, and
+  its form plays it.
+- A video above the size cap of *Social Media Sync*, one LinkedIn is still
+  processing, or one whose download fails is not stored. The publication is
+  still marked as having a video, its form says that the video was not
+  downloaded, and the next pass that reads the publication tries again.
 - The publication mirrors what is online: an image removed from the post on
   LinkedIn is dropped from the dashboard card on the next import. Only the
   medias downloaded from LinkedIn are managed this way, so a file attached by

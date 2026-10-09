@@ -20,6 +20,12 @@ the responsible user is notified by the check that runs every two hours, and
 the import refuses with the name of the missing permission instead of the bare
 error LinkedIn answers.
 
+The video of a post is downloaded whole, and the file is held to the size cap
+of *Social Media Sync*, the system parameter
+`social_media_sync.media_max_size_mb`, installed at `100` megabytes. LinkedIn
+takes videos of up to 500 MB, so a page publishing long videos is the one to
+raise it for; see the configuration of *Social Media Sync*.
+
 System parameters
 ---------------
 
